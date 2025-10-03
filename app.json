@@ -8,25 +8,23 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-
     "splash": {
       "image": "./assets/images/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.rork.socialmedia-mastermind-content-planning-analytics",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos",
         "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
-        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone"
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone",
+        "ITSAppUsesNonExemptEncryption": false
       },
       "usesIcloudStorage": true,
       "buildNumber": "16"
     },
-
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
@@ -34,17 +32,16 @@
       },
       "package": "app.rork.socialmedia-mastermind-content-planning-analytics",
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ],
       "versionCode": 1
     },
-
     "web": {
       "favicon": "./assets/images/icon.png"
     },
-
     "plugins": [
       "expo-router",
       [
@@ -60,9 +57,15 @@
         }
       ]
     ],
-
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0940242a-d7f2-474f-9c7c-fa49419bb1b4"
+      }
+    },
+    "owner": "smyagency"
   }
 }
