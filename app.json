@@ -46,12 +46,7 @@
     },
 
     "plugins": [
-      [
-        "expo-router",
-        {
-          "origin": "https://rork.com/"
-        }
-      ],
+      "expo-router",
       [
         "expo-image-picker",
         {
