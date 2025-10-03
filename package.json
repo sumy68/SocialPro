@@ -3,9 +3,10 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "bunx rork start -p vfa6vldc0dg4o7t6k51vz --tunnel",
-    "start-web": "bunx rork start -p vfa6vldc0dg4o7t6k51vz --web --tunnel",
-    "start-web-dev": "DEBUG=expo* bunx rork start -p vfa6vldc0dg4o7t6k51vz --web --tunnel",
+    "start": "expo start",
+    "ios": "expo run:ios",
+    "android": "expo run:android",
+    "web": "expo start --web",
     "lint": "expo lint"
   },
   "dependencies": {
@@ -48,7 +49,10 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@expo/ngrok": "^4.1.0",
-    "@types/react": "~19.0.10",
+    "@types/react": "18.3.5",
+    "ajv": "^8.17.1",
+    "ajv-keywords": "^5.1.0",
+    "schema-utils": "^4.2.0",
     "eslint": "^9.31.0",
     "eslint-config-expo": "^9.2.0",
     "typescript": "~5.8.3"
