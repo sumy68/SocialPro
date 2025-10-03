@@ -8,11 +8,13 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+
     "splash": {
       "image": "./assets/images/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.rork.socialmedia-mastermind-content-planning-analytics",
@@ -21,11 +23,13 @@
         "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
         "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone"
       },
-      "usesIcloudStorage": true
+      "usesIcloudStorage": true,
+      "buildNumber": "16"
     },
+
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "app.rork.socialmedia-mastermind-content-planning-analytics",
@@ -33,11 +37,14 @@
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
-      ]
+      ],
+      "versionCode": 1
     },
+
     "web": {
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/icon.png"
     },
+
     "plugins": [
       [
         "expo-router",
@@ -58,6 +65,7 @@
         }
       ]
     ],
+
     "experiments": {
       "typedRoutes": true
     }

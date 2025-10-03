@@ -28,11 +28,11 @@
     "es": "El contenido de video supera a otros"
   },
   "Your video posts are getting 40% more engagement than static images": {
-    "de": "Ihre Video-Posts erhalten 40% mehr Interaktionen als statische Bilder",
-    "en": "Your video posts are getting 40% more engagement than static images",
-    "tr": "Video gönderileriniz statik görsellerden %40 daha fazla etkileşim alıyor",
-    "fr": "Vos publications vidéo obtiennent 40% d'engagement en plus que les images statiques",
-    "es": "Tus publicaciones de video obtienen un 40% más de interacción que las imágenes estáticas"
+    "de": "Ihre Video-Posts erhalten %{percent} mehr Interaktionen als statische Bilder",
+    "en": "Your video posts are getting %{percent} more engagement than static images",
+    "tr": "Video gönderileriniz statik görsellerden %{percent} daha fazla etkileşim alıyor",
+    "fr": "Vos publications vidéo obtiennent %{percent} d'engagement en plus que les images statiques",
+    "es": "Tus publicaciones de video obtienen un %{percent} más de interacción que las imágenes estáticas"
   },
   "Peak Engagement Time": {
     "de": "Höchste Interaktionszeit",
@@ -42,11 +42,11 @@
     "es": "Hora pico de interacción"
   },
   "Your audience is most active between 2-4 PM on weekdays": {
-    "de": "Ihre Zielgruppe ist an Wochentagen zwischen 14-16 Uhr am aktivsten",
-    "en": "Your audience is most active between 2-4 PM on weekdays",
-    "tr": "Hedef kitleniz hafta içi 14:00-16:00 saatleri arasında en aktif",
-    "fr": "Votre audience est la plus active entre 14h et 16h en semaine",
-    "es": "Tu audiencia está más activa entre las 2-4 PM en días laborables"
+    "de": "Ihre Zielgruppe ist an Wochentagen zwischen %{start}–%{end} am aktivsten",
+    "en": "Your audience is most active between %{start}–%{end} on weekdays",
+    "tr": "Hedef kitleniz hafta içi %{start}–%{end} saatleri arasında en aktif",
+    "fr": "Votre audience est la plus active entre %{start}–%{end} en semaine",
+    "es": "Tu audiencia está más activa entre las %{start}–%{end} en días laborables"
   },
   "Trending Topic": {
     "de": "Trending-Thema",
@@ -56,11 +56,11 @@
     "es": "Tema en tendencia"
   },
   "Posts about productivity are performing 25% better this week": {
-    "de": "Posts über Produktivität performen diese Woche 25% besser",
-    "en": "Posts about productivity are performing 25% better this week",
-    "tr": "Verimlilik hakkındaki gönderiler bu hafta %25 daha iyi performans gösteriyor",
-    "fr": "Les publications sur la productivité performent 25% mieux cette semaine",
-    "es": "Las publicaciones sobre productividad están funcionando un 25% mejor esta semana"
+    "de": "Posts über %{topic} performen diese Woche %{percent} besser",
+    "en": "Posts about %{topic} are performing %{percent} better this week",
+    "tr": "%{topic} hakkındaki gönderiler bu hafta %{percent} daha iyi performans gösteriyor",
+    "fr": "Les publications sur %{topic} performent %{percent} mieux cette semaine",
+    "es": "Las publicaciones sobre %{topic} están funcionando un %{percent} mejor esta semana"
   },
   "Create More Video Content": {
     "de": "Mehr Video-Content erstellen",
@@ -70,11 +70,11 @@
     "es": "Crear más contenido de video"
   },
   "Video posts are your top performers. Create 2-3 more Reels this week.": {
-    "de": "Video-Posts sind Ihre Top-Performer. Erstellen Sie diese Woche 2-3 weitere Reels.",
-    "en": "Video posts are your top performers. Create 2-3 more Reels this week.",
-    "tr": "Video gönderileri en iyi performansınız. Bu hafta 2-3 Reel daha oluşturun.",
-    "fr": "Les publications vidéo sont vos meilleures performances. Créez 2-3 Reels de plus cette semaine.",
-    "es": "Las publicaciones de video son tus mejores resultados. Crea 2-3 Reels más esta semana."
+    "de": "Video-Posts sind Ihre Top-Performer. Erstellen Sie diese Woche %{count} weitere Reels.",
+    "en": "Video posts are your top performers. Create %{count} more Reels this week.",
+    "tr": "Video gönderileri en iyi performansınız. Bu hafta %{count} Reel daha oluşturun.",
+    "fr": "Les publications vidéo sont vos meilleures performances. Créez %{count} Reels de plus cette semaine.",
+    "es": "Las publicaciones de video son tus mejores resultados. Crea %{count} Reels más esta semana."
   },
   "Optimize Posting Schedule": {
     "de": "Posting-Zeitplan optimieren",
@@ -84,11 +84,11 @@
     "es": "Optimizar horario de publicación"
   },
   "Schedule more posts between 2–4 PM for maximum visibility.": {
-    "de": "Planen Sie mehr Posts zwischen 14-16 Uhr für maximale Sichtbarkeit.",
-    "en": "Schedule more posts between 2–4 PM for maximum visibility.",
-    "tr": "Maksimum görünürlük için 14:00-16:00 saatleri arasında daha fazla gönderi planlayın.",
-    "fr": "Programmez plus de publications entre 14h et 16h pour une visibilité maximale.",
-    "es": "Programa más publicaciones entre las 2-4 PM para máxima visibilidad."
+    "de": "Planen Sie mehr Posts zwischen %{start}–%{end} für maximale Sichtbarkeit.",
+    "en": "Schedule more posts between %{start}–%{end} for maximum visibility.",
+    "tr": "Maksimum görünürlük için %{start}–%{end} saatleri arasında daha fazla gönderi planlayın.",
+    "fr": "Programmez plus de publications entre %{start}–%{end} pour une visibilité maximale.",
+    "es": "Programa más publicaciones entre las %{start}–%{end} para máxima visibilidad."
   },
   "Use Trending Hashtags": {
     "de": "Trending-Hashtags verwenden",
@@ -98,11 +98,11 @@
     "es": "Usar hashtags en tendencia"
   },
   "Include #productivity and #motivation in your next posts.": {
-    "de": "Fügen Sie #produktivität und #motivation in Ihre nächsten Posts ein.",
-    "en": "Include #productivity and #motivation in your next posts.",
-    "tr": "Bir sonraki gönderilerinizde #verimlilik ve #motivasyon etiketlerini ekleyin.",
-    "fr": "Incluez #productivité et #motivation dans vos prochaines publications.",
-    "es": "Incluye #productividad y #motivación en tus próximas publicaciones."
+    "de": "Fügen Sie %{tags} in Ihre nächsten Posts ein.",
+    "en": "Include %{tags} in your next posts.",
+    "tr": "Bir sonraki gönderilerinizde %{tags} etiketlerini ekleyin.",
+    "fr": "Incluez %{tags} dans vos prochaines publications.",
+    "es": "Incluye %{tags} en tus próximas publicaciones."
   },
   "Create Reels": {
     "de": "Reels erstellen",
