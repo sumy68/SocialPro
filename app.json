@@ -30,7 +30,7 @@
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "app.rork.socialmedia-mastermind-content-planning-analytics",
+      "package": "com.smyagency.socialpro",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
@@ -43,7 +43,6 @@
       "favicon": "./assets/images/icon.png"
     },
     "plugins": [
-      "expo-router",
       [
         "expo-image-picker",
         {
@@ -54,6 +53,16 @@
         "expo-document-picker",
         {
           "iCloudContainerEnvironment": "Production"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "14.0",
+            "flipper": false,
+            "useFrameworks": "static"
+          }
         }
       ]
     ],
