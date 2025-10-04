@@ -8,14 +8,14 @@ import { SocialMediaProvider } from "@/contexts/SocialMediaContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
+// Verhindert, dass der Splash Screen automatisch verschwindet
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 5 * 60 * 1000, // 5 Minuten
     },
   },
 });
@@ -35,36 +35,36 @@ export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    let splashTimeoutId: NodeJS.Timeout;
-    
+    // ✅ Typ-Safe Timer-Fix (funktioniert in React Native & Web)
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    let splashTimeoutId: ReturnType<typeof setTimeout> | undefined;
+
     const prepare = async () => {
       try {
-        // Minimal delay for proper hydration
+        // Kurze Verzögerung für sauberes Hydrieren
         timeoutId = setTimeout(() => {
           setIsReady(true);
-          
-          // Hide splash screen after a short delay
+
+          // Splash Screen leicht verzögert ausblenden
           splashTimeoutId = setTimeout(() => {
             SplashScreen.hideAsync().catch(console.error);
           }, 200);
         }, 50);
       } catch (error) {
-        console.error('Error during app initialization:', error);
-        // Ensure we always set ready to true
+        console.error("Error during app initialization:", error);
         setIsReady(true);
       }
     };
 
     prepare();
-    
+
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
       if (splashTimeoutId) clearTimeout(splashTimeoutId);
     };
   }, []);
 
-  // Show loading only briefly to prevent hydration mismatch
+  // Zeige kurz einen Loader, bis App bereit ist
   if (!isReady) {
     return (
       <View style={styles.loadingContainer}>
@@ -94,8 +94,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F9FAFB",
   },
 });
