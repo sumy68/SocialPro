@@ -1,246 +1,241 @@
-import createContextHook from '@nkzw/create-context-hook';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// app/(premium)/SubscriptionScreen.tsx
+
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { Check, Crown, X, Zap } from 'lucide-react-native';
 
-interface CompanyProfile {
-  industry: string;
-  companySize: string;
-  goals: string[];
-  targetAudience: string;
-  currentPlatforms: string[];
-  contentTypes: string[];
-  postingFrequency: string;
+export default function SubscriptionScreen() {
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { user, products, subscribe, restorePurchases } = useAuth();
+
+  // Preise dynamisch vom Store (über react-native-iap)
+  const monthly = products.find(p => p.productId === 'com.deinpaket.socialpro.premium.monthly');
+  const yearly  = products.find(p => p.productId === 'com.deinpaket.socialpro.premium.yearly');
+
+  const monthlyPrice = monthly?.localizedPrice ?? '…';
+  const yearlyPrice  = yearly?.localizedPrice ?? '…';
+
+  // Zusatzinfos berechnen (Monatsäquivalent & Ersparnis)
+  const m = monthly?.price ?? 0;
+  const y = yearly?.price ?? 0;
+  const perMonthYearly = y ? y / 12 : null;
+  const savings = m && y ? m * 12 - y : null;
+
+  const handleSubscribe = async () => {
+    setIsProcessing(true);
+    try {
+      await subscribe(selectedPlan);
+      Alert.alert(
+        'Abonnement erfolgreich!',
+        'Willkommen bei SocialPro Premium! Sie haben jetzt Zugang zu allen Features.',
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    } catch (error) {
+      Alert.alert('Fehler', 'Abonnement konnte nicht abgeschlossen werden.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    const ok = await restorePurchases();
+    Alert.alert(ok ? 'Erfolg' : 'Hinweis', ok ? 'Käufe wiederhergestellt.' : 'Keine aktiven Käufe gefunden.');
+  };
+
+  const isSubscribed = user?.subscriptionStatus === 'active';
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+          <X color="#6B7280" size={24} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>SocialPro Premium</Text>
+        <View style={styles.placeholder} />
+      </View>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.hero}>
+          <Crown color="#8B5CF6" size={48} />
+          <Text style={styles.heroTitle}>Schalten Sie Ihr volles Potenzial frei</Text>
+          <Text style={styles.heroSubtitle}>
+            Professionelle Social Media Verwaltung mit KI-Power
+          </Text>
+        </View>
+
+        <View style={styles.features}>
+          {[
+            'Unbegrenzte Post-Planung',
+            'KI-Content-Generator',
+            'Erweiterte Analytics',
+            'Multi-Platform-Publishing',
+            'Trend-Scanner & Insights',
+            'Priority Support',
+          ].map((feature, index) => (
+            <View style={styles.featureItem} key={index}>
+              <Check color="#10B981" size={20} />
+              <Text style={styles.featureText}>{feature}</Text>
+            </View>
+          ))}
+        </View>
+
+        {!isSubscribed && (
+          <>
+            <View style={styles.trialSection}>
+              <View style={styles.trialBadge}>
+                <Zap color="#F59E0B" size={16} />
+                <Text style={styles.trialBadgeText}>3 Tage kostenlos testen</Text>
+              </View>
+              <Text style={styles.trialNote}>
+                Keine Kreditkarte erforderlich • Jederzeit kündbar
+              </Text>
+            </View>
+
+            <View style={styles.planSelector}>
+              {/* Monatlich */}
+              <TouchableOpacity
+                style={[styles.planOption, selectedPlan === 'monthly' && styles.planOptionSelected]}
+                onPress={() => setSelectedPlan('monthly')}
+              >
+                <View style={styles.planHeader}>
+                  <Text style={styles.planName}>Monatlich</Text>
+                  <Text style={styles.planPrice}>{monthlyPrice}</Text>
+                </View>
+                <Text style={styles.planPeriod}>pro Monat</Text>
+              </TouchableOpacity>
+
+              {/* Jährlich */}
+              <TouchableOpacity
+                style={[styles.planOption, selectedPlan === 'yearly' && styles.planOptionSelected]}
+                onPress={() => setSelectedPlan('yearly')}
+              >
+                <View style={styles.planBadge}>
+                  <Text style={styles.planBadgeText}>2 Monate gratis</Text>
+                </View>
+                <View style={styles.planHeader}>
+                  <Text style={styles.planName}>Jährlich</Text>
+                  <Text style={styles.planPrice}>{yearlyPrice}</Text>
+                </View>
+                <Text style={styles.planPeriod}>
+                  pro Jahr {perMonthYearly ? `(≈ ${perMonthYearly.toFixed(2)} €/Monat)` : ''}
+                </Text>
+                {Boolean(savings) && (
+                  <Text style={styles.planSavings}>
+                    Du sparst ca. {savings!.toFixed(2)} €
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.subscribeButton, isProcessing && styles.subscribeButtonDisabled]}
+              onPress={handleSubscribe}
+              disabled={isProcessing}
+            >
+              <Text style={styles.subscribeButtonText}>
+                {isProcessing ? 'Wird verarbeitet...' :
+                  `${selectedPlan === 'monthly' ? 'Monatlich' : 'Jährlich'} abonnieren`}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={handleRestore}>
+              <Text style={styles.restoreText}>Käufe wiederherstellen</Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        {isSubscribed && (
+          <View style={styles.subscribedStatus}>
+            <Check color="#10B981" size={32} />
+            <Text style={styles.subscribedTitle}>Sie sind Premium-Mitglied!</Text>
+            <Text style={styles.subscribedText}>
+              Genießen Sie alle Premium-Features von SocialPro.
+            </Text>
+          </View>
+        )}
+
+        <Text style={styles.disclaimer}>
+          Das Abonnement verlängert sich automatisch, sofern nicht mindestens 24 Stunden
+          vor Ablauf gekündigt wird. Verwaltung/Kündigung: iOS Einstellungen → Apple-ID → Abonnements.
+          Mit dem Kauf stimmen Sie unseren Nutzungsbedingungen und Datenschutzrichtlinien zu.
+        </Text>
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
 
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  subscriptionStatus: 'trial' | 'active' | 'expired' | 'none';
-  trialEndsAt?: Date;
-  subscriptionType?: 'monthly' | 'yearly';
-  companyProfile?: CompanyProfile;
-  onboardingCompleted: boolean;
-}
-
-interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => Promise<void>;
-  startTrial: () => Promise<void>;
-  subscribe: (type: 'monthly' | 'yearly') => Promise<void>;
-  checkSubscriptionStatus: () => boolean;
-  updateCompanyProfile: (profile: CompanyProfile) => Promise<void>;
-  completeOnboarding: () => Promise<void>;
-}
-
-export const [AuthProvider, useAuth] = createContextHook((): AuthContextType => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    loadUser();
-  }, []);
-
-  const loadUser = async () => {
-    try {
-      const userData = await AsyncStorage.getItem('user');
-      if (userData && typeof userData === 'string' && userData.trim()) {
-        try {
-          // Validate JSON format before parsing
-          if (!userData.startsWith('{')) {
-            console.warn('Invalid JSON format for user data, clearing storage');
-            await AsyncStorage.removeItem('user');
-            return;
-          }
-          
-          const parsedUser = JSON.parse(userData);
-          if (parsedUser && typeof parsedUser === 'object') {
-            if (parsedUser.trialEndsAt) {
-              parsedUser.trialEndsAt = new Date(parsedUser.trialEndsAt);
-            }
-            
-            // Check if trial has expired
-            if (parsedUser.subscriptionStatus === 'trial' && parsedUser.trialEndsAt) {
-              if (new Date() > parsedUser.trialEndsAt) {
-                const expiredUser = { ...parsedUser, subscriptionStatus: 'expired' as const };
-                setUser(expiredUser);
-                await AsyncStorage.setItem('user', JSON.stringify(expiredUser));
-                return;
-              }
-            }
-            
-            setUser(parsedUser);
-          } else {
-            console.warn('Invalid user data format, clearing storage');
-            await AsyncStorage.removeItem('user');
-            setUser(null);
-          }
-        } catch (parseError) {
-          console.error('Error parsing user data, clearing corrupted data:', parseError);
-          await AsyncStorage.removeItem('user');
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
-    } catch (error) {
-      console.error('Error loading user:', error);
-      // Clear all corrupted data if there's a general error
-      try {
-        await AsyncStorage.removeItem('user');
-      } catch (clearError) {
-        console.error('Error clearing corrupted user data:', clearError);
-      }
-      setUser(null);
-    } finally {
-      // Set loading to false immediately to prevent hydration timeout
-      setIsLoading(false);
-    }
-  };
-
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const newUser: User = {
-        id: '1',
-        email,
-        name: email.split('@')[0],
-        subscriptionStatus: 'none',
-        onboardingCompleted: false
-      };
-      
-      setUser(newUser);
-      await AsyncStorage.setItem('user', JSON.stringify(newUser));
-      router.replace('/onboarding');
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const register = async (email: string, password: string, name: string) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const newUser: User = {
-        id: '1',
-        email,
-        name,
-        subscriptionStatus: 'none',
-        onboardingCompleted: false
-      };
-      
-      setUser(newUser);
-      await AsyncStorage.setItem('user', JSON.stringify(newUser));
-      router.replace('/onboarding');
-    } catch (error) {
-      console.error('Register error:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await AsyncStorage.removeItem('user');
-      setUser(null);
-      router.replace('/auth');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
-  const startTrial = async () => {
-    if (!user) return;
-    
-    const trialEndsAt = new Date();
-    trialEndsAt.setDate(trialEndsAt.getDate() + 3); // 3 days trial
-    
-    const updatedUser: User = {
-      ...user,
-      subscriptionStatus: 'trial',
-      trialEndsAt
-    };
-    
-    setUser(updatedUser);
-    await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
-  };
-
-  const subscribe = async (type: 'monthly' | 'yearly') => {
-    if (!user) return;
-    
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const updatedUser: User = {
-      ...user,
-      subscriptionStatus: 'active',
-      subscriptionType: type,
-      trialEndsAt: undefined
-    };
-    
-    setUser(updatedUser);
-    await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
-  };
-
-  const updateCompanyProfile = async (profile: CompanyProfile) => {
-    if (!user) return;
-    
-    const updatedUser: User = {
-      ...user,
-      companyProfile: profile
-    };
-    
-    setUser(updatedUser);
-    await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
-  };
-
-  const completeOnboarding = async () => {
-    if (!user) return;
-    
-    const updatedUser: User = {
-      ...user,
-      onboardingCompleted: true
-    };
-    
-    setUser(updatedUser);
-    await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
-  };
-
-  const checkSubscriptionStatus = (): boolean => {
-    if (!user) return false;
-    
-    if (user.subscriptionStatus === 'active') return true;
-    
-    if (user.subscriptionStatus === 'trial' && user.trialEndsAt) {
-      return new Date() <= user.trialEndsAt;
-    }
-    
-    return false;
-  };
-
-  return {
-    user,
-    isLoading,
-    login,
-    register,
-    logout,
-    startTrial,
-    subscribe,
-    checkSubscriptionStatus,
-    updateCompanyProfile,
-    completeOnboarding
-  };
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  header: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
+  },
+  closeButton: { padding: 4 },
+  headerTitle: { fontSize: 18, fontWeight: '600', color: '#111827' },
+  placeholder: { width: 32 },
+  content: { flex: 1, paddingHorizontal: 20 },
+  hero: { alignItems: 'center', paddingVertical: 32 },
+  heroTitle: {
+    fontSize: 24, fontWeight: 'bold', color: '#111827', textAlign: 'center',
+    marginTop: 16, marginBottom: 8,
+  },
+  heroSubtitle: { fontSize: 16, color: '#6B7280', textAlign: 'center' },
+  features: {
+    backgroundColor: '#FFFFFF', borderRadius: 12, padding: 20, marginBottom: 24,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
+  },
+  featureItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  featureText: { fontSize: 16, color: '#374151', marginLeft: 12 },
+  trialSection: {
+    backgroundColor: '#FFFBEB', borderRadius: 12, padding: 20, marginBottom: 24,
+    alignItems: 'center', borderWidth: 1, borderColor: '#FED7AA',
+  },
+  trialBadge: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF3C7',
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 8,
+  },
+  trialBadgeText: { fontSize: 14, fontWeight: '600', color: '#D97706', marginLeft: 4 },
+  trialNote: { fontSize: 12, color: '#92400E', textAlign: 'center' },
+  planSelector: { marginBottom: 24 },
+  planOption: {
+    backgroundColor: '#FFFFFF', borderRadius: 12, padding: 20, marginBottom: 12,
+    borderWidth: 2, borderColor: '#F3F4F6', position: 'relative',
+  },
+  planOptionSelected: { borderColor: '#8B5CF6' },
+  planBadge: {
+    position: 'absolute', top: -8, right: 16, backgroundColor: '#10B981',
+    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12,
+  },
+  planBadgeText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+  planHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  planName: { fontSize: 18, fontWeight: '600', color: '#111827' },
+  planPrice: { fontSize: 24, fontWeight: 'bold', color: '#8B5CF6' },
+  planPeriod: { fontSize: 14, color: '#6B7280' },
+  planSavings: { fontSize: 14, color: '#10B981', fontWeight: '600', marginTop: 4 },
+  subscribeButton: {
+    backgroundColor: '#8B5CF6', borderRadius: 12, paddingVertical: 16,
+    alignItems: 'center', marginBottom: 16, shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
+  },
+  subscribeButtonDisabled: { backgroundColor: '#D1D5DB', shadowOpacity: 0, elevation: 0 },
+  subscribeButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
+  restoreText: {
+    color: '#6B7280', textAlign: 'center', fontSize: 14, marginBottom: 24, textDecorationLine: 'underline',
+  },
+  subscribedStatus: { alignItems: 'center', paddingVertical: 32 },
+  subscribedTitle: { fontSize: 20, fontWeight: 'bold', color: '#10B981', marginTop: 12, marginBottom: 8 },
+  subscribedText: { fontSize: 16, color: '#6B7280', textAlign: 'center' },
+  disclaimer: { fontSize: 12, color: '#9CA3AF', textAlign: 'center', lineHeight: 16, marginBottom: 32 },
 });
