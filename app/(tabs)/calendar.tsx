@@ -18,7 +18,7 @@ import {
   Clock,
   Facebook,
 } from "lucide-react-native";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthCtx";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { router } from "expo-router";
 
