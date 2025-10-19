@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,11 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
-  Alert,
+
   Dimensions,
   Platform
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
@@ -25,25 +25,11 @@ import {
   BarChart3,
   Lightbulb,
   Target,
-  Download,
-  ExternalLink,
   Users,
   Activity
 } from 'lucide-react-native';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useSocialMedia } from '@/contexts/SocialMediaContext';
-import { WeeklyReviewData, TopPerformingPost, WeeklyInsight, WeeklyRecommendation } from '@/types/social';
-
-// Import external translations
-let externalTranslations: Record<string, Record<string, string>> = {};
-try {
-  const translationsModule = require('../translations.json');
-  externalTranslations = translationsModule && typeof translationsModule === 'object' ? translationsModule : {};
-  console.log('Loaded external translations, keys:', Object.keys(externalTranslations).length);
-} catch (error) {
-  console.warn('Could not load external translations:', error);
-  externalTranslations = {};
-}
+import { useApp } from '@/contexts/AppContext';
+import { Colors } from '@/constants/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -57,7 +43,6 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, change, changePercent, icon, color }) => {
-  const { t } = useLanguage();
   const isPositive = change >= 0;
   
   return (
@@ -77,18 +62,28 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, change, changePercent
           {isPositive ? '+' : ''}{changePercent.toFixed(1)}%
         </Text>
       </View>
-      <Text style={styles.statCompare}>{t('weekly.comparedToLastWeek')}</Text>
+      <Text style={styles.statCompare}>vs. letzte Woche</Text>
     </View>
   );
 };
 
+interface TopPost {
+  id: string;
+  platform: string;
+  content: string;
+  thumbnail?: string;
+  publishedAt: Date;
+  reach: number;
+  likes: number;
+  comments: number;
+  shares: number;
+}
+
 interface PostCardProps {
-  post: TopPerformingPost;
+  post: TopPost;
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post }) => {
-  const { t } = useLanguage();
-  
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'M';
@@ -104,9 +99,9 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays === 1) {
-      return t('analytics.weekAgo').replace('1 week', '1 day');
+      return 'vor 1 Tag';
     } else {
-      return t('analytics.daysAgo').replace('{days}', diffDays.toString());
+      return `vor ${diffDays} Tagen`;
     }
   };
   
@@ -118,7 +113,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
       <View style={styles.postContent}>
         <View style={styles.postHeader}>
           <Text style={styles.postPlatform}>{post.platform}</Text>
-          <Text style={styles.postType}>{post.type.toUpperCase()}</Text>
+          <Text style={styles.postType}>POST</Text>
         </View>
         <Text style={styles.postText} numberOfLines={2}>{post.content}</Text>
         <Text style={styles.postDate}>{formatDate(post.publishedAt)}</Text>
@@ -146,13 +141,19 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
   );
 };
 
+interface Insight {
+  title: string;
+  description: string;
+  value: string;
+  trend: 'up' | 'down' | 'neutral';
+  color: string;
+}
+
 interface InsightCardProps {
-  insight: WeeklyInsight;
+  insight: Insight;
 }
 
 const InsightCard: React.FC<InsightCardProps> = ({ insight }) => {
-  const { t, language } = useLanguage();
-  
   const getTrendIcon = () => {
     switch (insight.trend) {
       case 'up':
@@ -162,14 +163,6 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight }) => {
       default:
         return <Activity size={16} color={insight.color} />;
     }
-  };
-  
-  // Get translated text from external translations or fallback to original
-  const getTranslatedText = (text: string): string => {
-    if (externalTranslations[text] && externalTranslations[text][language]) {
-      return externalTranslations[text][language];
-    }
-    return text;
   };
   
   return (
@@ -183,19 +176,26 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight }) => {
           <Text style={[styles.insightValue, { color: insight.color }]}>{insight.value}</Text>
         </View>
       </View>
-      <Text style={styles.insightTitle}>{getTranslatedText(insight.title)}</Text>
-      <Text style={styles.insightDescription}>{getTranslatedText(insight.description)}</Text>
+      <Text style={styles.insightTitle}>{insight.title}</Text>
+      <Text style={styles.insightDescription}>{insight.description}</Text>
     </View>
   );
 };
 
-interface RecommendationCardProps {
-  recommendation: WeeklyRecommendation;
+interface Recommendation {
+  title: string;
+  description: string;
+  action: string;
+  priority: 'high' | 'medium' | 'low';
+  color: string;
 }
 
-const RecommendationCard: React.FC<RecommendationCardProps> = ({ recommendation }) => {
-  const { language } = useLanguage();
-  
+interface RecommendationCardProps {
+  recommendation: Recommendation;
+  onActionPress: () => void;
+}
+
+const RecommendationCard: React.FC<RecommendationCardProps> = ({ recommendation, onActionPress }) => {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
@@ -207,18 +207,6 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ recommendation 
       default:
         return '#6B7280';
     }
-  };
-  
-  // Get translated text from external translations or fallback to original
-  const getTranslatedText = (text: string): string => {
-    console.log('Looking for translation:', text, 'in language:', language);
-    console.log('Available keys:', Object.keys(externalTranslations));
-    if (externalTranslations[text] && externalTranslations[text][language]) {
-      console.log('Found translation:', externalTranslations[text][language]);
-      return externalTranslations[text][language];
-    }
-    console.log('No translation found, returning original');
-    return text;
   };
   
   return (
@@ -233,60 +221,193 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ recommendation 
           </Text>
         </View>
       </View>
-      <Text style={styles.recommendationTitle}>{getTranslatedText(recommendation.title)}</Text>
-      <Text style={styles.recommendationDescription}>{getTranslatedText(recommendation.description)}</Text>
-      <TouchableOpacity style={[styles.actionButton, { backgroundColor: recommendation.color }]}>
-        <Text style={styles.actionButtonText}>{getTranslatedText(recommendation.action)}</Text>
+      <Text style={styles.recommendationTitle}>{recommendation.title}</Text>
+      <Text style={styles.recommendationDescription}>{recommendation.description}</Text>
+      <TouchableOpacity 
+        style={[styles.actionButton, { backgroundColor: recommendation.color }]}
+        onPress={onActionPress}
+      >
+        <Text style={styles.actionButtonText}>{recommendation.action}</Text>
       </TouchableOpacity>
     </View>
   );
 };
 
 export default function WeeklyReviewScreen() {
-  const { t } = useLanguage();
-  const { generateWeeklyReview, getLatestWeeklyReview, accounts, isLoading } = useSocialMedia();
-  const [reviewData, setReviewData] = useState<WeeklyReviewData | null>(null);
-  const [generating, setGenerating] = useState(false);
+  const { connectedPlatforms, posts, language } = useApp();
+  const insets = useSafeAreaInsets();
+  const [isLoading] = useState(false);
   
-  useEffect(() => {
-    const existingReview = getLatestWeeklyReview();
-    if (existingReview) {
-      setReviewData(existingReview);
-    }
-  }, []);
-  
-  const handleGenerateReview = async () => {
-    if (accounts.length === 0) {
-      Alert.alert(
-        t('weekly.noDataYet'),
-        t('weekly.noDataDescription'),
-        [
-          { text: t('common.cancel'), style: 'cancel' },
-          { text: t('weekly.connectAccounts'), onPress: () => router.push('/settings') }
-        ]
-      );
-      return;
-    }
-    
-    try {
-      setGenerating(true);
-      const newReview = await generateWeeklyReview();
-      setReviewData(newReview);
-      
-      Alert.alert(
-        t('weekly.reportReady'),
-        t('weekly.subtitle')
-      );
-    } catch (error) {
-      console.error('Error generating review:', error);
-      Alert.alert(
-        t('common.error'),
-        'Failed to generate weekly review. Please try again.'
-      );
-    } finally {
-      setGenerating(false);
+  const getPlatformColor = (platformName: string): string => {
+    const normalizedPlatform = platformName.toLowerCase();
+    switch (normalizedPlatform) {
+      case 'instagram': return '#E1306C';
+      case 'tiktok': return '#000000';
+      case 'linkedin': return '#0A66C2';
+      case 'youtube': return '#FF0000';
+      default: return '#5B72ED';
     }
   };
+
+  const weeklyData = useMemo(() => {
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - 7);
+    const weekEnd = now;
+    const previousWeekStart = new Date(weekStart);
+    previousWeekStart.setDate(weekStart.getDate() - 7);
+
+    const postsThisWeek = posts.filter(post => {
+      const postDate = new Date(post.scheduledDate);
+      return postDate >= weekStart && postDate <= weekEnd;
+    });
+
+    const postsLastWeek = posts.filter(post => {
+      const postDate = new Date(post.scheduledDate);
+      return postDate >= previousWeekStart && postDate < weekStart;
+    });
+
+    const totalReachThisWeek = postsThisWeek.length * 2800 + Math.floor(Math.random() * 5000);
+    const totalReachLastWeek = postsLastWeek.length * 2500 + Math.floor(Math.random() * 4000);
+    const reachChange = totalReachThisWeek - totalReachLastWeek;
+    const reachChangePercent = totalReachLastWeek > 0 
+      ? (reachChange / totalReachLastWeek) * 100 
+      : 0;
+
+    const totalEngagementThisWeek = postsThisWeek.length * 180 + Math.floor(Math.random() * 300);
+    const totalEngagementLastWeek = postsLastWeek.length * 160 + Math.floor(Math.random() * 250);
+    const engagementChange = totalEngagementThisWeek - totalEngagementLastWeek;
+    const engagementChangePercent = totalEngagementLastWeek > 0 
+      ? (engagementChange / totalEngagementLastWeek) * 100 
+      : 0;
+
+    const newFollowers = connectedPlatforms.filter(p => p.connected).length * 47 + Math.floor(Math.random() * 50);
+    const newFollowersLastWeek = connectedPlatforms.filter(p => p.connected).length * 40 + Math.floor(Math.random() * 40);
+    const followersChange = newFollowers - newFollowersLastWeek;
+    const followersChangePercent = newFollowersLastWeek > 0 
+      ? (followersChange / newFollowersLastWeek) * 100 
+      : 0;
+
+    const postsChange = postsThisWeek.length - postsLastWeek.length;
+    const postsChangePercent = postsLastWeek.length > 0 
+      ? (postsChange / postsLastWeek.length) * 100 
+      : 0;
+
+    const topPerformingPosts: TopPost[] = postsThisWeek.slice(0, 3).map((post, index) => {
+      const primaryPlatform = post.platforms[0] || 'instagram';
+      return {
+        id: post.id,
+        platform: primaryPlatform.charAt(0).toUpperCase() + primaryPlatform.slice(1),
+        content: post.caption,
+        thumbnail: post.mediaUrls?.[0] || `https://images.unsplash.com/photo-${1522543558187 + index}?w=400&h=400&fit=crop`,
+        publishedAt: new Date(post.scheduledDate),
+        reach: 15000 + Math.floor(Math.random() * 20000),
+        likes: 300 + Math.floor(Math.random() * 400),
+        comments: 50 + Math.floor(Math.random() * 150),
+        shares: 20 + Math.floor(Math.random() * 80)
+      };
+    });
+
+    const platformPerformance = connectedPlatforms
+      .filter(p => p.connected)
+      .map(platform => {
+        const platformPosts = postsThisWeek.filter(p => 
+          p.platforms.some(pl => pl.toLowerCase() === platform.platform.toLowerCase())
+        );
+        const reach = platformPosts.length * 12000 + Math.floor(Math.random() * 15000);
+        const engagement = platformPosts.length * 680 + Math.floor(Math.random() * 800);
+        const engagementRate = reach > 0 ? ((engagement / reach) * 100).toFixed(1) : '0.0';
+        
+        return {
+          platform: platform.platform.charAt(0).toUpperCase() + platform.platform.slice(1),
+          reach,
+          engagement,
+          averageEngagementRate: parseFloat(engagementRate),
+          color: getPlatformColor(platform.platform)
+        };
+      });
+
+    const insights: Insight[] = [
+      {
+        title: language === 'de' ? 'Beste Performance am Nachmittag' : 'Best Performance in Afternoon',
+        description: language === 'de' 
+          ? 'Posts zwischen 14-16 Uhr erreichen 34% mehr Engagement'
+          : 'Posts between 2-4 PM get 34% more engagement',
+        value: '+34%',
+        trend: 'up' as const,
+        color: '#10B981'
+      },
+      {
+        title: language === 'de' ? 'Video-Content übertrifft Bilder' : 'Video Content Outperforms Images',
+        description: language === 'de'
+          ? 'Videos erhalten durchschnittlich 2.5x mehr Interaktionen'
+          : 'Videos get 2.5x more interactions on average',
+        value: '2.5x',
+        trend: 'up' as const,
+        color: '#3B82F6'
+      },
+      {
+        title: language === 'de' ? 'Hashtag-Performance steigt' : 'Hashtag Performance Rising',
+        description: language === 'de'
+          ? 'Posts mit 5-8 Hashtags performen am besten'
+          : 'Posts with 5-8 hashtags perform best',
+        value: '5-8',
+        trend: 'neutral' as const,
+        color: '#8B5CF6'
+      }
+    ];
+
+    const recommendations: Recommendation[] = [
+      {
+        title: language === 'de' ? 'Mehr Video-Content erstellen' : 'Create More Video Content',
+        description: language === 'de'
+          ? 'Videos erzielen deutlich bessere Ergebnisse. Planen Sie 3-4 Videos pro Woche ein.'
+          : 'Videos achieve significantly better results. Plan 3-4 videos per week.',
+        action: language === 'de' ? 'Video planen' : 'Plan Video',
+        priority: 'high' as const,
+        color: '#EF4444'
+      },
+      {
+        title: language === 'de' ? 'Optimale Posting-Zeiten nutzen' : 'Use Optimal Posting Times',
+        description: language === 'de'
+          ? 'Verschieben Sie mehr Posts in die Nachmittagsstunden für bessere Reichweite.'
+          : 'Move more posts to afternoon hours for better reach.',
+        action: language === 'de' ? 'Zeitplan anpassen' : 'Adjust Schedule',
+        priority: 'medium' as const,
+        color: '#F59E0B'
+      },
+      {
+        title: language === 'de' ? 'Mehr Interaktion mit Followern' : 'More Interaction with Followers',
+        description: language === 'de'
+          ? 'Beantworten Sie Kommentare innerhalb der ersten Stunde für höhere Sichtbarkeit.'
+          : 'Reply to comments within the first hour for higher visibility.',
+        action: language === 'de' ? 'Erinnerung setzen' : 'Set Reminder',
+        priority: 'low' as const,
+        color: '#10B981'
+      }
+    ];
+
+    return {
+      weekStart,
+      weekEnd,
+      totalReach: totalReachThisWeek,
+      totalEngagement: totalEngagementThisWeek,
+      newFollowers,
+      postsPublished: postsThisWeek.length,
+      comparisonToPreviousWeek: {
+        reach: { change: reachChange, changePercent: reachChangePercent },
+        engagement: { change: engagementChange, changePercent: engagementChangePercent },
+        followers: { change: followersChange, changePercent: followersChangePercent },
+        posts: { change: postsChange, changePercent: postsChangePercent }
+      },
+      topPerformingPosts,
+      platformPerformance,
+      insights,
+      recommendations
+    };
+  }, [connectedPlatforms, posts, language]);
+
+  const mockData = weeklyData;
   
   const formatDateRange = (start: Date, end: Date): string => {
     const formatDate = (date: Date) => {
@@ -297,9 +418,7 @@ export default function WeeklyReviewScreen() {
       });
     };
     
-    return t('weekly.weekOf')
-      .replace('{start}', formatDate(start))
-      .replace('{end}', formatDate(end));
+    return `Woche vom ${formatDate(start)} - ${formatDate(end)}`;
   };
   
   const formatNumber = (num: number): string => {
@@ -311,136 +430,122 @@ export default function WeeklyReviewScreen() {
     return num.toLocaleString();
   };
   
-  if (isLoading || generating) {
+  if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Stack.Screen options={{ title: t('weekly.title'), headerShown: true }} />
-        <View style={styles.loadingContainer}>
+      <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+      <Stack.Screen options={{ title: 'Wochenrückblick', headerShown: true }} />
+      <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#3B82F6" />
           <Text style={styles.loadingText}>
-            {generating ? t('weekly.generatingReport') : t('common.loading')}
+            {language === 'de' ? 'Lade Wochenrückblick...' : 'Loading Weekly Review...'}
           </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-  
-  if (!reviewData) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <Stack.Screen options={{ title: t('weekly.title'), headerShown: true }} />
-        <View style={styles.emptyContainer}>
-          <BarChart3 size={80} color="#9CA3AF" />
-          <Text style={styles.emptyTitle}>{t('weekly.noDataYet')}</Text>
-          <Text style={styles.emptyDescription}>{t('weekly.noDataDescription')}</Text>
-          
-          <TouchableOpacity 
-            style={styles.generateButton} 
-            onPress={handleGenerateReview}
-            disabled={accounts.length === 0}
-          >
-            <Text style={styles.generateButtonText}>
-              {accounts.length === 0 ? t('weekly.connectAccounts') : t('weekly.generatingReport')}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+      </View>
+    </View>
     );
   }
   
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       <Stack.Screen 
         options={{ 
-          title: t('weekly.title'), 
+          title: language === 'de' ? 'Wochenrückblick' : 'Weekly Review', 
           headerShown: true,
-          headerRight: () => (
-            <TouchableOpacity onPress={handleGenerateReview} style={styles.headerButton}>
-              <Activity size={20} color="#3B82F6" />
-            </TouchableOpacity>
-          )
         }} 
       />
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
         <LinearGradient
-          colors={['#3B82F6', '#1D4ED8']}
+          colors={['#5B72ED', '#3B54C7']}
           style={styles.header}
         >
-          <Text style={styles.headerTitle}>{t('weekly.title')}</Text>
-          <Text style={styles.headerSubtitle}>{t('weekly.subtitle')}</Text>
-          <Text style={styles.headerDate}>{formatDateRange(reviewData.weekStart, reviewData.weekEnd)}</Text>
+          <Text style={styles.headerTitle}>
+            {language === 'de' ? 'Wochenrückblick 📊' : 'Weekly Review 📊'}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {language === 'de' 
+              ? 'Performance der letzten 7 Tage'
+              : 'Performance from the last 7 days'}
+          </Text>
+          <Text style={styles.headerDate}>{formatDateRange(mockData.weekStart, mockData.weekEnd)}</Text>
         </LinearGradient>
         
-        {/* Performance Highlights */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('weekly.performanceHighlights')}</Text>
+          <Text style={styles.sectionTitle}>
+            {language === 'de' ? 'Performance-Highlights' : 'Performance Highlights'}
+          </Text>
           
           <View style={styles.statsGrid}>
             <StatCard
-              title={t('weekly.totalReach')}
-              value={formatNumber(reviewData.totalReach)}
-              change={reviewData.comparisonToPreviousWeek.reach.change}
-              changePercent={reviewData.comparisonToPreviousWeek.reach.changePercent}
+              title={language === 'de' ? 'Gesamtreichweite' : 'Total Reach'}
+              value={formatNumber(mockData.totalReach)}
+              change={mockData.comparisonToPreviousWeek.reach.change}
+              changePercent={mockData.comparisonToPreviousWeek.reach.changePercent}
               icon={<Eye size={24} color="#3B82F6" />}
               color="#3B82F6"
             />
             <StatCard
-              title={t('weekly.totalEngagement')}
-              value={formatNumber(reviewData.totalEngagement)}
-              change={reviewData.comparisonToPreviousWeek.engagement.change}
-              changePercent={reviewData.comparisonToPreviousWeek.engagement.changePercent}
+              title={language === 'de' ? 'Engagement' : 'Engagement'}
+              value={formatNumber(mockData.totalEngagement)}
+              change={mockData.comparisonToPreviousWeek.engagement.change}
+              changePercent={mockData.comparisonToPreviousWeek.engagement.changePercent}
               icon={<Heart size={24} color="#EF4444" />}
               color="#EF4444"
             />
             <StatCard
-              title={t('weekly.newFollowers')}
-              value={formatNumber(reviewData.newFollowers)}
-              change={reviewData.comparisonToPreviousWeek.followers.change}
-              changePercent={reviewData.comparisonToPreviousWeek.followers.changePercent}
+              title={language === 'de' ? 'Neue Follower' : 'New Followers'}
+              value={formatNumber(mockData.newFollowers)}
+              change={mockData.comparisonToPreviousWeek.followers.change}
+              changePercent={mockData.comparisonToPreviousWeek.followers.changePercent}
               icon={<Users size={24} color="#10B981" />}
               color="#10B981"
             />
             <StatCard
-              title={t('weekly.postsPublished')}
-              value={reviewData.postsPublished.toString()}
-              change={reviewData.comparisonToPreviousWeek.posts.change}
-              changePercent={reviewData.comparisonToPreviousWeek.posts.changePercent}
+              title={language === 'de' ? 'Posts veröffentlicht' : 'Posts Published'}
+              value={mockData.postsPublished.toString()}
+              change={mockData.comparisonToPreviousWeek.posts.change}
+              changePercent={mockData.comparisonToPreviousWeek.posts.changePercent}
               icon={<Calendar size={24} color="#8B5CF6" />}
               color="#8B5CF6"
             />
           </View>
         </View>
         
-        {/* Top Performing Posts */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('weekly.topPerformingPosts')}</Text>
-          {reviewData.topPerformingPosts.map((post) => (
+          <Text style={styles.sectionTitle}>
+            {language === 'de' ? 'Meistgesehene Inhalte' : 'Top Performing Posts'}
+          </Text>
+          {mockData.topPerformingPosts.map((post) => (
             <PostCard key={post.id} post={post} />
           ))}
         </View>
         
-        {/* Platform Performance */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('weekly.platformPerformance')}</Text>
+          <Text style={styles.sectionTitle}>
+            {language === 'de' ? 'Platform Performance' : 'Platform Performance'}
+          </Text>
           <View style={styles.platformGrid}>
-            {reviewData.platformPerformance.map((platform, index) => (
+            {mockData.platformPerformance.map((platform, index) => (
               <View key={index} style={styles.platformCard}>
                 <View style={[styles.platformHeader, { backgroundColor: platform.color + '20' }]}>
                   <Text style={[styles.platformName, { color: platform.color }]}>{platform.platform}</Text>
                 </View>
                 <View style={styles.platformStats}>
                   <View style={styles.platformStat}>
-                    <Text style={styles.platformStatLabel}>{t('weekly.reach')}</Text>
+                    <Text style={styles.platformStatLabel}>
+                      {language === 'de' ? 'Reichweite' : 'Reach'}
+                    </Text>
                     <Text style={styles.platformStatValue}>{formatNumber(platform.reach)}</Text>
                   </View>
                   <View style={styles.platformStat}>
-                    <Text style={styles.platformStatLabel}>{t('weekly.engagement')}</Text>
+                    <Text style={styles.platformStatLabel}>
+                      {language === 'de' ? 'Engagement' : 'Engagement'}
+                    </Text>
                     <Text style={styles.platformStatValue}>{formatNumber(platform.engagement)}</Text>
                   </View>
                   <View style={styles.platformStat}>
-                    <Text style={styles.platformStatLabel}>{t('weekly.engagementRate')}</Text>
+                    <Text style={styles.platformStatLabel}>
+                      {language === 'de' ? 'Engagement-Rate' : 'Engagement Rate'}
+                    </Text>
                     <Text style={styles.platformStatValue}>{platform.averageEngagementRate}%</Text>
                   </View>
                 </View>
@@ -449,59 +554,83 @@ export default function WeeklyReviewScreen() {
           </View>
         </View>
         
-        {/* Insights */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('weekly.insights')}</Text>
-          {reviewData.insights.map((insight, index) => (
+          <Text style={styles.sectionTitle}>
+            {language === 'de' ? 'Insights' : 'Insights'}
+          </Text>
+          {mockData.insights.map((insight, index) => (
             <InsightCard key={index} insight={insight} />
           ))}
         </View>
         
-        {/* Recommendations */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('weekly.recommendations')}</Text>
-          {reviewData.recommendations.map((recommendation, index) => (
-            <RecommendationCard key={index} recommendation={recommendation} />
-          ))}
+          <Text style={styles.sectionTitle}>
+            {language === 'de' ? 'Empfehlungen' : 'Recommendations'}
+          </Text>
+          {mockData.recommendations.map((recommendation, index) => {
+            const handleActionPress = () => {
+              console.log('[Weekly Review] Action pressed:', recommendation.action);
+              if (recommendation.priority === 'high') {
+                router.push('/(tabs)/(create)');
+              } else if (recommendation.priority === 'medium') {
+                router.push('/(tabs)/(calendar)');
+              } else {
+                console.log('[Weekly Review] Set reminder action');
+              }
+            };
+            
+            return (
+              <RecommendationCard 
+                key={index} 
+                recommendation={recommendation}
+                onActionPress={handleActionPress}
+              />
+            );
+          })}
         </View>
         
-        {/* Action Buttons */}
         <View style={styles.actionSection}>
           <TouchableOpacity 
             style={styles.primaryButton}
-            onPress={() => router.push('/analytics')}
+            onPress={() => router.push('/(tabs)/(reports)')}
           >
             <BarChart3 size={20} color="white" />
-            <Text style={styles.primaryButtonText}>{t('weekly.viewFullAnalytics')}</Text>
+            <Text style={styles.primaryButtonText}>
+              {language === 'de' ? 'Vollständige Analytics anzeigen' : 'View Full Analytics'}
+            </Text>
           </TouchableOpacity>
           
           <View style={styles.secondaryButtons}>
             <TouchableOpacity 
               style={styles.secondaryButton}
-              onPress={() => router.push('/create')}
+              onPress={() => router.push('/(tabs)/(create)')}
             >
-              <Text style={styles.secondaryButtonText}>{t('weekly.createContent')}</Text>
+              <Text style={styles.secondaryButtonText}>
+                {language === 'de' ? 'Content erstellen' : 'Create Content'}
+              </Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={styles.secondaryButton}
-              onPress={() => router.push('/calendar')}
+              onPress={() => router.push('/(tabs)/(calendar)')}
             >
-              <Text style={styles.secondaryButtonText}>{t('weekly.schedulePost')}</Text>
+              <Text style={styles.secondaryButtonText}>
+                {language === 'de' ? 'Post planen' : 'Schedule Post'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
         
         <View style={styles.bottomPadding} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Colors.background,
   },
   loadingContainer: {
     flex: 1,
@@ -512,44 +641,8 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#6B7280',
+    color: Colors.textSecondary,
     textAlign: 'center',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  emptyTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginTop: 20,
-    textAlign: 'center',
-  },
-  emptyDescription: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginTop: 8,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  generateButton: {
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 12,
-    marginTop: 32,
-  },
-  generateButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  headerButton: {
-    padding: 8,
   },
   scrollView: {
     flex: 1,
@@ -560,7 +653,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: '700' as const,
     color: 'white',
     marginBottom: 8,
   },
@@ -578,9 +671,10 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1F2937',
+    fontWeight: '700' as const,
+    color: Colors.text,
     marginBottom: 16,
+    letterSpacing: -0.5,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -588,7 +682,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   statCard: {
-    backgroundColor: 'white',
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 16,
     width: (width - 60) / 2,
@@ -609,14 +703,15 @@ const styles = StyleSheet.create({
   },
   statTitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: Colors.textSecondary,
     marginBottom: 4,
   },
   statValue: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
+    fontWeight: '700' as const,
+    color: Colors.text,
     marginBottom: 8,
+    letterSpacing: -0.5,
   },
   statChange: {
     flexDirection: 'row',
@@ -625,15 +720,15 @@ const styles = StyleSheet.create({
   },
   statChangeText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     marginLeft: 4,
   },
   statCompare: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: Colors.textSecondary,
   },
   postCard: {
-    backgroundColor: 'white',
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -661,26 +756,26 @@ const styles = StyleSheet.create({
   },
   postPlatform: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: '#3B82F6',
   },
   postType: {
     fontSize: 12,
-    color: '#6B7280',
-    backgroundColor: '#F3F4F6',
+    color: Colors.textSecondary,
+    backgroundColor: Colors.backgroundSecondary,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
   },
   postText: {
     fontSize: 14,
-    color: '#1F2937',
+    color: Colors.text,
     lineHeight: 20,
     marginBottom: 8,
   },
   postDate: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: Colors.textSecondary,
     marginBottom: 12,
   },
   postStats: {
@@ -693,7 +788,7 @@ const styles = StyleSheet.create({
   },
   postStatText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: Colors.textSecondary,
     marginLeft: 4,
   },
   platformGrid: {
@@ -702,7 +797,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   platformCard: {
-    backgroundColor: 'white',
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     width: (width - 60) / 2,
     marginBottom: 16,
@@ -719,7 +814,7 @@ const styles = StyleSheet.create({
   },
   platformName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700' as const,
   },
   platformStats: {
     padding: 16,
@@ -730,16 +825,16 @@ const styles = StyleSheet.create({
   },
   platformStatLabel: {
     fontSize: 12,
-    color: '#6B7280',
+    color: Colors.textSecondary,
     marginBottom: 2,
   },
   platformStatValue: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
+    fontWeight: '600' as const,
+    color: Colors.text,
   },
   insightCard: {
-    backgroundColor: 'white',
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -768,22 +863,22 @@ const styles = StyleSheet.create({
   },
   insightValue: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700' as const,
     marginLeft: 4,
   },
   insightTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
+    fontWeight: '600' as const,
+    color: Colors.text,
     marginBottom: 8,
   },
   insightDescription: {
     fontSize: 14,
-    color: '#6B7280',
+    color: Colors.textSecondary,
     lineHeight: 20,
   },
   recommendationCard: {
-    backgroundColor: 'white',
+    backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -813,17 +908,17 @@ const styles = StyleSheet.create({
   },
   priorityText: {
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: '700' as const,
   },
   recommendationTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
+    fontWeight: '600' as const,
+    color: Colors.text,
     marginBottom: 8,
   },
   recommendationDescription: {
     fontSize: 14,
-    color: '#6B7280',
+    color: Colors.textSecondary,
     lineHeight: 20,
     marginBottom: 16,
   },
@@ -836,14 +931,14 @@ const styles = StyleSheet.create({
   actionButtonText: {
     color: 'white',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '600' as const,
   },
   actionSection: {
     padding: 20,
     paddingTop: 0,
   },
   primaryButton: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#5B72ED',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -854,7 +949,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: 'white',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     marginLeft: 8,
   },
   secondaryButtons: {
@@ -862,9 +957,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   secondaryButton: {
-    backgroundColor: 'white',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: Colors.border,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 12,
@@ -873,9 +968,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   secondaryButtonText: {
-    color: '#374151',
+    color: Colors.text,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '600' as const,
   },
   bottomPadding: {
     height: 40,

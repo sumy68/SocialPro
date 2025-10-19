@@ -1,62 +1,64 @@
 import { Tabs } from "expo-router";
-import { BarChart3, Calendar, Home, Plus, Settings } from "lucide-react-native";
+import { LayoutDashboard, Calendar, PlusCircle, BarChart3, Settings } from "lucide-react-native";
 import React from "react";
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function TabLayout() {
-  const { t } = useLanguage();
-
+  const t = useTranslation();
+  
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#8B5CF6",
-        tabBarInactiveTintColor: "#9CA3AF",
+        tabBarActiveTintColor: '#0A66C2',
+        tabBarInactiveTintColor: '#666',
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#FFFFFF",
+          backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
-          borderTopColor: "#F3F4F6",
+          borderTopColor: '#E0E0E0',
+          paddingTop: 8,
+          height: 88,
         },
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: "600",
-          marginTop: 4,
+          fontWeight: '600' as const,
+          marginBottom: 8,
         },
       }}
     >
       <Tabs.Screen
-        name="dashboard"
+        name="(dashboard)"
         options={{
-          title: t('dashboard.title'),
-          tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
+          title: t.tabs.dashboard,
+          tabBarIcon: ({ color }) => <LayoutDashboard size={24} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="calendar"
+        name="(calendar)"
         options={{
-          title: t('calendar.title'),
-          tabBarIcon: ({ color, size }) => <Calendar color={color} size={size} />,
+          title: t.tabs.calendar,
+          tabBarIcon: ({ color }) => <Calendar size={24} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="create"
+        name="(create)"
         options={{
-          title: t('create.title'),
-          tabBarIcon: ({ color, size }) => <Plus color={color} size={size} />,
+          title: t.tabs.create,
+          tabBarIcon: ({ color }) => <PlusCircle size={24} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="analytics"
+        name="(reports)"
         options={{
-          title: t('analytics.title'),
-          tabBarIcon: ({ color, size }) => <BarChart3 color={color} size={size} />,
+          title: t.tabs.reports,
+          tabBarIcon: ({ color }) => <BarChart3 size={24} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="(settings)"
         options={{
-          title: t('settings.title'),
-          tabBarIcon: ({ color, size }) => <Settings color={color} size={size} />,
+          title: t.tabs.settings,
+          tabBarIcon: ({ color }) => <Settings size={24} color={color} />,
         }}
       />
     </Tabs>

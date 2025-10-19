@@ -1,101 +1,88 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { AuthProvider } from "@/contexts/AuthCtx";
-import { SocialMediaProvider } from "@/contexts/SocialMediaContext";
-import { LanguageProvider } from "@/contexts/LanguageContext";
-import { View, ActivityIndicator, StyleSheet } from "react-native";
+import { AppProvider, useApp } from "@/contexts/AppContext";
+import { PlatformConnectionProvider } from "@/contexts/PlatformConnectionContext";
+import { trpc, trpcClient } from "@/lib/trpc";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
-// Verhindert, dass der Splash Screen automatisch verschwindet
 SplashScreen.preventAutoHideAsync();
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 Minuten
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 function RootLayoutNav() {
+  const { hasCompletedOnboarding, hasActiveSubscription, isLoading } = useApp();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inOnboarding = segments[0] === 'onboarding';
+    const inSubscription = segments[0] === 'subscription';
+    const inTabs = segments[0] === '(tabs)';
+    const inWeeklyReview = segments[0] === 'weekly-review';
+
+    const routePath = Array.isArray(segments) ? (segments as unknown as string[]).join('/') : '';
+    const allowOutsideTabs = routePath === 'onboarding/connect-platforms';
+
+    console.log('[Navigation] Checking navigation state:', {
+      hasCompletedOnboarding,
+      hasActiveSubscription: hasActiveSubscription(),
+      inOnboarding,
+      inSubscription,
+      inTabs,
+      inWeeklyReview,
+      allowOutsideTabs,
+      segments,
+      routePath,
+    });
+
+    if (inWeeklyReview) {
+      return;
+    }
+
+    if (!hasCompletedOnboarding && !inOnboarding) {
+      router.replace('/onboarding/welcome' as any);
+    } else if (hasCompletedOnboarding && !hasActiveSubscription() && !inSubscription) {
+      router.replace('/subscription' as any);
+    } else if (hasCompletedOnboarding && hasActiveSubscription() && !inTabs && !allowOutsideTabs) {
+      router.replace('/(tabs)/(dashboard)' as any);
+    }
+  }, [hasCompletedOnboarding, hasActiveSubscription, isLoading, segments, router]);
+
   return (
-    <Stack screenOptions={{ headerBackTitle: "Zurück" }}>
+    <Stack screenOptions={{ headerBackTitle: "Back" }}>
+      <Stack.Screen name="onboarding/welcome" options={{ headerShown: false }} />
+      <Stack.Screen name="onboarding/company-info" />
+      <Stack.Screen name="onboarding/connect-platforms" options={{ presentation: 'modal', title: 'Plattformen verbinden' }} />
+      <Stack.Screen name="subscription" />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="auth" options={{ headerShown: false, presentation: "modal" }} />
-      <Stack.Screen name="subscription" options={{ headerShown: false, presentation: "modal" }} />
-      <Stack.Screen name="language-selection" options={{ headerShown: false, presentation: "modal" }} />
+      <Stack.Screen name="weekly-review" options={{ headerShown: false, presentation: 'card' }} />
     </Stack>
   );
 }
 
 export default function RootLayout() {
-  const [isReady, setIsReady] = useState(false);
-
   useEffect(() => {
-    // ✅ Typ-Safe Timer-Fix (funktioniert in React Native & Web)
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    let splashTimeoutId: ReturnType<typeof setTimeout> | undefined;
-
-    const prepare = async () => {
-      try {
-        // Kurze Verzögerung für sauberes Hydrieren
-        timeoutId = setTimeout(() => {
-          setIsReady(true);
-
-          // Splash Screen leicht verzögert ausblenden
-          splashTimeoutId = setTimeout(() => {
-            SplashScreen.hideAsync().catch(console.error);
-          }, 200);
-        }, 50);
-      } catch (error) {
-        console.error("Error during app initialization:", error);
-        setIsReady(true);
-      }
-    };
-
-    prepare();
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      if (splashTimeoutId) clearTimeout(splashTimeoutId);
-    };
+    SplashScreen.hideAsync();
   }, []);
-
-  // Zeige kurz einen Loader, bis App bereit ist
-  if (!isReady) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8B5CF6" />
-      </View>
-    );
-  }
 
   return (
     <QueryClientProvider client={queryClient}>
-      <GestureHandlerRootView style={styles.container}>
-        <LanguageProvider>
-          <AuthProvider>
-            <SocialMediaProvider>
-              <RootLayoutNav />
-            </SocialMediaProvider>
-          </AuthProvider>
-        </LanguageProvider>
-      </GestureHandlerRootView>
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <AppProvider>
+            <PlatformConnectionProvider>
+              <ErrorBoundary>
+                <RootLayoutNav />
+              </ErrorBoundary>
+            </PlatformConnectionProvider>
+          </AppProvider>
+        </GestureHandlerRootView>
+      </trpc.Provider>
     </QueryClientProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F9FAFB",
-  },
-});
