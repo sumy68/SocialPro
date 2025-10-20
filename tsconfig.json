@@ -5,13 +5,21 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@rork/toolkit-sdk": [
+        "mocks/rork-toolkit-sdk"
       ]
-    }
+    },
+    "baseUrl": "."
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "mocks/**/*",
+    "types/**/*",
+    "app/**/*",
+    "src/**/*"
   ]
 }
