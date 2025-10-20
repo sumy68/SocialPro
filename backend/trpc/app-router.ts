@@ -59,5 +59,3 @@ export const appRouter = createTRPCRouter({
     refreshToken: refreshPlatformTokenProcedure,
   }),
 });
-
-export type AppRouter = typeof appRouter;

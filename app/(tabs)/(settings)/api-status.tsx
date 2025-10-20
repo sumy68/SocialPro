@@ -118,9 +118,9 @@ export default function APIStatusScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>How to Fix</Text>
-          <Text style={styles.helpText}>
+          <View>
             {status === 'disconnected' ? (
-              <>
+              <Text style={styles.helpText}>
                 <Text style={styles.bold}>Backend not available.{'\n\n'}</Text>
                 <Text>The app is running in Demo Mode, which means:{'\n\n'}</Text>
                 <Text>\u2022 Platform connections are simulated{'\n'}</Text>
@@ -131,14 +131,14 @@ export default function APIStatusScreen() {
                 <Text>2. Set EXPO_PUBLIC_APP_URL in your .env file{'\n'}</Text>
                 <Text>3. Restart the app with: bun run start{'\n\n'}</Text>
                 <Text>For development, the API URL should match your tunnel URL provided by Rork.</Text>
-              </>
+              </Text>
             ) : (
-              <>
+              <Text style={styles.helpText}>
                 <Text style={styles.bold}>Backend is connected!{'\n\n'}</Text>
                 <Text>Your app can use real OAuth connections and publish to social media platforms.</Text>
-              </>
+              </Text>
             )}
-          </Text>
+          </View>
         </View>
       </ScrollView>
     </>

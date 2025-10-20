@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Platform } from '@/constants/types';
-import { trpc, trpcClient } from '@/lib/trpc';
+import { trpc, trpcClient, isDemoMode } from '@/lib/trpc';
 import { useApp } from '@/contexts/AppContext';
 
 export function usePlatformTokens() {
@@ -25,6 +25,10 @@ export function usePlatformTokens() {
     }
 
     try {
+      if (isDemoMode()) {
+        return { isValid: true, needsRefresh: false, data: { accessToken: 'demo-token' } } as any;
+      }
+
       const tokenData = await trpcClient.platforms.getToken.query({ platform });
       
       if (!tokenData) {
@@ -59,6 +63,11 @@ export function usePlatformTokens() {
     setErrors(prev => ({ ...prev, [platform]: null }));
 
     try {
+      if (isDemoMode()) {
+        console.log('[TokenManager] Demo mode: faking refresh success for', platform);
+        return { success: true, data: { accessToken: 'demo-token' } } as any;
+      }
+
       const result = await refreshTokenMutation.mutateAsync({ platform });
       console.log('[TokenManager] Token refreshed successfully for:', platform);
       return { success: true, data: result };

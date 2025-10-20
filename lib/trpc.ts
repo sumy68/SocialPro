@@ -1,7 +1,7 @@
 import { createTRPCReact } from "@trpc/react-query";
 import { createTRPCClient, httpLink } from "@trpc/client";
 import superjson from "superjson";
-import type { AppRouter } from "@/backend/trpc/app-router";
+import type { AppRouter } from "./trpc-types";
 
 function sanitizeBase(input?: string): string | null {
   const raw = (input || "").trim();
@@ -9,7 +9,6 @@ function sanitizeBase(input?: string): string | null {
   if (!raw.startsWith("http://") && !raw.startsWith("https://")) return null;
   try {
     const u = new URL(raw);
-    // Strip any trailing /api or /api/ path pieces to keep this an origin/base
     const cleanedPath = u.pathname.replace(/\/$/, "");
     if (cleanedPath === "/api" || cleanedPath.startsWith("/api/")) {
       u.pathname = "/";
@@ -19,6 +18,12 @@ function sanitizeBase(input?: string): string | null {
     return raw.replace(/\/$/, "");
   }
 }
+
+export const isDemoMode = (): boolean => {
+  const raw = (process.env.EXPO_PUBLIC_DEMO_MODE ?? "").toString().trim().toLowerCase();
+  if (raw === "false" || raw === "0" || raw === "no") return false;
+  return true;
+};
 
 export const getBaseUrl = (): string => {
   const fromEnv = sanitizeBase(process.env.EXPO_PUBLIC_RORK_API_BASE_URL) || sanitizeBase(process.env.EXPO_PUBLIC_APP_URL);
@@ -48,36 +53,30 @@ export const trpcVanillaClient = createTRPCClient<AppRouter>({
         } as Record<string, string>;
       },
       async fetch(url, options) {
+        if (isDemoMode()) {
+          throw new Error("Demo mode enabled: backend calls are disabled");
+        }
         console.log('[tRPC Vanilla Client] Fetching:', url);
-        
         try {
           const response = await fetch(url, options);
-          
           if (!response.ok) {
             console.log('[tRPC Vanilla Client] Response not OK (status ' + response.status + ')');
           }
-          
           const contentType = response.headers.get('content-type');
-          
           if (!contentType || !contentType.includes('application/json')) {
             const text = await response.text();
             console.log('[tRPC Vanilla Client] Non-JSON response received');
-            
             if (text.includes('<!DOCTYPE html>') || text.includes('<html')) {
               throw new Error('Cannot connect to server. Please make sure the app is running and EXPO_PUBLIC_APP_URL is configured correctly.');
             }
-            
             throw new Error(`Expected JSON response but got ${contentType}. This usually means the API endpoint is not available.`);
           }
-          
           return response;
         } catch (error: any) {
           console.log('[tRPC Vanilla Client] Backend not available');
-          
           if (error.message.includes('Network request failed') || error.message.includes('Failed to fetch')) {
             throw new Error('Cannot connect to server. Please check your network connection and make sure EXPO_PUBLIC_APP_URL is set correctly.');
           }
-          
           throw error;
         }
       },
@@ -85,7 +84,7 @@ export const trpcVanillaClient = createTRPCClient<AppRouter>({
   ],
 });
 
-export const trpcClient = trpc.createClient({
+export const trpcClient = createTRPCClient<AppRouter>({
   links: [
     httpLink({
       url: `${getBaseUrl()}/api/trpc`,
@@ -94,6 +93,12 @@ export const trpcClient = trpc.createClient({
         return {
           "Content-Type": "application/json",
         } as Record<string, string>;
+      },
+      async fetch(url, options) {
+        if (isDemoMode()) {
+          throw new Error("Demo mode enabled: backend calls are disabled");
+        }
+        return fetch(url, options);
       },
     }),
   ],

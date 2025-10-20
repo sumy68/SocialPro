@@ -1,26 +1,10 @@
-let cachedApp: any = null;
-
-async function getApp() {
-  if (cachedApp) {
-    return cachedApp;
-  }
-  
-  try {
-    const mod = await import("@/backend/hono");
-    cachedApp = mod.default;
-    return cachedApp;
-  } catch (error: any) {
-    console.error('[API Route] Failed to load backend:', error);
-    throw error;
-  }
-}
-
 async function handleRequest(request: Request) {
-  console.log('[API Route] Handling request:', request.method, request.url);
+  const url = new URL(request.url);
+  console.log('[API Route] Handling request:', request.method, url.pathname);
   
   try {
-    const app = await getApp();
-    const response = await app.fetch(request);
+    const { default: honoApp } = await import('@/backend/hono');
+    const response = await honoApp.fetch(request);
     console.log('[API Route] Response status:', response.status);
     return response;
   } catch (error: any) {

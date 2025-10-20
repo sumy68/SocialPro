@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { User, Link2, Globe, CreditCard, FileText, HelpCircle, LogOut, CheckCircle, AlertCircle, RefreshCw, Server } from 'lucide-react-native';
+import { User, Link2, Globe, CreditCard, FileText, HelpCircle, LogOut, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react-native';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useApp } from '@/contexts/AppContext';
 import { usePlatformConnection } from '@/contexts/PlatformConnectionContext';
@@ -181,12 +181,6 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t.settings.support}</Text>
-          
-          <SettingItem
-            icon={<Server size={24} color="#8B5CF6" />}
-            label="API Status"
-            onPress={() => router.push('/api-status' as any)}
-          />
           
           <SettingItem
             icon={<HelpCircle size={24} color="#F59E0B" />}

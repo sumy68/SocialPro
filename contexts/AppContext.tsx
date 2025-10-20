@@ -38,14 +38,12 @@ export const [AppProvider, useApp] = createContextHook(() => {
     try {
       console.log('[AppContext] Loading stored data...');
       
-      const [
-        storedLanguage,
-        storedOnboarding,
-        storedCompanyInfo,
-        storedPlatforms,
-        storedSubscription,
-        storedPosts,
-      ] = await Promise.all([
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Storage load timeout')), 3000)
+      );
+      
+      const loadPromise = Promise.all([
+
         AsyncStorage.getItem(STORAGE_KEYS.LANGUAGE),
         AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING),
         AsyncStorage.getItem(STORAGE_KEYS.COMPANY_INFO),
@@ -53,6 +51,15 @@ export const [AppProvider, useApp] = createContextHook(() => {
         AsyncStorage.getItem(STORAGE_KEYS.SUBSCRIPTION),
         AsyncStorage.getItem(STORAGE_KEYS.POSTS),
       ]);
+
+      const [
+        storedLanguage,
+        storedOnboarding,
+        storedCompanyInfo,
+        storedPlatforms,
+        storedSubscription,
+        storedPosts,
+      ] = await Promise.race([loadPromise, timeoutPromise]) as string[];
 
       if (storedLanguage) {
         setLanguageState(storedLanguage as Language);
@@ -86,8 +93,12 @@ export const [AppProvider, useApp] = createContextHook(() => {
       }
 
       console.log('[AppContext] Data loaded successfully');
-    } catch (error) {
-      console.error('[AppContext] Error loading stored data:', error);
+    } catch (error: any) {
+      if (error.message === 'Storage load timeout') {
+        console.warn('[AppContext] Storage load timeout - using defaults');
+      } else {
+        console.error('[AppContext] Error loading stored data:', error);
+      }
     } finally {
       setIsLoading(false);
     }

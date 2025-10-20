@@ -1,5 +1,5 @@
 import { useApp } from '@/contexts/AppContext';
-import { trpc } from '@/lib/trpc';
+import { trpc, isDemoMode } from '@/lib/trpc';
 import { Platform } from '@/constants/types';
 import { useMemo } from 'react';
 
@@ -12,6 +12,19 @@ export function usePlatformAnalytics(platform: Platform) {
   );
 
   const isConnected = platformData?.connected && platformData?.accessToken;
+
+  if (isDemoMode()) {
+    const demo = platformData?.connected
+      ? {
+          instagram: { followers: 12340, profileViews: 540 },
+          linkedin: { followers: 9800 },
+          tiktok: { followers: 21300 },
+          youtube: { subscribers: 15400, totalViews: 450000 },
+        }
+      : null;
+    const data = platform === 'instagram' ? demo?.instagram : platform === 'linkedin' ? demo?.linkedin : platform === 'tiktok' ? demo?.tiktok : demo?.youtube;
+    return { data, isLoading: false, error: null, isConnected } as const;
+  }
 
   const instagramQuery = trpc.platforms.analytics.instagram.getProfile.useQuery(
     {
@@ -86,6 +99,27 @@ export function usePlatformAnalytics(platform: Platform) {
 
 export function useAllPlatformsAnalytics() {
   const { connectedPlatforms } = useApp();
+
+  if (isDemoMode()) {
+    const list = connectedPlatforms.filter(p => p.connected && p.accessToken);
+    const platformsData = list.map(p => {
+      switch (p.platform) {
+        case 'instagram':
+          return { platform: 'instagram' as const, followers: 12340, reach: 540, engagement: 0 };
+        case 'linkedin':
+          return { platform: 'linkedin' as const, followers: 9800, reach: 0, engagement: 0 };
+        case 'tiktok':
+          return { platform: 'tiktok' as const, followers: 21300, reach: 0, engagement: 0 };
+        case 'youtube':
+          return { platform: 'youtube' as const, followers: 15400, reach: 450000, engagement: 0 };
+      }
+    }).filter(Boolean) as { platform: Platform; followers: number; reach: number; engagement: number }[];
+
+    const totalFollowers = platformsData.reduce((sum, p) => sum + p.followers, 0);
+    const totalReach = platformsData.reduce((sum, p) => sum + p.reach, 0);
+
+    return { platformsData, totalFollowers, totalReach, isLoading: false } as const;
+  }
 
   const connectedPlatformsList = useMemo(
     () => connectedPlatforms.filter(p => p.connected && p.accessToken),

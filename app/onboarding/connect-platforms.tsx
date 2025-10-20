@@ -8,6 +8,7 @@ import { trpc, trpcVanillaClient, getBaseUrl } from '@/lib/trpc';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useMemo, useRef, useState } from "react";
 import { Platform as RNPlatform } from 'react-native';
+import { getRedirectUri } from '@/lib/oauth';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -21,6 +22,7 @@ export default function ConnectPlatformsScreen() {
   const disconnectMutation = trpc.platforms.disconnect.useMutation();
 
   const appScheme = useMemo(() => (process.env.EXPO_PUBLIC_SCHEME || 'myapp').trim(), []);
+  const oauthRedirectPath = useMemo(() => (process.env.EXPO_PUBLIC_OAUTH_REDIRECT_PATH || '/auth/callback').trim(), []);
   const pkceRef = useRef<Record<Platform, { verifier: string; challenge: string; state: string } | null>>({
     instagram: null,
     linkedin: null,
@@ -126,7 +128,7 @@ export default function ConnectPlatformsScreen() {
           expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
         };
       } else {
-        const returnUrl = `${appScheme}://oauth/callback`;
+        const returnUrl = getRedirectUri();
         const result = await WebBrowser.openAuthSessionAsync(
           authUrl,
           returnUrl

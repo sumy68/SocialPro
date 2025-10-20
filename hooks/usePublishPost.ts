@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Platform } from '@/constants/types';
-import { trpc } from '@/lib/trpc';
+import { trpc, isDemoMode } from '@/lib/trpc';
 import { usePlatformConnection } from '@/contexts/PlatformConnectionContext';
 import { Alert } from 'react-native';
 
@@ -30,6 +30,11 @@ export function usePublishPost() {
     try {
       const tokenData = await getPublishToken(input.platform);
       
+      if (isDemoMode()) {
+        console.log('[PublishPost] Demo mode: simulating publish success');
+        return { success: true, data: { id: 'demo', status: 'posted' } } as any;
+      }
+
       const result = await publishMutation.mutateAsync({
         platform: input.platform,
         caption: input.caption,

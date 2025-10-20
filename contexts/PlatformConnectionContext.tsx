@@ -1,7 +1,7 @@
 import createContextHook from '@nkzw/create-context-hook';
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Platform } from '@/constants/types';
-import { trpcVanillaClient } from '@/lib/trpc';
+import { trpcVanillaClient, isDemoMode } from '@/lib/trpc';
 import { useApp } from './AppContext';
 import { Alert } from 'react-native';
 
@@ -47,6 +47,23 @@ export const [PlatformConnectionProvider, usePlatformConnection] = createContext
           [platform]: {
             platform,
             connected: false,
+            lastChecked: new Date().toISOString(),
+          },
+        }));
+        return;
+      }
+
+      if (isDemoMode()) {
+        const platformData = connectedPlatforms.find(p => p.platform === platform);
+        if (!mounted.current) return;
+        setStatusMap(prev => ({
+          ...prev,
+          [platform]: {
+            platform,
+            connected: !!platformData?.connected,
+            accountName: platformData?.accountName,
+            accountId: platformData?.accountId,
+            isExpired: false,
             lastChecked: new Date().toISOString(),
           },
         }));
@@ -101,7 +118,8 @@ export const [PlatformConnectionProvider, usePlatformConnection] = createContext
       let errorMessage = error.message || 'Unknown error';
       if (errorMessage.includes('JSON response but got text/html') || 
           errorMessage.includes('Response not OK') ||
-          errorMessage.includes('Cannot connect to server')) {
+          errorMessage.includes('Cannot connect to server') ||
+          errorMessage.includes('Demo mode enabled')) {
         console.log('[PlatformConnection] Backend not available, using local state only');
         const platformData = connectedPlatforms.find(p => p.platform === platform);
         if (!mounted.current) return;
@@ -152,6 +170,11 @@ export const [PlatformConnectionProvider, usePlatformConnection] = createContext
     console.log('[PlatformConnection] Refreshing token for:', platform);
     
     try {
+      if (isDemoMode()) {
+        await checkPlatformStatus(platform);
+        return { success: true };
+      }
+
       const result = await trpcVanillaClient.platforms.refreshToken.mutate({ platform });
       
       if (result.success) {
@@ -197,6 +220,16 @@ export const [PlatformConnectionProvider, usePlatformConnection] = createContext
       }
     }
     
+    if (isDemoMode()) {
+      const local = connectedPlatforms.find(p => p.platform === platform);
+      if (!local?.connected) throw new Error(`${platform} is not connected`);
+      return {
+        accessToken: local.accessToken ?? 'demo-token',
+        userId: local.accountId ?? 'demo-user',
+        username: local.accountName ?? 'Demo User',
+      };
+    }
+
     const tokenData = await trpcVanillaClient.platforms.getToken.query({ platform });
     
     if (!tokenData || !tokenData.accessToken) {
@@ -208,7 +241,7 @@ export const [PlatformConnectionProvider, usePlatformConnection] = createContext
       userId: tokenData.userId,
       username: tokenData.username,
     };
-  }, [statusMap, refreshPlatformToken]);
+  }, [statusMap, refreshPlatformToken, connectedPlatforms]);
 
   const connectedPlatformsList = useMemo(() => {
     return Object.values(statusMap).filter(p => p.connected);
