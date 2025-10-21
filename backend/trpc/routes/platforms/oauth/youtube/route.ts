@@ -12,7 +12,7 @@ function resolveOrigin(req: Request): string {
     const fallback = (process.env.EXPO_PUBLIC_APP_URL || '').trim();
     if (fallback && (fallback.startsWith('http://') || fallback.startsWith('https://')))
       return fallback.replace(/\/$/, '');
-    return 'http://localhost:3000';
+    return 'https://socialpro-fnvo.onrender.com';
   }
 }
 

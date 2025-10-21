@@ -36,8 +36,8 @@ export const getBaseUrl = (): string => {
     console.log("[tRPC] Using base URL from window.location:", origin);
     return origin;
   }
-  console.warn("[tRPC] No HTTP base URL configured. Falling back to http://localhost:3000. Set EXPO_PUBLIC_APP_URL for device testing.");
-  return "http://localhost:3000";
+  console.warn("[tRPC] No HTTP base URL configured. Falling back to https://socialpro-fnvo.onrender.com. Set EXPO_PUBLIC_APP_URL for device testing.");
+  return "https://socialpro-fnvo.onrender.com";
 };
 
 export const trpc = createTRPCReact<AppRouter>();
