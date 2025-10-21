@@ -6,7 +6,7 @@ import { ImageIcon, Upload, Wand2, Link2, X, Calendar, Clock, Send } from 'lucid
 
 import { useApp } from '@/contexts/AppContext';
 import { Platform } from '@/constants/types';
-import { generateText } from '@/lib/toolkit';
+import { generateText } from '@rork/toolkit-sdk';
 import { usePublishPost } from '@/hooks/usePublishPost';
 
 import * as ImagePicker from 'expo-image-picker';
@@ -708,7 +708,7 @@ Gib nur die Caption zurück, ohne zusätzliche Erklärungen.`;
                       padding: 12,
                       fontSize: 16,
                       borderRadius: 8,
-                      border: '1.5px solid '#7C3AED',
+                      border: '1.5px solid #7C3AED',
                       marginBottom: 16,
                     }}
                     min={new Date().toISOString().split('T')[0]}
