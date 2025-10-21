@@ -3,10 +3,12 @@ import { serve } from '@hono/node-server';
 
 async function loadApp() {
   try {
-    const mod = await import('@/backend/hono'); // tsconfig-Alias
+    // tsconfig-Alias zuerst versuchen
+    const mod = await import('@/backend/hono');
     return mod.default;
   } catch {
-    const mod = await import('./backend/hono'); // Fallback
+    // Fallback ohne Alias
+    const mod = await import('./backend/hono');
     return mod.default;
   }
 }
@@ -36,8 +38,14 @@ async function loadApp() {
     return app.fetch(req);
   };
 
-  serve({ fetch: fetchHandler, port });
-  console.log(`[server] Running on port ${port} (health: /healthz)`);
+  // ✅ WICHTIG für Render: auf 0.0.0.0 binden
+  serve({
+    fetch: fetchHandler,
+    port,
+    hostname: '0.0.0.0',
+  });
+
+  console.log(`[server] Running on http://0.0.0.0:${port} (health: /healthz)`);
 })().catch((err) => {
   console.error('[server] Failed to start:', err);
   process.exit(1);
