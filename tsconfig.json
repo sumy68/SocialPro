@@ -1,21 +1,16 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "./node_modules/expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
     "jsx": "react-jsx",
-
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
       "@rork/toolkit-sdk": ["mocks/rork-toolkit-sdk"]
     },
-
     "moduleResolution": "bundler",
     "target": "ES2022",
-
-    "types": ["react", "react-native", "node"],
     "customConditions": ["react-native"],
-
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "noEmit": true

@@ -10,10 +10,12 @@ import { PlatformConnectionProvider } from "@/contexts/PlatformConnectionContext
 import { trpc, trpcClient } from "@/lib/trpc";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
-void SplashScreen.preventAutoHideAsync();
+// Splash direkt verhindern, aber Fehler schlucken (nie throwen)
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const queryClient = new QueryClient();
 
+// Optional: Start im Tab-Bereich
 export const unstable_settings = {
   initialRouteName: "(tabs)",
 };
@@ -22,16 +24,34 @@ function RootLayoutNav() {
   const { hasCompletedOnboarding, hasActiveSubscription, isLoading } = useApp();
   const router   = useRouter();
   const segments = useSegments();
-  const navState = useRootNavigationState(); 
+  const navState = useRootNavigationState();
+
   const [appReady, setAppReady] = useState(false);
 
+  // 1) Splash niemals ewig stehen lassen (Fail-Open nach 2.5s)
   useEffect(() => {
-    if (!isLoading && !appReady) {
+    let cancelled = false;
+
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        setAppReady(true);
+        SplashScreen.hideAsync().catch(() => {});
+      }
+    }, 2500);
+
+    // Sobald der App-Context „fertig“ meldet → sofort Splash weg
+    if (!isLoading) {
       setAppReady(true);
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [isLoading, appReady]);
 
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
+  }, [isLoading]);
+
+  // 2) Segment-Flags (für Redirect-Regeln)
   const { inOnboarding, inSubscription, inTabs, inWeeklyReview, allowOutsideTabs } = useMemo(() => {
     const list = Array.isArray(segments) ? (segments as unknown as string[]) : [];
     const first = list[0] || "";
@@ -41,29 +61,36 @@ function RootLayoutNav() {
       inSubscription: first === "subscription",
       inTabs: first === "(tabs)",
       inWeeklyReview: first === "weekly-review",
+      // ggf. eine Route erlauben, die außerhalb der Tabs liegt
       allowOutsideTabs: path === "onboarding/connect-platforms",
     };
   }, [segments]);
 
+  // 3) Redirects erst ausführen, wenn Navigation „ready“ UND App sichtbar ist
   useEffect(() => {
-    if (isLoading || !appReady) return;
-    if (!navState?.key) return; 
+    if (!appReady) return;
+    if (!navState?.key) return; // Navigation noch nicht bereit → warten
 
+    // weekly-review nicht umleiten
     if (inWeeklyReview) return;
 
+    // Onboarding erzwungen
     if (!hasCompletedOnboarding && !inOnboarding) {
       router.replace("/onboarding/welcome" as any);
       return;
     }
+
+    // Subscription erzwungen
     if (hasCompletedOnboarding && !hasActiveSubscription() && !inSubscription) {
       router.replace("/subscription" as any);
       return;
     }
+
+    // Fertig → in Tabs, falls wir nicht schon dort sind (außer erlaubte Einzelroute)
     if (hasCompletedOnboarding && hasActiveSubscription() && !inTabs && !allowOutsideTabs) {
       router.replace("/(tabs)/(dashboard)" as any);
     }
   }, [
-    isLoading,
     appReady,
     navState?.key,
     hasCompletedOnboarding,
@@ -76,8 +103,7 @@ function RootLayoutNav() {
     router,
   ]);
 
-  if (!navState?.key) return null;
-
+  // Wichtig: Den Stack IMMER rendern (kein "return null"), damit bei Delays trotzdem UI entsteht.
   return (
     <Stack screenOptions={{ headerBackTitle: "Back" }}>
       <Stack.Screen name="onboarding/welcome" options={{ headerShown: false }} />
