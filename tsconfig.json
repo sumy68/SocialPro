@@ -2,27 +2,23 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "jsx": "react-jsx",
 
-    // ✅ Alias bleibt wie bei dir
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
       "@rork/toolkit-sdk": ["mocks/rork-toolkit-sdk"]
     },
 
-    // ✅ Wichtig für server.ts (Node-APIs wie process, __dirname, etc.)
-    "types": ["node"],
-
-    // ✅ Saubere ESM-Auflösung (passt gut zu tsx & top-level await)
-    "module": "ESNext",
-    "moduleResolution": "Node",
-
-    // ✅ Moderne Syntax zur Laufzeit (Node 18+/Render ok)
+    "moduleResolution": "bundler",
     "target": "ES2022",
 
-    // Hilfreich für schnellere Builds und weniger Friktion
+    "types": ["react", "react-native", "node"],
+    "customConditions": ["react-native"],
+
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "noEmit": true
   },
   "include": [
     "**/*.ts",
@@ -32,7 +28,7 @@
     "mocks/**/*",
     "types/**/*",
     "app/**/*",
-    "src/**/*",
-    "server.ts"
-  ]
+    "src/**/*"
+  ],
+  "exclude": ["server.ts"]
 }

@@ -12,53 +12,53 @@ export default function APIStatusScreen() {
 
   useEffect(() => {
     checkAPIStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const checkAPIStatus = async () => {
     setStatus('checking');
     setErrorMessage('');
-    
+
     const url = getBaseUrl();
     setBaseUrl(url);
-    
+
     const startTime = Date.now();
-    
     try {
-      const response = await fetch(`${url}/api/trpc/example.hi`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
+      // 👉 ping deinen echten Health-Endpoint
+      const res = await fetch(`${url}/healthz`, { method: 'GET' });
       const endTime = Date.now();
       setResponseTime(endTime - startTime);
-      
-      const contentType = response.headers.get('content-type');
-      
-      if (response.ok && contentType?.includes('application/json')) {
+
+      if (res.ok) {
+        // 2xx = ok
         setStatus('connected');
-      } else {
-        const text = await response.text();
-        setStatus('disconnected');
-        
-        if (text.includes('<!DOCTYPE html>') || text.includes('<html')) {
-          setErrorMessage('API endpoint returns HTML instead of JSON. API routes may not be properly configured.');
-        } else {
-          setErrorMessage(`Unexpected response: ${response.status} ${response.statusText}`);
-        }
+        return;
       }
-    } catch (error: any) {
+
+      // Nicht-OK: Text lesen, sinnvolle Fehlermeldung bauen
+      const text = await res.text();
       setStatus('disconnected');
-      setErrorMessage(error.message || 'Network request failed');
+
+      if (text?.includes('<!DOCTYPE html>') || text?.includes('<html')) {
+        setErrorMessage('Health-URL liefert HTML statt JSON. Prüfe Server-Routing oder Render-Konfiguration.');
+      } else {
+        setErrorMessage(`Unerwartete Antwort: ${res.status} ${res.statusText}`);
+      }
+    } catch (err: any) {
+      setStatus('disconnected');
+      setResponseTime(null);
+      const msg = String(err?.message ?? 'Network request failed');
+      setErrorMessage(msg);
     }
   };
 
   const envVars = {
     'EXPO_PUBLIC_APP_URL': process.env.EXPO_PUBLIC_APP_URL || 'Not set',
     'EXPO_PUBLIC_RORK_API_BASE_URL': process.env.EXPO_PUBLIC_RORK_API_BASE_URL || 'Not set',
+    'EXPO_PUBLIC_DEMO_MODE': process.env.EXPO_PUBLIC_DEMO_MODE ?? 'Not set',
     'Platform': RNPlatform.OS,
     'Current Base URL': baseUrl,
+    'Health URL': baseUrl ? `${baseUrl}/healthz` : '…',
   };
 
   return (
@@ -72,7 +72,7 @@ export default function APIStatusScreen() {
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
         <View style={styles.header}>
           <Text style={styles.title}>Backend Connection Status</Text>
-          <Text style={styles.subtitle}>Check if the tRPC backend is accessible</Text>
+          <Text style={styles.subtitle}>Checks connectivity to your production backend</Text>
         </View>
 
         <View style={[styles.statusCard, status === 'connected' ? styles.statusConnected : styles.statusDisconnected]}>
@@ -83,18 +83,18 @@ export default function APIStatusScreen() {
           ) : (
             <AlertCircle size={48} color="#EF4444" />
           )}
-          
+
           <Text style={[styles.statusText, status === 'connected' ? styles.statusTextConnected : styles.statusTextDisconnected]}>
-            {status === 'checking' ? 'Checking...' : status === 'connected' ? 'Connected' : 'Disconnected'}
+            {status === 'checking' ? 'Checking…' : status === 'connected' ? 'Connected' : 'Disconnected'}
           </Text>
-          
+
           {responseTime !== null && (
             <Text style={styles.responseTime}>Response time: {responseTime}ms</Text>
           )}
-          
-          {errorMessage && (
+
+          {errorMessage ? (
             <Text style={styles.errorMessage}>{errorMessage}</Text>
-          )}
+          ) : null}
         </View>
 
         <TouchableOpacity
@@ -111,34 +111,29 @@ export default function APIStatusScreen() {
           {Object.entries(envVars).map(([key, value]) => (
             <View key={key} style={styles.envRow}>
               <Text style={styles.envKey}>{key}:</Text>
-              <Text style={styles.envValue}>{value}</Text>
+              <Text style={styles.envValue}>{String(value)}</Text>
             </View>
           ))}
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>How to Fix</Text>
-          <View>
-            {status === 'disconnected' ? (
-              <Text style={styles.helpText}>
-                <Text style={styles.bold}>Backend not available.{'\n\n'}</Text>
-                <Text>The app is running in Demo Mode, which means:{'\n\n'}</Text>
-                <Text>\u2022 Platform connections are simulated{'\n'}</Text>
-                <Text>\u2022 All data is stored locally{'\n'}</Text>
-                <Text>\u2022 Publishing features work with demo data{'\n\n'}</Text>
-                <Text style={styles.bold}>To enable real OAuth:{'\n\n'}</Text>
-                <Text>1. Ensure your backend server is running{'\n'}</Text>
-                <Text>2. Set EXPO_PUBLIC_APP_URL in your .env file{'\n'}</Text>
-                <Text>3. Restart the app with: bun run start{'\n\n'}</Text>
-                <Text>For development, the API URL should match your tunnel URL provided by Rork.</Text>
-              </Text>
-            ) : (
-              <Text style={styles.helpText}>
-                <Text style={styles.bold}>Backend is connected!{'\n\n'}</Text>
-                <Text>Your app can use real OAuth connections and publish to social media platforms.</Text>
-              </Text>
-            )}
-          </View>
+          <Text style={styles.sectionTitle}>Troubleshooting</Text>
+          {status === 'connected' ? (
+            <Text style={styles.helpText}>
+              <Text style={styles.bold}>Backend is connected.</Text>{'\n'}
+              All API features (OAuth, publishing, data) should work with your production server.
+            </Text>
+          ) : (
+            <Text style={styles.helpText}>
+              <Text style={styles.bold}>No connection to backend.</Text>{'\n\n'}
+              1) Öffne im Browser: {baseUrl || '<BASE_URL>'}/healthz {'\n'}
+              2) Falls 404: Ist <Text style={styles.bold}>/healthz</Text> im Server implementiert? (bei dir: ja){'\n'}
+              3) Render-Dashboard: letzte Deploy-Logs checken{'\n'}
+              4) In <Text style={styles.bold}>.env.development / .env.production</Text> sicherstellen:{'\n'}
+              {'   '}EXPO_PUBLIC_APP_URL = https://socialpro-fnvo.onrender.com{'\n'}
+              5) App neu starten: <Text style={styles.bold}>npx expo start --tunnel -c</Text> oder interner EAS-Build
+            </Text>
+          )}
         </View>
       </ScrollView>
     </>
@@ -227,6 +222,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600' as const,
+    marginLeft: 8,
   },
   section: {
     backgroundColor: '#FFFFFF',

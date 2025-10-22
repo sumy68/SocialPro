@@ -16,13 +16,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.rork.socialpro-content-booster",
+      "buildNumber": "1.0.0",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos",
         "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
         "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone",
-        "UIBackgroundModes": [
-          "audio"
-        ]
+        "UIBackgroundModes": ["audio"]
       }
     },
     "android": {
@@ -30,12 +29,11 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "app.rork.socialpro_content_booster",
+      "package": "app.rork.socialprocontentbooster",
+      "versionCode": 1,
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
         "INTERNET",
+        "CAMERA",
         "RECORD_AUDIO"
       ]
     },
@@ -46,7 +44,7 @@
       [
         "expo-router",
         {
-          "origin": "https://DEINE-PROD-DOMAIN.tld"
+          "origin": "https://socialpro-fnvo.onrender.com"
         }
       ],
       [
