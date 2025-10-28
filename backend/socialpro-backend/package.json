@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch ./server.ts",
-    "start": "node --loader tsx ./server.ts"
+    "start": "tsx --tsconfig tsconfig.json server.ts",
+    "render-start": "tsx --tsconfig tsconfig.json server.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.11.3",
