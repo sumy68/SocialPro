@@ -5,10 +5,9 @@ import superjson from "superjson";
 import type { AppRouter } from "./trpc-types";
 
 /**
- * Normalisiert eine Basis-URL:
- * - Muss mit http/https beginnen
- * - Entfernt trailing Slash
- * - Entfernt versehentlich angehängtes /api oder /api/...
+ * Entfernt überflüssige Teile aus einer Base-URL:
+ * - trailing Slash
+ * - versehentlich angehängtes /api oder /api/...
  */
 function sanitizeBase(input?: string): string | null {
   const raw = (input || "").trim();
@@ -17,50 +16,38 @@ function sanitizeBase(input?: string): string | null {
 
   try {
     const u = new URL(raw);
-    // trailing slash wegräumen
-    u.pathname = u.pathname.replace(/\/+$/, "");
-
-    // Falls jemand fälschlich /api in die ENV eingetragen hat, wieder entfernen
+    u.pathname = u.pathname.replace(/\/+$/, ""); // trailing slash entfernen
     if (u.pathname === "/api" || u.pathname.startsWith("/api/")) {
       u.pathname = "";
     }
     return `${u.origin}${u.pathname}`;
   } catch {
-    // Fallback: nur trailing slash kappen
     return raw.replace(/\/+$/, "");
   }
 }
 
 /**
- * DEMO-Mode nur aktivieren, wenn es EXPLIZIT gesetzt wurde.
- * Alles andere (leer/0/false/no) => aus.
+ * Prüft, ob der Demo-Mode aktiv ist.
  */
 export const isDemoMode = (): boolean => {
   const raw = (process.env.EXPO_PUBLIC_DEMO_MODE ?? "")
     .toString()
     .trim()
     .toLowerCase();
-
-  if (raw === "" || raw === "false" || raw === "0" || raw === "no") return false;
-  return true;
+  return !(raw === "" || raw === "false" || raw === "0" || raw === "no");
 };
 
 /**
- * Ermittelt die Basis-URL:
- * 1) EXPO_PUBLIC_APP_URL (empfohlen)
- * 2) Fallback: deine Render-Domain
+ * Liefert die Basis-URL der API (ohne doppelten Slash!)
  */
 export const getBaseUrl = (): string => {
-  const fromEnv =
-    sanitizeBase(process.env.EXPO_PUBLIC_RORK_API_BASE_URL) ||
-    sanitizeBase(process.env.EXPO_PUBLIC_APP_URL);
-
+  const fromEnv = sanitizeBase(process.env.EXPO_PUBLIC_APP_URL);
   if (fromEnv) {
     console.log("[tRPC] Using base URL from env:", fromEnv);
     return fromEnv;
   }
 
-  // window.origin als Fallback nur im Web-Kontext verwenden – schadet in RN nicht.
+  // Fallback: window.origin im Web oder feste Render-Domain
   if (typeof window !== "undefined" && (window as any).location?.origin) {
     const origin = (window as any).location.origin.replace(/\/+$/, "");
     console.log("[tRPC] Using base URL from window.location:", origin);
@@ -76,13 +63,21 @@ export const getBaseUrl = (): string => {
   return fallback;
 };
 
-const BASE_URL = getBaseUrl();
+/**
+ * Basis-URL normalisieren (trailing Slashes entfernen)
+ */
+const BASE_URL = (() => {
+  const base = getBaseUrl().replace(/\/+$/, "");
+  console.log("[tRPC] Normalized base URL:", base);
+  return base;
+})();
+
 const TRPC_URL = `${BASE_URL}/api/trpc`;
 
 export const trpc = createTRPCReact<AppRouter>();
 
 /**
- * Strenger Client mit zusätzlichen Checks/Logs
+ * Voller Client mit Logging & Checks
  */
 export const trpcVanillaClient = createTRPCClient<AppRouter>({
   links: [
@@ -90,9 +85,7 @@ export const trpcVanillaClient = createTRPCClient<AppRouter>({
       url: TRPC_URL,
       transformer: superjson as any,
       headers() {
-        return {
-          "Content-Type": "application/json",
-        } as Record<string, string>;
+        return { "Content-Type": "application/json" } as Record<string, string>;
       },
       async fetch(url, options) {
         if (isDemoMode()) {
@@ -100,6 +93,7 @@ export const trpcVanillaClient = createTRPCClient<AppRouter>({
         }
 
         console.log("[tRPC Vanilla Client] Fetching:", url);
+
         try {
           const response = await fetch(url, options);
 
@@ -113,11 +107,13 @@ export const trpcVanillaClient = createTRPCClient<AppRouter>({
           if (!contentType || !contentType.includes("application/json")) {
             const text = await response.text();
             console.log("[tRPC Vanilla Client] Non-JSON response received");
+
             if (text.includes("<!DOCTYPE html>") || text.includes("<html")) {
               throw new Error(
                 "Cannot connect to server. Please make sure EXPO_PUBLIC_APP_URL points to your API and that the server is running."
               );
             }
+
             throw new Error(
               `Expected JSON response but got ${contentType ?? "unknown"}. This usually means the API endpoint is not available.`
             );
@@ -140,7 +136,7 @@ export const trpcVanillaClient = createTRPCClient<AppRouter>({
 });
 
 /**
- * Schlanker Client (ohne extra Checks)
+ * Schlanker Client (ohne Logging)
  */
 export const trpcClient = createTRPCClient<AppRouter>({
   links: [
@@ -148,9 +144,7 @@ export const trpcClient = createTRPCClient<AppRouter>({
       url: TRPC_URL,
       transformer: superjson as any,
       headers() {
-        return {
-          "Content-Type": "application/json",
-        } as Record<string, string>;
+        return { "Content-Type": "application/json" } as Record<string, string>;
       },
       async fetch(url, options) {
         if (isDemoMode()) {

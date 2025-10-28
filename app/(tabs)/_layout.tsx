@@ -1,64 +1,76 @@
+// app/(tabs)/_layout.tsx
 import { Tabs } from "expo-router";
-import { LayoutDashboard, Calendar, PlusCircle, BarChart3, Settings } from "lucide-react-native";
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { useTranslation } from "@/hooks/useTranslation";
 
 export default function TabLayout() {
-  const t = useTranslation();
-  
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#0A66C2',
-        tabBarInactiveTintColor: '#666',
         headerShown: false,
+        tabBarActiveTintColor: "#1C64F2",
+        tabBarInactiveTintColor: "#9CA3AF",
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: '#E0E0E0',
-          paddingTop: 8,
-          height: 88,
+          backgroundColor: "#FFFFFF",
+          borderTopColor: "#E5E7EB",
+          height: 70,
+          paddingBottom: 8,
         },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600' as const,
-          marginBottom: 8,
-        },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: "600" },
       }}
     >
+      {/* Dashboard */}
       <Tabs.Screen
         name="(dashboard)"
         options={{
-          title: t.tabs.dashboard,
-          tabBarIcon: ({ color }) => <LayoutDashboard size={24} color={color} />,
+          tabBarLabel: "Dashboard",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="grid-outline" color={color} size={size} />
+          ),
         }}
       />
+
+      {/* Kalender */}
       <Tabs.Screen
         name="(calendar)"
         options={{
-          title: t.tabs.calendar,
-          tabBarIcon: ({ color }) => <Calendar size={24} color={color} />,
+          tabBarLabel: "Kalender",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar-outline" color={color} size={size} />
+          ),
         }}
       />
+
+      {/* Erstellen */}
       <Tabs.Screen
         name="(create)"
         options={{
-          title: t.tabs.create,
-          tabBarIcon: ({ color }) => <PlusCircle size={24} color={color} />,
+          tabBarLabel: "Erstellen",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle-outline" color={color} size={size + 2} />
+          ),
         }}
       />
+
+      {/* Reports */}
       <Tabs.Screen
         name="(reports)"
         options={{
-          title: t.tabs.reports,
-          tabBarIcon: ({ color }) => <BarChart3 size={24} color={color} />,
+          tabBarLabel: "Reports",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="bar-chart-outline" color={color} size={size} />
+          ),
         }}
       />
+
+      {/* Einstellungen */}
       <Tabs.Screen
         name="(settings)"
         options={{
-          title: t.tabs.settings,
-          tabBarIcon: ({ color }) => <Settings size={24} color={color} />,
+          tabBarLabel: "Einstellungen",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" color={color} size={size} />
+          ),
         }}
       />
     </Tabs>

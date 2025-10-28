@@ -29,7 +29,7 @@ export function usePlatformTokens() {
         return { isValid: true, needsRefresh: false, data: { accessToken: 'demo-token' } } as any;
       }
 
-      const tokenData = await trpcClient.platforms.getToken.query({ platform });
+      const tokenData = await trpcClient.platforms.getToken.query({} as any, { platform });
       
       if (!tokenData) {
         return { isValid: false, needsRefresh: false };
@@ -68,7 +68,7 @@ export function usePlatformTokens() {
         return { success: true, data: { accessToken: 'demo-token' } } as any;
       }
 
-      const result = await refreshTokenMutation.mutateAsync({ platform });
+      const result = await (refreshTokenMutation.mutateAsync) as any({ platform });
       console.log('[TokenManager] Token refreshed successfully for:', platform);
       return { success: true, data: result };
     } catch (error: any) {

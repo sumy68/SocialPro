@@ -1,15 +1,106 @@
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { Linkedin, Instagram, Music2, Youtube, CheckCircle } from 'lucide-react-native';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Platform } from '@/constants/types';
 import { useApp } from '@/contexts/AppContext';
-import { trpc, trpcVanillaClient, getBaseUrl } from '@/lib/trpc';
-import * as WebBrowser from 'expo-web-browser';
-import React, { useMemo, useRef, useState } from "react";
-import { getRedirectUri } from '@/lib/oauth';
+import * as Linking from 'expo-linking';
 
-WebBrowser.maybeCompleteAuthSession();
+// ---------------------------------------------
+// KONFIG
+// ---------------------------------------------
+
+// Das ist dein öffentliches Backend bei Render
+const RENDER_BASE = 'https://socialpro-fnvo.onrender.com';
+
+// Diese IDs kommen aus den Developer-Konsolen der Plattformen
+// (später aus .env reinziehen)
+const LINKEDIN_CLIENT_ID = 'DEIN_LINKEDIN_CLIENT_ID';
+const IG_CLIENT_ID = 'DEIN_IG_CLIENT_ID';
+const TIKTOK_CLIENT_KEY = 'DEIN_TIKTOK_CLIENT_KEY'; // TikTok nennt das client_key
+const YT_CLIENT_ID = 'DEIN_YT_CLIENT_ID';
+
+// Das packen wir als state rein, damit Backend weiß, welcher User das war
+// später ersetzen durch echte userId aus deinem Login/Session
+const OAUTH_STATE = 'test-user-123';
+
+// ---------------------------------------------
+// OAUTH URL BUILDER pro Plattform
+// ---------------------------------------------
+
+function buildLinkedInAuthUrl() {
+  const redirectUri = encodeURIComponent(`${RENDER_BASE}/oauth/linkedin/callback`);
+  const scope = encodeURIComponent('w_member_social r_liteprofile');
+  const state = encodeURIComponent(OAUTH_STATE);
+
+  return (
+    `https://www.linkedin.com/oauth/v2/authorization` +
+    `?response_type=code` +
+    `&client_id=${LINKEDIN_CLIENT_ID}` +
+    `&redirect_uri=${redirectUri}` +
+    `&scope=${scope}` +
+    `&state=${state}`
+  );
+}
+
+function buildInstagramAuthUrl() {
+  const redirectUri = encodeURIComponent(`${RENDER_BASE}/oauth/instagram/callback`);
+  const scope = encodeURIComponent('user_profile,user_media'); // anpassen je nach App Setup
+  const state = encodeURIComponent(OAUTH_STATE);
+
+  return (
+    `https://api.instagram.com/oauth/authorize` +
+    `?client_id=${IG_CLIENT_ID}` +
+    `&redirect_uri=${redirectUri}` +
+    `&scope=${scope}` +
+    `&response_type=code` +
+    `&state=${state}`
+  );
+}
+
+function buildTikTokAuthUrl() {
+  const redirectUri = encodeURIComponent(`${RENDER_BASE}/oauth/tiktok/callback`);
+  const scope = encodeURIComponent('user.info.basic video.list video.upload'); // anpassen bei TikTok
+  const state = encodeURIComponent(OAUTH_STATE);
+
+  return (
+    `https://www.tiktok.com/v2/auth/authorize/` +
+    `?client_key=${TIKTOK_CLIENT_KEY}` +
+    `&response_type=code` +
+    `&redirect_uri=${redirectUri}` +
+    `&scope=${scope}` +
+    `&state=${state}`
+  );
+}
+
+function buildYouTubeAuthUrl() {
+  const redirectUri = encodeURIComponent(`${RENDER_BASE}/oauth/youtube/callback`);
+  const scope = encodeURIComponent([
+    'https://www.googleapis.com/auth/youtube.upload',
+    'https://www.googleapis.com/auth/youtube.readonly',
+  ].join(' '));
+
+  const state = encodeURIComponent(OAUTH_STATE);
+  const accessType = 'offline'; // wichtig: damit Google auch refresh_token gibt
+  const includeGrantedScopes = 'true';
+  const responseType = 'code';
+
+  return (
+    `https://accounts.google.com/o/oauth2/v2/auth` +
+    `?client_id=${YT_CLIENT_ID}` +
+    `&redirect_uri=${redirectUri}` +
+    `&response_type=${responseType}` +
+    `&scope=${scope}` +
+    `&access_type=${accessType}` +
+    `&include_granted_scopes=${includeGrantedScopes}` +
+    `&state=${state}`
+  );
+}
+
+// ---------------------------------------------
+// SCREEN
+// ---------------------------------------------
 
 export default function ConnectPlatformsScreen() {
   const router = useRouter();
@@ -17,218 +108,38 @@ export default function ConnectPlatformsScreen() {
   const { connectedPlatforms, connectPlatform, disconnectPlatform } = useApp();
   const [connecting, setConnecting] = useState<Platform | null>(null);
 
-  const saveTokenMutation = trpc.platforms.saveToken.useMutation();
-  const disconnectMutation = trpc.platforms.disconnect.useMutation();
-
-  const pkceRef = useRef<Record<Platform, { verifier: string; challenge: string; state: string } | null>>({
-    instagram: null,
-    linkedin: null,
-    tiktok: null,
-    youtube: null,
-  });
-
-  function randomUrlSafe(length: number): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-      const idx = Math.floor(Math.random() * chars.length);
-      result += chars[idx];
-    }
-    return result;
-  }
-
-  async function generatePKCE(): Promise<{ verifier: string; state: string }> {
-    const verifier = randomUrlSafe(64);
-    const state = randomUrlSafe(32);
-    return { verifier, state };
-  }
-
-  const handleConnect = async (platform: Platform) => {
-    console.log('[OAuth] Starting OAuth flow for:', platform);
-    setConnecting(platform);
-
+  // Verbinden-Handler: öffnet NUR den Browser zur Plattform.
+  // Danach übernimmt dein Backend (`hono.ts`) den Callback
+  // und macht redirect zurück zu socialpro://connected/success?...,
+  // was bei dir den success-screen öffnet und im success-screen
+  // rufen wir connectPlatform(...) auf.
+  const startConnect = async (platform: Platform) => {
     try {
-      let authUrl = '';
-      let isDemoMode = false;
+      setConnecting(platform);
 
-      try {
-        console.log('[OAuth] Base URL being used:', getBaseUrl());
-        console.log('[OAuth] Full tRPC URL:', `${getBaseUrl()}/api/trpc`);
-
-        let initResult: any;
-
-        const pkce = await generatePKCE();
-        pkceRef.current[platform] = { verifier: pkce.verifier, challenge: '', state: pkce.state };
-        const initInput = { state: pkce.state, codeVerifier: pkce.verifier } as any;
-
-        switch (platform) {
-          case 'instagram':
-            console.log('[OAuth] Calling Instagram init...');
-            initResult = await trpcVanillaClient.platforms.oauth.instagram.init.query(initInput);
-            console.log('[OAuth] Instagram init response:', initResult);
-            break;
-          case 'linkedin':
-            console.log('[OAuth] Calling LinkedIn init...');
-            initResult = await trpcVanillaClient.platforms.oauth.linkedin.init.query(initInput);
-            console.log('[OAuth] LinkedIn init response:', initResult);
-            break;
-          case 'tiktok':
-            console.log('[OAuth] Calling TikTok init...');
-            initResult = await trpcVanillaClient.platforms.oauth.tiktok.init.query(initInput);
-            console.log('[OAuth] TikTok init response:', initResult);
-            break;
-          case 'youtube':
-            console.log('[OAuth] Calling YouTube init...');
-            initResult = await trpcVanillaClient.platforms.oauth.youtube.init.query(initInput);
-            console.log('[OAuth] YouTube init response:', initResult);
-            break;
-          default:
-            throw new Error(`Unsupported platform: ${platform}`);
-        }
-
-        authUrl = initResult.authUrl;
-        isDemoMode = initResult.isDemoMode || false;
-      } catch {
-        console.log('[OAuth] Backend not available, using Demo Mode automatically');
-
-        isDemoMode = true;
-        authUrl = 'demo://auth';
-
-        await new Promise(resolve => {
-          Alert.alert(
-            'Demo Mode',
-            `Backend server not available.\n\n✓ Simulating ${t.platforms[platform]} connection\n✓ All features work in demo mode\n✓ Data saved locally\n\nTo enable real OAuth:\n• Set EXPO_PUBLIC_APP_URL in .env\n• Restart the app`,
-            [{ text: 'Continue', onPress: () => resolve(undefined) }]
-          );
-        });
-      }
-
-      console.log('[OAuth] Opening auth URL:', authUrl, 'Demo mode:', isDemoMode);
-
-      let tokenData: any;
-
-      if (isDemoMode) {
-        console.log('[OAuth] Demo mode - simulating connection');
-        tokenData = {
-          accessToken: `demo_${platform}_access_token`,
-          refreshToken: `demo_${platform}_refresh_token`,
-          userId: `demo_${platform}_user_id`,
-          username: `Demo ${platform.charAt(0).toUpperCase() + platform.slice(1)} User`,
-          expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-        };
+      let url = '';
+      if (platform === 'linkedin') {
+        url = buildLinkedInAuthUrl();
+      } else if (platform === 'instagram') {
+        url = buildInstagramAuthUrl();
+      } else if (platform === 'tiktok') {
+        url = buildTikTokAuthUrl();
+      } else if (platform === 'youtube') {
+        url = buildYouTubeAuthUrl();
       } else {
-        const returnUrl = getRedirectUri();
-        console.log('[OAuth] Redirect URI:', returnUrl);
-
-        const result = await WebBrowser.openAuthSessionAsync(authUrl, returnUrl);
-        console.log('[OAuth] WebBrowser result:', result);
-
-        if (result.type === 'success' && result.url) {
-          let code: string | null = null;
-          let state: string | null = null;
-          try {
-            const queryString = result.url.split('?')[1] ?? '';
-            const params = new URLSearchParams(queryString);
-            code = params.get('code');
-            state = params.get('state');
-          } catch {
-            console.log('[OAuth] Fallback parsing for auth code');
-            const codeMatch = result.url.match(/[?&]code=([^&]+)/);
-            const stateMatch = result.url.match(/[?&]state=([^&]+)/);
-            code = codeMatch?.[1] ? decodeURIComponent(codeMatch[1]) : null;
-            state = stateMatch?.[1] ? decodeURIComponent(stateMatch[1]) : null;
-          }
-
-          if (!code) throw new Error('No authorization code received');
-
-          const expected = pkceRef.current[platform];
-          if (expected?.state && state && expected.state !== state) {
-            throw new Error('State mismatch. Please try again.');
-          }
-
-          console.log('[OAuth] Authorization code received, exchanging for token...');
-
-          const codeVerifier = pkceRef.current[platform]?.verifier;
-
-          switch (platform) {
-            case 'instagram':
-              tokenData = await trpcVanillaClient.platforms.oauth.instagram.callback.mutate({ code, state: state ?? undefined });
-              console.log('[OAuth][callback][instagram] tokenData =', tokenData);
-              break;
-            case 'linkedin':
-              tokenData = await trpcVanillaClient.platforms.oauth.linkedin.callback.mutate({ code, codeVerifier: codeVerifier ?? undefined, state: state ?? undefined });
-              console.log('[OAuth][callback][linkedin] tokenData =', tokenData);
-              break;
-            case 'tiktok':
-              tokenData = await trpcVanillaClient.platforms.oauth.tiktok.callback.mutate({ code, state: state ?? undefined });
-              console.log('[OAuth][callback][tiktok] tokenData =', tokenData);
-              break;
-            case 'youtube':
-              tokenData = await trpcVanillaClient.platforms.oauth.youtube.callback.mutate({ code, codeVerifier: codeVerifier ?? undefined, state: state ?? undefined });
-              console.log('[OAuth][callback][youtube] tokenData =', tokenData);
-              break;
-          }
-        } else if (result.type === 'cancel') {
-          console.log('[OAuth] User cancelled');
-          return;
-        } else {
-          throw new Error('OAuth flow was not completed');
-        }
+        throw new Error('Unsupported platform: ' + platform);
       }
 
-      if (tokenData) {
-        console.log('[OAuth] Token received, saving...');
-
-        // --- TEMP Ping: Backend erreichbar? ---
-        try {
-          const baseUrl = getBaseUrl();
-          const pingUrl = `${baseUrl}/api/platforms/status`;
-          console.log('[Ping] URL:', pingUrl);
-
-          const res = await fetch(pingUrl, { headers: { Accept: 'application/json' } });
-          const ct = res.headers.get('content-type');
-          const txt = await res.text();
-
-          console.log('[Ping] status:', res.status, 'content-type:', ct);
-          console.log('[Ping] body:', txt);
-        } catch (e) {
-          console.log('[Ping] failed:', e);
-        }
-        // --- TEMP Ping Ende ---
-
-        try {
-          await saveTokenMutation.mutateAsync({
-            platform,
-            accessToken: tokenData.accessToken,
-            refreshToken: tokenData.refreshToken,
-            userId: tokenData.userId,
-            username: tokenData.username,
-            expiresAt: tokenData.expiresAt,
-          });
-        } catch (saveError: any) {
-          console.warn('[OAuth] Failed to save token to backend (expected in demo mode):', saveError?.message || saveError);
-        }
-
-        await connectPlatform(
-          platform,
-          tokenData.username,
-          tokenData.userId,
-          tokenData.accessToken,
-          tokenData.refreshToken,
-          tokenData.expiresAt
-        );
-
-        console.log('[OAuth] Platform connected successfully:', platform);
-        Alert.alert(
-          'Success',
-          `${t.platforms[platform]} connected successfully!${isDemoMode ? ' (Demo Mode)' : ''}`
-        );
-      }
-    } catch (error: any) {
-      console.error('[OAuth] Error connecting platform:', error);
+      console.log('[OAuth] opening external auth url:', url);
+      // Wichtig: wir öffnen jetzt SYSTEM-BROWSER (nicht WebBrowser AuthSession)
+      // Die Plattform leitet dann zu deinem Backend weiter
+      // Dein Backend leitet dann zurück in die App mit socialpro://...
+      Linking.openURL(url);
+    } catch (err: any) {
+      console.error('[OAuth] Error starting connect:', err);
       Alert.alert(
         'Connection Failed',
-        error?.message || 'Failed to connect platform. Please try again.'
+        err?.message || 'Failed to start connection. Please try again.'
       );
     } finally {
       setConnecting(null);
@@ -246,12 +157,14 @@ export default function ConnectPlatformsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await disconnectMutation.mutateAsync({ platform });
+              // wir callen hier aktuell noch dein altes disconnect
+              // das kann so bleiben falls dein Backend das schon kennt
+              await disconnectPlatform(platform);
+              Alert.alert('Success', `${t.platforms[platform]} disconnected successfully`);
             } catch (error: any) {
-              console.warn('[OAuth] Failed to disconnect from backend (expected in demo mode):', error?.message || error);
+              console.warn('[OAuth] Failed to disconnect:', error?.message || error);
+              Alert.alert('Error', 'Could not disconnect. Please try again.');
             }
-            await disconnectPlatform(platform);
-            Alert.alert('Success', `${t.platforms[platform]} disconnected successfully`);
           },
         },
       ]
@@ -286,7 +199,7 @@ export default function ConnectPlatformsScreen() {
             name={t.platforms.linkedin}
             color="#0A66C2"
             status={getPlatformStatus('linkedin')}
-            onConnect={() => handleConnect('linkedin')}
+            onConnect={() => startConnect('linkedin')}
             onDisconnect={() => handleDisconnect('linkedin')}
             isConnecting={connecting === 'linkedin'}
           />
@@ -295,7 +208,7 @@ export default function ConnectPlatformsScreen() {
             name={t.platforms.instagram}
             color="#E1306C"
             status={getPlatformStatus('instagram')}
-            onConnect={() => handleConnect('instagram')}
+            onConnect={() => startConnect('instagram')}
             onDisconnect={() => handleDisconnect('instagram')}
             isConnecting={connecting === 'instagram'}
           />
@@ -304,7 +217,7 @@ export default function ConnectPlatformsScreen() {
             name={t.platforms.tiktok}
             color="#000000"
             status={getPlatformStatus('tiktok')}
-            onConnect={() => handleConnect('tiktok')}
+            onConnect={() => startConnect('tiktok')}
             onDisconnect={() => handleDisconnect('tiktok')}
             isConnecting={connecting === 'tiktok'}
           />
@@ -313,7 +226,7 @@ export default function ConnectPlatformsScreen() {
             name={t.platforms.youtube}
             color="#FF0000"
             status={getPlatformStatus('youtube')}
-            onConnect={() => handleConnect('youtube')}
+            onConnect={() => startConnect('youtube')}
             onDisconnect={() => handleDisconnect('youtube')}
             isConnecting={connecting === 'youtube'}
           />
@@ -327,6 +240,8 @@ export default function ConnectPlatformsScreen() {
   );
 }
 
+
+// Karte für jede Plattform (UI Komponente)
 function PlatformCard({
   icon,
   name,
@@ -352,7 +267,9 @@ function PlatformCard({
         {icon}
         <View style={styles.platformTextContainer}>
           <Text style={styles.platformName}>{name}</Text>
-          {isConnected && status?.accountName && <Text style={styles.accountName}>{status.accountName}</Text>}
+          {isConnected && status?.accountName && (
+            <Text style={styles.accountName}>{status.accountName}</Text>
+          )}
         </View>
         {isConnected && <CheckCircle size={20} color="#10B981" />}
       </View>
@@ -373,6 +290,8 @@ function PlatformCard({
   );
 }
 
+
+// Styles
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F9FA' },
   contentContainer: { padding: 24, paddingBottom: 40 },

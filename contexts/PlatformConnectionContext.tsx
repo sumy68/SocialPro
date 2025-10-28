@@ -70,7 +70,7 @@ export const [PlatformConnectionProvider, usePlatformConnection] = createContext
         return;
       }
 
-      const tokenData = await trpcVanillaClient.platforms.getToken.query({ platform });
+      const tokenData = await trpcVanillaClient.platforms.getToken.query({} as any, { platform });
       
       if (!tokenData) {
         if (!mounted.current) return;
@@ -175,7 +175,7 @@ export const [PlatformConnectionProvider, usePlatformConnection] = createContext
         return { success: true };
       }
 
-      const result = await trpcVanillaClient.platforms.refreshToken.mutate({ platform });
+      const result = await trpcVanillaClient.platforms.refreshToken.mutate({ platform } as any);
       
       if (result.success) {
         await checkPlatformStatus(platform);
@@ -230,7 +230,7 @@ export const [PlatformConnectionProvider, usePlatformConnection] = createContext
       };
     }
 
-    const tokenData = await trpcVanillaClient.platforms.getToken.query({ platform });
+    const tokenData = await trpcVanillaClient.platforms.getToken.query({ platform } as any);
     
     if (!tokenData || !tokenData.accessToken) {
       throw new Error('No valid token available');

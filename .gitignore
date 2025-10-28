@@ -38,3 +38,8 @@ yarn-error.*
 .env
 .env.development
 .env.production
+backup_fix/
+node_modules_old/
+backup_fix/
+health/
+backend/socialpro-backend/

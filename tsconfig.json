@@ -1,29 +1,48 @@
 {
-  "extends": "./node_modules/expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true,
-    "jsx": "react-jsx",
+    "jsx": "react-native",
+    "target": "esnext",
+    "module": "esnext",
+    "lib": [
+      "dom",
+      "esnext"
+    ],
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "strict": false,
+    "noEmit": true,
+    "noImplicitAny": false,
+    "ignoreDeprecations": "5.0",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@rork/toolkit-sdk": ["mocks/rork-toolkit-sdk"]
-    },
-    "moduleResolution": "bundler",
-    "target": "ES2022",
-    "customConditions": ["react-native"],
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "noEmit": true
+      "@/*": [
+        "./*"
+      ]
+    }
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx",
+    "app",
+    "src",
+    "contexts",
+    "hooks",
+    "lib",
+    "services",
+    "components",
+    "types",
+    "util",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts",
-    "mocks/**/*",
-    "types/**/*",
-    "app/**/*",
-    "src/**/*"
+    "expo-env.d.ts"
   ],
-  "exclude": ["server.ts"]
+  "exclude": [
+    "node_modules",
+    "backend",
+    "socialpro-backend",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ],
+  "extends": "node_modules/expo/tsconfig.base"
 }

@@ -1,24 +1,23 @@
-import * as AuthSession from 'expo-auth-session';
+// lib/trpc.ts
+import { createTRPCClient, httpBatchLink, httpLink } from "@trpc/client";
+import type { AppRouter } from "@/server/trpc";
 
-/**
- * Baut die Redirect-URI für OAuth-Flows.
- * Diese muss genau mit der URI übereinstimmen,
- * die du in den Provider-Einstellungen (Instagram, LinkedIn, etc.)
- * und im Render-Backend konfiguriert hast.
- */
-export function getRedirectUri(): string {
-  const scheme = (process.env.EXPO_PUBLIC_SCHEME || 'myapp').trim();
-  const path = (process.env.EXPO_PUBLIC_OAUTH_REDIRECT_PATH || '/auth/callback').trim();
+const rawBase = process.env.EXPO_PUBLIC_APP_URL ?? "";
+const apiBase = rawBase.replace(/\/+$/, ""); // entfernt überflüssige Slashes
+console.log("[tRPC] Normalized base URL:", apiBase);
 
- 
-  const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
+export const trpcVanillaClient = createTRPCClient<AppRouter>({
+  links: [
+    httpLink({
+      url: `${apiBase}/api/trpc`,
+    }),
+  ],
+});
 
-  const redirectUri = AuthSession.makeRedirectUri({
-    scheme,
-    path: normalizedPath,
-  });
-
-  console.log('[OAuth] Redirect URI generated:', redirectUri);
-
-  return redirectUri;
-}
+export const trpcClient = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: `${apiBase}/api/trpc`,
+    }),
+  ],
+});

@@ -6,7 +6,7 @@ import { ImageIcon, Upload, Wand2, Link2, X, Calendar, Clock, Send } from 'lucid
 
 import { useApp } from '@/contexts/AppContext';
 import { Platform } from '@/constants/types';
-import { generateText } from '@rork/toolkit-sdk';
+import { generateText } from '@/lib/toolkit';
 import { usePublishPost } from '@/hooks/usePublishPost';
 
 import * as ImagePicker from 'expo-image-picker';
@@ -150,7 +150,7 @@ export default function CreateScreen() {
             } else {
               console.log('[AI Generator] Converting mobile image:', uri);
               base64Data = await FileSystem.readAsStringAsync(uri, {
-                encoding: FileSystem.EncodingType.Base64,
+                encoding: 'base64',
               });
             }
             

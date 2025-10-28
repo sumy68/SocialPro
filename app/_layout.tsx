@@ -10,6 +10,8 @@ import { PlatformConnectionProvider } from "@/contexts/PlatformConnectionContext
 import { trpc, trpcClient } from "@/lib/trpc";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
+console.log("[ENV TEST]", process.env.EXPO_PUBLIC_APP_URL);
+
 // Splash direkt verhindern, aber Fehler schlucken (nie throwen)
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -22,7 +24,7 @@ export const unstable_settings = {
 
 function RootLayoutNav() {
   const { hasCompletedOnboarding, hasActiveSubscription, isLoading } = useApp();
-  const router   = useRouter();
+  const router = useRouter();
   const segments = useSegments();
   const navState = useRootNavigationState();
 
@@ -56,13 +58,16 @@ function RootLayoutNav() {
     const list = Array.isArray(segments) ? (segments as unknown as string[]) : [];
     const first = list[0] || "";
     const path = list.join("/");
+
     return {
       inOnboarding: first === "onboarding",
       inSubscription: first === "subscription",
       inTabs: first === "(tabs)",
       inWeeklyReview: first === "weekly-review",
       // ggf. eine Route erlauben, die außerhalb der Tabs liegt
-      allowOutsideTabs: path === "onboarding/connect-platforms",
+      allowOutsideTabs:
+        path === "onboarding/connect-platforms" ||
+        path === "connected/success",
     };
   }, [segments]);
 
@@ -115,6 +120,16 @@ function RootLayoutNav() {
       <Stack.Screen name="subscription" />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="weekly-review" options={{ headerShown: false, presentation: "card" }} />
+
+      {/* NEU: OAuth-Screens */}
+      <Stack.Screen
+        name="connect"
+        options={{ title: "Plattformen verbinden" }}
+      />
+      <Stack.Screen
+        name="connected/success"
+        options={{ title: "Verbindung", presentation: "modal" }}
+      />
     </Stack>
   );
 }
