@@ -42,6 +42,4 @@ backup_fix/
 node_modules_old/
 backup_fix/
 health/
-backend/socialpro-backend/
-socialpro-backend/
-socialpro-backend/
+backend/socialpro-backend/.env
