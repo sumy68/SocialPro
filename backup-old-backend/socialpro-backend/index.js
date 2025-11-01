@@ -1,0 +1,10 @@
+import express from "express";
+const app = express();
+app.use(express.json());
+app.get("/health", (req,res)=>res.json({status:"ok", service:"socialpro-backend", time:new Date().toISOString()}));
+app.get("/api/trpc/example.hi", (req,res)=>res.json({message:"Hello from SocialPro backend ✅"}));
+app.get("/api/trpc/platforms.getToken", (req,res)=>res.json({token:null, connected:false}));
+app.get("/api/trpc/platforms.oauth.tiktok.init", (req,res)=>res.json({ok:true, demo:false, provider:"tiktok", authUrl:null}));
+app.get("/", (req,res)=>res.send("🚀 SocialPro Backend läuft!"));
+const port = process.env.PORT || 8080;
+app.listen(port, ()=>console.log(`✅ Backend läuft auf Port ${port}`));
