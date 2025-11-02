@@ -152,3 +152,21 @@ app.get("/oauth/youtube/callback", async (c) => {
 });
 
 export default { fetch: (req: Request) => app.fetch(req) };
+
+// --- Health / Status ---
+app.get('/status', (c) =>
+  c.json({
+    ok: true,
+    service: 'socialpro-backend',
+    timestamp: new Date().toISOString(),
+  })
+);
+
+// ✅ Zusätzlich: /healthz direkt in Hono
+app.get('/healthz', (c) =>
+  c.json({
+    status: 'ok',
+    message: 'API is running',
+    service: 'socialpro-backend',
+  })
+);
