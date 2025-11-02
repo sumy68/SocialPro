@@ -18,20 +18,67 @@ app.get('/status', (c) =>
   })
 );
 
+app.get('/api/health', (c) =>
+  c.json({
+    ok: true,
+    service: 'socialpro-backend',
+    timestamp: new Date().toISOString(),
+  })
+);
+
 // --- Root Route ---
 app.get('/', (c) => c.json({ message: 'SocialPro backend up ✅' }));
 
-// --- TikTok OAuth (Skelett) ---
+// ===============================
+// ✅ Instagram OAuth (Meta)
+// ===============================
+app.get('/auth/instagram/start', (c) => {
+  const appId = "1887376112124643"; // ✅ Deine Meta App ID
+  const redirectUri = 'https://socialpro-fnvo.onrender.com/auth/instagram/callback';
 
-// 1. Start OAuth: App ruft das auf, wir leiten den User zu TikTok
+  const scope = [
+    'public_profile',
+    'email',
+    'instagram_basic',
+    'pages_show_list',
+    'pages_read_engagement',
+    'instagram_manage_insights',
+  ].join(',');
+
+  const state = crypto.randomUUID(); // ✅ random state
+
+  const url =
+    `https://www.facebook.com/v19.0/dialog/oauth` +
+    `?client_id=${encodeURIComponent(appId)}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&response_type=code` +
+    `&scope=${encodeURIComponent(scope)}` +
+    `&state=${encodeURIComponent(state)}`;
+
+  return c.redirect(url, 302);
+});
+
+app.get('/auth/instagram/callback', async (c) => {
+  const code = c.req.query('code');
+  const state = c.req.query('state');
+
+  console.log('✅ Instagram callback hit:', { code, state });
+
+  // TODO: Access Token über Graph API holen (kommt später)
+
+  // Zurück in die App redirecten
+  const deeplink = `socialpro://oauth?provider=instagram&status=success&code=${code}`;
+  return c.redirect(deeplink, 302);
+});
+
+// ===============================
+// ✅ TikTok OAuth (dein Skelett)
+// ===============================
 app.get('/auth/tiktok/start', (c) => {
-  // Diese Werte kommen später aus ENV:
   const clientKey = process.env.TIKTOK_CLIENT_KEY ?? 'MISSING_CLIENT_KEY';
   const redirectUri = 'https://socialpro-fnvo.onrender.com/auth/tiktok/callback';
-
-  // TikTok OAuth authorize URL
   const scope = encodeURIComponent('user.info.basic');
-  const state = 'todo-random-state'; // später dynamisch generieren
+  const state = 'todo-random-state';
 
   const url =
     `https://www.tiktok.com/v2/auth/authorize/` +
@@ -44,21 +91,11 @@ app.get('/auth/tiktok/start', (c) => {
   return c.redirect(url, 302);
 });
 
-// 2. Callback von TikTok: TikTok ruft diese URL nach erfolgreichem Login auf
 app.get('/auth/tiktok/callback', async (c) => {
   const code = c.req.query('code');
   const state = c.req.query('state');
-
-  // TODO: später hier Access Token mit TikTok austauschen
   console.log('✅ TikTok callback hit:', { code, state });
-
-  return c.json({
-    ok: true,
-    source: 'tiktok',
-    code,
-    state,
-    message: 'TikTok OAuth callback received successfully ✅',
-  });
+  return c.json({ ok: true, source: 'tiktok', code, state });
 });
 
 export default app;

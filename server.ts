@@ -3,11 +3,11 @@ import { serve } from '@hono/node-server';
 
 async function loadApp() {
   try {
-    // tsconfig-Alias zuerst versuchen
+    // Falls du später Aliases nutzt (z. B. @/backend/hono)
     const mod = await import('@/backend/hono');
     return mod.default;
   } catch {
-    // Fallback ohne Alias
+    // ✅ Fallback ohne Alias — funktioniert garantiert
     const mod = await import('./backend/hono');
     return mod.default;
   }
@@ -20,7 +20,7 @@ async function loadApp() {
   const fetchHandler = (req: Request) => {
     const url = new URL(req.url);
 
-    // ✅ Healthcheck direkt hier beantworten
+    // ✅ Render Healthcheck
     if (url.pathname === '/healthz') {
       return new Response(
         JSON.stringify({ status: 'ok', message: 'API is running' }),
@@ -34,15 +34,14 @@ async function loadApp() {
       );
     }
 
-    // Sonst an deine Hono-App weiterreichen
+    // Weiter an Hono
     return app.fetch(req);
   };
 
-  // ✅ WICHTIG für Render: auf 0.0.0.0 binden
   serve({
     fetch: fetchHandler,
     port,
-    hostname: '0.0.0.0',
+    hostname: '0.0.0.0', // ✅ wichtig für Render
   });
 
   console.log(`[server] Running on http://0.0.0.0:${port} (health: /healthz)`);

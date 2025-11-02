@@ -7,14 +7,19 @@ export default {
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
-    scheme: 'socialpro',
+
+    // Deep Link Schema (z. B. socialpro://)
+    scheme: process.env.EXPO_PUBLIC_SCHEME || 'socialpro',
+
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
+
     splash: {
       image: './assets/images/splash-icon.png',
       resizeMode: 'contain',
       backgroundColor: '#ffffff',
     },
+
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'app.rork.socialpro-content-booster',
@@ -26,6 +31,7 @@ export default {
         UIBackgroundModes: ['audio'],
       },
     },
+
     android: {
       adaptiveIcon: {
         foregroundImage: './assets/images/adaptive-icon.png',
@@ -35,11 +41,13 @@ export default {
       versionCode: 1,
       permissions: ['INTERNET', 'CAMERA', 'RECORD_AUDIO'],
     },
+
     web: {
       favicon: './assets/images/favicon.png',
     },
+
     plugins: [
-      ['expo-router', { origin: 'https://socialpro-fnvo.onrender.com' }],
+      'expo-router',
       [
         'expo-image-picker',
         {
@@ -51,15 +59,15 @@ export default {
       'expo-web-browser',
       'expo-font',
     ],
+
     experiments: {
       typedRoutes: true,
     },
 
-      extra: {
-        EXPO_PUBLIC_APP_URL: process.env.EXPO_PUBLIC_APP_URL,
-        EXPO_PUBLIC_DEMO_MODE: process.env.EXPO_PUBLIC_DEMO_MODE,
-        EXPO_PUBLIC_SCHEME: process.env.EXPO_PUBLIC_SCHEME || 'socialpro', // 👈 hinzufügen
-      },
-
+    extra: {
+      EXPO_PUBLIC_APP_URL: process.env.EXPO_PUBLIC_APP_URL,
+      EXPO_PUBLIC_DEMO_MODE: process.env.EXPO_PUBLIC_DEMO_MODE,
+      EXPO_PUBLIC_SCHEME: process.env.EXPO_PUBLIC_SCHEME || 'socialpro',
+    },
   },
 };

@@ -45,6 +45,15 @@ app.use(
 
 app.get("/", (c) => c.json({ ok: true, service: "socialpro-backend", version: 1 }));
 
+// Debug ENV Check (temporär)
+app.get("/oauth/instagram/debug-env", (c) => {
+  return c.json({
+    hasClientId: !!IG_CLIENT_ID,
+    hasClientSecret: !!IG_CLIENT_SECRET,
+    redirectUri: IG_REDIRECT_URI,
+  });
+});
+
 // -------------------------------------------------
 // INSTAGRAM START (Basic Display)
 // -------------------------------------------------
