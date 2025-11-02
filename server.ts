@@ -3,12 +3,12 @@ import { serve } from '@hono/node-server';
 
 async function loadApp() {
   try {
-    // Falls du später Aliases nutzt (z. B. @/backend/hono)
-    const mod = await import('@/backend/hono');
+    // Falls du später Aliases hast (z. B. "@")
+    const mod = await import('@/src/backend/hono');
     return mod.default;
   } catch {
-    // ✅ Fallback ohne Alias — funktioniert garantiert
-    const mod = await import('./backend/hono');
+    // ✅ Funktioniert garantiert — richtiger Pfad!
+    const mod = await import('./src/backend/hono');
     return mod.default;
   }
 }
@@ -34,18 +34,14 @@ async function loadApp() {
       );
     }
 
-    // Weiter an Hono
     return app.fetch(req);
   };
 
   serve({
     fetch: fetchHandler,
-    port,
     hostname: '0.0.0.0', // ✅ wichtig für Render
+    port,
   });
 
   console.log(`[server] Running on http://0.0.0.0:${port} (health: /healthz)`);
-})().catch((err) => {
-  console.error('[server] Failed to start:', err);
-  process.exit(1);
-});
+})();
