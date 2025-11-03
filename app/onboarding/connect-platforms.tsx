@@ -1,3 +1,4 @@
+import startInstagramOAuth from '../../src/utils/instagramOAuth';
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
@@ -7,78 +8,42 @@ import { Platform } from '@/constants/types';
 import { useApp } from '@/contexts/AppContext';
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
+import * as AuthSession from 'expo-auth-session';
 
-// ---------------------------------------------
-// ENV aus app.config.js
-// ---------------------------------------------
+
+// Expo: evtl. Browser schließen nach OAuth
+WebBrowser.maybeCompleteAuthSession();
+
+// ✅ ENV aus app.config.js
 const { EXPO_PUBLIC_APP_URL, EXPO_PUBLIC_SCHEME } = Constants.expoConfig?.extra ?? {};
-const APP_URL = EXPO_PUBLIC_APP_URL as string;                 // z.B. https://socialpro-fnvo.onrender.com
-const API_BASE = `${APP_URL}/api`;                             // => https://.../api
+const APP_URL = (EXPO_PUBLIC_APP_URL as string) || '';
+const API_BASE = `${APP_URL}/api`;
 const DEEP_LINK_SCHEME = (EXPO_PUBLIC_SCHEME as string) || 'socialpro';
 
 const OAUTH_STATE = 'test-user-123';
 
-// Platzhalter-IDs (falls du sie schon hast, ersetze sie)
-const LINKEDIN_CLIENT_ID = 'DEIN_LINKEDIN_CLIENT_ID';
-const TIKTOK_CLIENT_KEY  = 'DEIN_TIKTOK_CLIENT_KEY';
-const YT_CLIENT_ID       = 'DEIN_YT_CLIENT_ID';
-
-// ---------------------------------------------
-// OAuth URL Builder (Instagram läuft über Backend-Start)
-// ---------------------------------------------
+// ✅ Plattform spezifische OAuth URLs (außer IG = Backend)
 function buildLinkedInAuthUrl() {
   const redirectUri = encodeURIComponent(`${API_BASE}/oauth/linkedin/callback`);
   const scope = encodeURIComponent('w_member_social r_liteprofile');
   const state = encodeURIComponent(OAUTH_STATE);
-
-  return (
-    `https://www.linkedin.com/oauth/v2/authorization` +
-    `?response_type=code` +
-    `&client_id=${LINKEDIN_CLIENT_ID}` +
-    `&redirect_uri=${redirectUri}` +
-    `&scope=${scope}` +
-    `&state=${state}`
-  );
+  return `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=DEIN_LINKEDIN_CLIENT_ID&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`;
 }
-
 function buildTikTokAuthUrl() {
   const redirectUri = encodeURIComponent(`${API_BASE}/oauth/tiktok/callback`);
   const scope = encodeURIComponent('user.info.basic video.list video.upload');
   const state = encodeURIComponent(OAUTH_STATE);
-
-  return (
-    `https://www.tiktok.com/v2/auth/authorize/` +
-    `?client_key=${TIKTOK_CLIENT_KEY}` +
-    `&response_type=code` +
-    `&redirect_uri=${redirectUri}` +
-    `&scope=${scope}` +
-    `&state=${state}`
-  );
+  return `https://www.tiktok.com/v2/auth/authorize/?client_key=DEIN_TIKTOK_CLIENT_KEY&response_type=code&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`;
 }
-
 function buildYouTubeAuthUrl() {
   const redirectUri = encodeURIComponent(`${API_BASE}/oauth/youtube/callback`);
-  const scope = encodeURIComponent([
-    'https://www.googleapis.com/auth/youtube.upload',
-    'https://www.googleapis.com/auth/youtube.readonly',
-  ].join(' '));
-  const state = encodeURIComponent(OAUTH_STATE);
-
-  return (
-    `https://accounts.google.com/o/oauth2/v2/auth` +
-    `?client_id=${YT_CLIENT_ID}` +
-    `&redirect_uri=${redirectUri}` +
-    `&response_type=code` +
-    `&scope=${scope}` +
-    `&access_type=offline` +
-    `&include_granted_scopes=true` +
-    `&state=${state}`
+  const scope = encodeURIComponent(
+    'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly'
   );
+  const state = encodeURIComponent(OAUTH_STATE);
+  return `https://accounts.google.com/o/oauth2/v2/auth?client_id=DEIN_YT_CLIENT_ID&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&include_granted_scopes=true&state=${state}`;
 }
 
-// ---------------------------------------------
-// Screen
-// ---------------------------------------------
 export default function ConnectPlatformsScreen() {
   const router = useRouter();
   const t = useTranslation();
@@ -88,27 +53,24 @@ export default function ConnectPlatformsScreen() {
   const startConnect = async (platform: Platform) => {
     try {
       setConnecting(platform);
-      let url = '';
 
       if (platform === 'linkedin') {
-        url = buildLinkedInAuthUrl();
-        await WebBrowser.openBrowserAsync(url);
-      } else if (platform === 'instagram') {
-        // Instagram über dein Backend
-        url = `${API_BASE}/oauth/instagram/start`;
-        await WebBrowser.openAuthSessionAsync(url, `${DEEP_LINK_SCHEME}://`);
-      } else if (platform === 'tiktok') {
-        url = buildTikTokAuthUrl();
-        await WebBrowser.openBrowserAsync(url);
-      } else if (platform === 'youtube') {
-        url = buildYouTubeAuthUrl();
-        await WebBrowser.openBrowserAsync(url);
-      } else {
-        throw new Error('Unsupported platform: ' + platform);
+        return await WebBrowser.openBrowserAsync(buildLinkedInAuthUrl());
       }
+      if (platform === 'tiktok') {
+        return await WebBrowser.openBrowserAsync(buildTikTokAuthUrl());
+      }
+      if (platform === 'youtube') {
+        return await WebBrowser.openBrowserAsync(buildYouTubeAuthUrl());
+      }
+      if (platform === 'instagram') {
+        return await startInstagramOAuth(OAUTH_STATE);
+      }
+
+      throw new Error('Unsupported platform: ' + platform);
     } catch (err: any) {
-      console.error('[OAuth] Error starting connect:', err);
-      Alert.alert('Connection Failed', err?.message || 'Failed to start connection. Please try again.');
+      console.error('[OAuth] Error:', err);
+      Alert.alert('Error', err?.message ?? 'OAuth failed');
     } finally {
       setConnecting(null);
     }
@@ -117,33 +79,24 @@ export default function ConnectPlatformsScreen() {
   const handleDisconnect = async (platform: Platform) => {
     Alert.alert(
       'Disconnect Platform',
-      `Are you sure you want to disconnect ${t.platforms[platform]}?`,
+      `Disconnect ${t.platforms[platform]}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Disconnect',
           style: 'destructive',
           onPress: async () => {
-            try {
-              await disconnectPlatform(platform);
-              Alert.alert('Success', `${t.platforms[platform]} disconnected successfully`);
-            } catch {
-              Alert.alert('Error', 'Could not disconnect. Please try again.');
-            }
+            await disconnectPlatform(platform);
+            Alert.alert('Done', `${t.platforms[platform]} disconnected`);
           },
         },
       ]
     );
   };
 
-  const handleContinue = () => router.push('/subscription' as any);
-  const getPlatformStatus = (platform: Platform) => connectedPlatforms.find(p => p.platform === platform);
-
   return (
     <>
-      <Stack.Screen
-        options={{ title: t.onboarding.platforms.title, headerBackTitle: t.back }}
-      />
+      <Stack.Screen options={{ title: t.onboarding.platforms.title, headerBackTitle: t.back }} />
 
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
         <View style={styles.header}>
@@ -152,84 +105,90 @@ export default function ConnectPlatformsScreen() {
         </View>
 
         <View style={styles.platforms}>
+          {/* ✅ LinkedIn */}
           <PlatformCard
             icon={<Linkedin size={32} color="#0A66C2" />}
             name={t.platforms.linkedin}
             color="#0A66C2"
-            status={getPlatformStatus('linkedin')}
+            status={connectedPlatforms.find(p => p.platform === 'linkedin')}
             onConnect={() => startConnect('linkedin')}
             onDisconnect={() => handleDisconnect('linkedin')}
             isConnecting={connecting === 'linkedin'}
           />
 
+          {/* ✅ Instagram */}
           <PlatformCard
             icon={<Instagram size={32} color="#E1306C" />}
             name={t.platforms.instagram}
             color="#E1306C"
-            status={getPlatformStatus('instagram')}
+            status={connectedPlatforms.find(p => p.platform === 'instagram')}
             onConnect={() => startConnect('instagram')}
             onDisconnect={() => handleDisconnect('instagram')}
             isConnecting={connecting === 'instagram'}
           />
 
+          {/* ✅ TikTok */}
           <PlatformCard
             icon={<Music2 size={32} color="#000000" />}
             name={t.platforms.tiktok}
             color="#000000"
-            status={getPlatformStatus('tiktok')}
+            status={connectedPlatforms.find(p => p.platform === 'tiktok')}
             onConnect={() => startConnect('tiktok')}
             onDisconnect={() => handleDisconnect('tiktok')}
             isConnecting={connecting === 'tiktok'}
           />
 
+          {/* ✅ YouTube */}
           <PlatformCard
             icon={<Youtube size={32} color="#FF0000" />}
             name={t.platforms.youtube}
             color="#FF0000"
-            status={getPlatformStatus('youtube')}
+            status={connectedPlatforms.find(p => p.platform === 'youtube')}
             onConnect={() => startConnect('youtube')}
             onDisconnect={() => handleDisconnect('youtube')}
             isConnecting={connecting === 'youtube'}
           />
         </View>
 
-        <TouchableOpacity style={styles.skipButton} onPress={handleContinue} activeOpacity={0.7}>
-          <Text style={styles.skipButtonText}>{t.onboarding.platforms.connectLater}</Text>
+        <TouchableOpacity onPress={() => router.push('/subscription' as any)} style={styles.skipButton}>
+          <Text style={styles.skipButtonText}>
+            {t.onboarding.platforms.connectLater}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </>
   );
 }
 
-// ---------------------------------------------
-// UI
-// ---------------------------------------------
+// ✅ ROBUSTE VERSION — crashes verhindern
 function PlatformCard({
   icon,
   name,
   color,
   status,
-  onConnect,
-  onDisconnect,
-  isConnecting,
-}: {
-  icon: React.ReactNode;
-  name: string;
-  color: string;
-  status?: { platform: Platform; connected: boolean; accountName?: string };
-  onConnect: () => void;
-  onDisconnect: () => void;
-  isConnecting: boolean;
+  onConnect = () => {},
+  onDisconnect = () => {},
+  isConnecting = false,
 }) {
-  const isConnected = status?.connected || false;
+  const isConnected = !!status?.connected;
+  const bg = color || '#888';
+
+  const handlePress = () => {
+    try {
+      if (isConnected) onDisconnect();
+      else onConnect();
+    } catch (e) {
+      console.error('[PlatformCard] onPress error:', e);
+    }
+  };
 
   return (
-    <View style={[styles.platformCard, { borderLeftColor: color, borderLeftWidth: 4 }]}>
+    <View style={[styles.platformCard, { borderLeftColor: bg, borderLeftWidth: 4 }]}>
       <View style={styles.platformInfo}>
         {icon}
         <View style={styles.platformTextContainer}>
           <Text style={styles.platformName}>{name}</Text>
-        {isConnected && status?.accountName && (
+          {isConnected && status?.accountName && (
             <Text style={styles.accountName}>{status.accountName}</Text>
           )}
         </View>
@@ -237,14 +196,13 @@ function PlatformCard({
       </View>
 
       {isConnecting ? (
-        <ActivityIndicator color={color} />
+        <ActivityIndicator color={bg} />
       ) : (
         <TouchableOpacity
-          style={[styles.connectButton, { backgroundColor: isConnected ? '#F3F4F6' : color }]}
-          onPress={isConnected ? onDisconnect : onConnect}
-          activeOpacity={0.8}
+          style={[styles.connectButton, { backgroundColor: isConnected ? '#F3F4F6' : bg }]}
+          onPress={handlePress}
         >
-          <Text style={[styles.connectButtonText, { color: isConnected ? '#6B7280' : '#FFFFFF' }]}>
+          <Text style={[styles.connectButtonText, { color: isConnected ? '#6B7280' : '#FFF' }]}>
             {isConnected ? 'Disconnect' : 'Connect'}
           </Text>
         </TouchableOpacity>
@@ -253,9 +211,7 @@ function PlatformCard({
   );
 }
 
-// ---------------------------------------------
-// Styles
-// ---------------------------------------------
+// ✅ Styles
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F9FA' },
   contentContainer: { padding: 24, paddingBottom: 40 },
@@ -264,24 +220,19 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 16, color: '#666', textAlign: 'center', paddingHorizontal: 20 },
   platforms: { gap: 16, marginBottom: 32 },
   platformCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFF',
     borderRadius: 16,
     padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   platformInfo: { flexDirection: 'row', alignItems: 'center', gap: 16, flex: 1 },
   platformTextContainer: { flex: 1 },
   platformName: { fontSize: 18, fontWeight: '600', color: '#0F1419' },
   accountName: { fontSize: 12, color: '#666', marginTop: 2 },
   connectButton: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
-  connectButtonText: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
+  connectButtonText: { fontSize: 14, fontWeight: '600' },
   skipButton: { paddingVertical: 16, alignItems: 'center' },
   skipButtonText: { fontSize: 16, fontWeight: '600', color: '#0A66C2' },
 });

@@ -18,17 +18,17 @@ export default function OAuthResultScreen() {
   const success = useMemo(() => ok === '1', [ok]);
   const platformName = Array.isArray(platform) ? platform[0] : platform;
 
-  // Nach erfolgreichem OAuth direkt im Context markieren -> connected = true
+  // Nach erfolgreichem OAuth direkt im Context markieren
   useEffect(() => {
     if (success && platformName) {
-      // Dummy werte für jetzt. Später ersetzen wir das mit echten Daten aus dem Backend.
+      // Platzhalter bis echtes Token aus Backend kommt
       connectPlatform(
-        platformName as any,        // Platform type ('linkedin' | 'instagram' | ...)
-        platformName + ' Account',  // accountName placeholder
-        'pending-account-id',       // accountId placeholder
-        undefined,                  // accessToken (kommt später vom Backend)
-        undefined,                  // refreshToken
-        undefined,                  // expiresAt
+        platformName as any,
+        platformName + ' Account',
+        'pending-account-id',
+        undefined,
+        undefined,
+        undefined,
       );
     }
   }, [success, platformName, connectPlatform]);
@@ -64,13 +64,13 @@ export default function OAuthResultScreen() {
       <TouchableOpacity
         style={styles.button}
         onPress={() => {
-          router.push('/connect');
+          // ✅ Fix: existierende Route verwenden
+          router.push('/onboarding/connect-platforms');
         }}
       >
-        <Text style={styles.buttonText}>Zurück</Text>
+        <Text style={styles.buttonText}>Weiter</Text>
       </TouchableOpacity>
 
-      {/* Debug Info, optional */}
       {state ? (
         <Text style={styles.debugText}>User-ID (state): {state}</Text>
       ) : null}
