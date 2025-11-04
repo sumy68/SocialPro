@@ -1,3 +1,4 @@
+// src/backend/hono.ts
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
@@ -21,7 +22,7 @@ const YT_CLIENT_SECRET = process.env.YT_CLIENT_SECRET || "";
 const YT_REDIRECT_URI = process.env.YT_REDIRECT_URI || "";
 
 // -------------------------------------------------
-// Deep Link zurück in die App
+// Helper: Deep Link zurück in die App
 // -------------------------------------------------
 function buildAppRedirect(
   platform: string,
@@ -81,7 +82,9 @@ app.use(
   })
 );
 
-// Root & Health
+// -------------------------------------------------
+// Health / Diagnostics
+// -------------------------------------------------
 app.get("/", (c) =>
   c.json({ ok: true, service: "socialpro-backend", version: 1 })
 );
@@ -92,6 +95,7 @@ app.get("/status", (c) =>
     timestamp: new Date().toISOString(),
   })
 );
+app.get("/health", (c) => c.json({ status: "ok" }));
 app.get("/healthz", (c) =>
   c.json({
     status: "ok",
@@ -102,19 +106,29 @@ app.get("/healthz", (c) =>
 app.get("/api/health", (c) =>
   c.json({ ok: true, service: "socialpro-backend", scope: "api" })
 );
+// Sichtbarer Ping für schnellen Live-Check
+app.get("/__ping", (c) => c.text("pong-socialpro"));
 
 // -------------------------------------------------
 // INSTAGRAM (Basic Display)
 // -------------------------------------------------
 app.get("/api/oauth/instagram/debug-env", (c) =>
   c.json({
-    hasClientId: !!IG_CLIENT_ID,
-    hasClientSecret: !!IG_CLIENT_SECRET,
+    hasClientId: Boolean(IG_CLIENT_ID),
+    hasClientSecret: Boolean(IG_CLIENT_SECRET),
     redirectUri: IG_REDIRECT_URI,
   })
 );
 
 app.get("/api/oauth/instagram/start", (c) => {
+  if (!IG_CLIENT_ID || !IG_REDIRECT_URI) {
+    console.error("[instagram/start] Missing envs", {
+      hasClientId: Boolean(IG_CLIENT_ID),
+      hasRedirect: Boolean(IG_REDIRECT_URI),
+    });
+    return c.text("Server misconfigured: IG_CLIENT_ID / IG_REDIRECT_URI fehlen.", 500);
+  }
+
   const state = crypto.randomUUID();
   const params = new URLSearchParams({
     client_id: IG_CLIENT_ID,
@@ -123,9 +137,10 @@ app.get("/api/oauth/instagram/start", (c) => {
     response_type: "code",
     state,
   });
-  return c.redirect(
-    `https://api.instagram.com/oauth/authorize?${params.toString()}`
-  );
+
+  const url = `https://api.instagram.com/oauth/authorize?${params.toString()}`;
+  console.log("[instagram/start] redirect ->", url);
+  return c.redirect(url);
 });
 
 app.get("/api/oauth/instagram/callback", async (c) => {
@@ -138,6 +153,10 @@ app.get("/api/oauth/instagram/callback", async (c) => {
   }
 
   try {
+    if (!IG_CLIENT_ID || !IG_CLIENT_SECRET || !IG_REDIRECT_URI) {
+      throw new Error("Server misconfigured: IG envs fehlen.");
+    }
+
     const tokenRes = await fetch("https://api.instagram.com/oauth/access_token", {
       method: "POST",
       body: new URLSearchParams({
@@ -283,5 +302,4 @@ app.get("/api/oauth/youtube/callback", async (c) => {
 // -------------------------------------------------
 // Export NACH allen Routen
 // -------------------------------------------------
-
 export default app;
