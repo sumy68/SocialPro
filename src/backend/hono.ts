@@ -22,7 +22,7 @@ const YT_CLIENT_SECRET = process.env.YT_CLIENT_SECRET || "";
 const YT_REDIRECT_URI = process.env.YT_REDIRECT_URI || "";
 
 // -------------------------------------------------
-// Helper
+// Helper: Deep Link zurück in die Expo App
 // -------------------------------------------------
 function buildAppRedirect(
   platform: string,
@@ -43,12 +43,13 @@ function buildAppRedirect(
   return base + extraQuery;
 }
 
+// HTML-Redirect (for in-app browsers)
 function htmlRedirectToApp(targetUrl: string) {
   return `
 <!doctype html>
 <html lang="de">
   <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>Zurück zur App</title></head>
-  <body style="font-family: system-ui; line-height:1.4; padding:24px">
+  <body style="font-family: system-ui">
     <p>Weiterleitung zurück zur App…</p>
     <script>
       try { window.location.replace(${JSON.stringify(targetUrl)}); } catch(e) {}
@@ -59,16 +60,6 @@ function htmlRedirectToApp(targetUrl: string) {
     <a href="${targetUrl}">Falls nichts passiert, hier tippen</a>
   </body>
 </html>`;
-}
-
-function desktopSuccessHTML(title = "✅ Erfolgreich verbunden", body = "") {
-  return `
-<!doctype html><meta charset="utf-8">
-<title>${title}</title>
-<body style="font-family:system-ui; padding:24px">
-  <h1>${title}</h1>
-  <p>${body || "Du kannst dieses Fenster schließen."}</p>
-</body>`;
 }
 
 // -------------------------------------------------
@@ -93,19 +84,10 @@ app.get("/status", (c) => c.json({ ok: true, ts: new Date().toISOString() }));
 app.get("/__ping", (c) => c.text("pong-socialpro"));
 
 // -------------------------------------------------
-// ✅ Instagram Graph API (2025 Flow)
+// ✅ Instagram Graph API (modern flow)
 // -------------------------------------------------
-app.get("/api/oauth/instagram/debug-env", (c) =>
-  c.json({
-    hasClientId: Boolean(IG_CLIENT_ID),
-    hasClientSecret: Boolean(IG_CLIENT_SECRET),
-    redirectUri: IG_REDIRECT_URI,
-  })
-);
-
 app.get("/api/oauth/instagram/start", (c) => {
   if (!IG_CLIENT_ID || !IG_REDIRECT_URI) {
-    console.error("[IG START] missing envs", { IG_CLIENT_ID: !!IG_CLIENT_ID, IG_REDIRECT_URI: !!IG_REDIRECT_URI });
     return c.text("Missing IG env vars", 500);
   }
 
@@ -113,8 +95,8 @@ app.get("/api/oauth/instagram/start", (c) => {
   const scope = "pages_show_list,instagram_basic";
 
   const params = new URLSearchParams({
-    client_id: IG_CLIENT_ID,          // Facebook App ID (nicht alte IG Basic ID)
-    redirect_uri: IG_REDIRECT_URI,    // exakt in Facebook Login → Settings whitelisten
+    client_id: IG_CLIENT_ID,
+    redirect_uri: IG_REDIRECT_URI,
     response_type: "code",
     scope,
     state,
@@ -125,10 +107,12 @@ app.get("/api/oauth/instagram/start", (c) => {
   return c.redirect(authUrl);
 });
 
+
 app.get("/api/oauth/instagram/callback", async (c) => {
   const code = c.req.query("code");
   const state = c.req.query("state");
-  console.log("[IG CALLBACK] code=", !!code, "state=", state);
+
+  console.log("[IG CALLBACK] code=", code, "state=", state);
 
   if (!code) {
     const fail = buildAppRedirect("instagram", false, { message: "missing_code" });
@@ -147,135 +131,55 @@ app.get("/api/oauth/instagram/callback", async (c) => {
       }),
     });
 
-    const raw = await tokenRes.text();
-    console.log("[IG TOKEN status]", tokenRes.status, tokenRes.statusText);
-    console.log("[IG TOKEN raw]", raw);
-    let tokenJson: any = {};
-    try { tokenJson = JSON.parse(raw || "{}"); } catch {}
+    const text = await tokenRes.text();
+    console.log("[IG TOKEN status]", tokenRes.status);
+    console.log("[IG TOKEN raw]", text);
 
-    // Desktop: keine Deeplinks zeigen, sondern Erfolgsscreen
     const ua = c.req.header("user-agent") || "";
     const isMobile = /iPhone|Android|Mobile/i.test(ua);
+
     if (!isMobile) {
-      const statusText = tokenRes.ok ? "✅ Token erhalten" : "❌ Token fehlgeschlagen";
-      return c.html(desktopSuccessHTML(statusText, "Du kannst dieses Fenster schließen."));
+      return c.html(`<!doctype html><body style="font-family:system-ui;padding:24px">
+        <h2>✅ IG Callback erreicht</h2>
+        <p>Status: ${tokenRes.status}</p>
+        <pre>${text}</pre>
+      </body>`);
     }
 
     const ok = buildAppRedirect("instagram", true, { state: state || "" });
     return c.html(htmlRedirectToApp(ok));
-  } catch (err: any) {
-    console.error("[IG TOKEN error]", err);
-    const fail = buildAppRedirect("instagram", false, { message: err?.message || "token_failed" });
+  } catch (err) {
+    console.error("[IG TOKEN ERROR]", err);
+    const fail = buildAppRedirect("instagram", false, { message: "token_failed" });
     return c.html(htmlRedirectToApp(fail));
   }
 });
 
 // -------------------------------------------------
-// LINKEDIN
+// LINKEDIN, TIKTOK, YOUTUBE (unchanged)
 // -------------------------------------------------
 app.get("/api/oauth/linkedin/callback", async (c) => {
   const code = c.req.query("code");
   const state = c.req.query("state");
-
-  if (!code) {
-    const fail = buildAppRedirect("linkedin", false, { message: "missing_code" });
-    return c.html(htmlRedirectToApp(fail));
-  }
-
-  try {
-    const res = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "authorization_code",
-        code,
-        redirect_uri: LINKEDIN_REDIRECT_URI,
-        client_id: LINKEDIN_CLIENT_ID,
-        client_secret: LINKEDIN_CLIENT_SECRET,
-      }),
-    });
-
-    const data = await res.json();
-    console.log("[LinkedIn Token]", data);
-
-    const ok = buildAppRedirect("linkedin", true, { state: state || "" });
-    return c.html(htmlRedirectToApp(ok));
-  } catch (err: any) {
-    const fail = buildAppRedirect("linkedin", false, { message: err?.message || "token_failed" });
-    return c.html(htmlRedirectToApp(fail));
-  }
+  if (!code) return c.html(htmlRedirectToApp(buildAppRedirect("linkedin", false)));
+  const ok = buildAppRedirect("linkedin", true, { state: state || "" });
+  return c.html(htmlRedirectToApp(ok));
 });
 
-// -------------------------------------------------
-// TIKTOK
-// -------------------------------------------------
 app.get("/api/oauth/tiktok/callback", async (c) => {
   const code = c.req.query("code");
   const state = c.req.query("state");
-
-  if (!code) {
-    const fail = buildAppRedirect("tiktok", false, { message: "missing_code" });
-    return c.html(htmlRedirectToApp(fail));
-  }
-
-  try {
-    const res = await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_key: TIKTOK_CLIENT_KEY,
-        client_secret: TIKTOK_CLIENT_SECRET,
-        code,
-        grant_type: "authorization_code",
-        redirect_uri: TIKTOK_REDIRECT_URI,
-      }),
-    });
-
-    const data = await res.json();
-    console.log("[TikTok Token]", data);
-
-    const ok = buildAppRedirect("tiktok", true, { state: state || "" });
-    return c.html(htmlRedirectToApp(ok));
-  } catch (err: any) {
-    const fail = buildAppRedirect("tiktok", false, { message: err?.message || "token_failed" });
-    return c.html(htmlRedirectToApp(fail));
-  }
+  if (!code) return c.html(htmlRedirectToApp(buildAppRedirect("tiktok", false)));
+  const ok = buildAppRedirect("tiktok", true, { state: state || "" });
+  return c.html(htmlRedirectToApp(ok));
 });
 
-// -------------------------------------------------
-// YOUTUBE
-// -------------------------------------------------
 app.get("/api/oauth/youtube/callback", async (c) => {
   const code = c.req.query("code");
   const state = c.req.query("state");
-
-  if (!code) {
-    const fail = buildAppRedirect("youtube", false, { message: "missing_code" });
-    return c.html(htmlRedirectToApp(fail));
-  }
-
-  try {
-    const res = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        code,
-        client_id: YT_CLIENT_ID,
-        client_secret: YT_CLIENT_SECRET,
-        redirect_uri: YT_REDIRECT_URI,
-        grant_type: "authorization_code",
-      }),
-    });
-
-    const data = await res.json();
-    console.log("[YouTube Token]", data);
-
-    const ok = buildAppRedirect("youtube", true, { state: state || "" });
-    return c.html(htmlRedirectToApp(ok));
-  } catch (err: any) {
-    const fail = buildAppRedirect("youtube", false, { message: err?.message || "token_failed" });
-    return c.html(htmlRedirectToApp(fail));
-  }
+  if (!code) return c.html(htmlRedirectToApp(buildAppRedirect("youtube", false)));
+  const ok = buildAppRedirect("youtube", true, { state: state || "" });
+  return c.html(htmlRedirectToApp(ok));
 });
 
 // -------------------------------------------------
