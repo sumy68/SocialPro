@@ -28,8 +28,6 @@ function buildAppRedirect(
   ok: boolean,
   extra?: Record<string, string>
 ) {
-  // Du nutzt aktuell dieses Deep-Link-Pattern:
-  // socialpro://connected/success?platform=instagram&ok=1
   const base = `socialpro://connected/success?platform=${encodeURIComponent(
     platform
   )}&ok=${ok ? "1" : "0"}`;
@@ -106,7 +104,7 @@ app.get("/api/health", (c) =>
 );
 
 // -------------------------------------------------
-// INSTAGRAM START (Basic Display)
+// INSTAGRAM (Basic Display)
 // -------------------------------------------------
 app.get("/api/oauth/instagram/debug-env", (c) =>
   c.json({
@@ -130,7 +128,6 @@ app.get("/api/oauth/instagram/start", (c) => {
   );
 });
 
-// INSTAGRAM CALLBACK
 app.get("/api/oauth/instagram/callback", async (c) => {
   const code = c.req.query("code");
   const state = c.req.query("state");
@@ -147,15 +144,13 @@ app.get("/api/oauth/instagram/callback", async (c) => {
         client_id: IG_CLIENT_ID,
         client_secret: IG_CLIENT_SECRET,
         grant_type: "authorization_code",
-        redirect_uri: IG_REDIRECT_URI, // exakt identisch zu /start & Meta-Whitelist
+        redirect_uri: IG_REDIRECT_URI, // identisch zu START & Meta-Whitelist
         code,
       }),
     });
 
     const tokenJson = await tokenRes.json();
     console.log("[instagram/callback] token response:", tokenJson);
-
-    // Hier könntest du tokenJson.access_token speichern/weiterverarbeiten
 
     const target = buildAppRedirect("instagram", true, { state: state || "" });
     return c.html(htmlRedirectToApp(target));
@@ -285,6 +280,8 @@ app.get("/api/oauth/youtube/callback", async (c) => {
   }
 });
 
-export default {
-  fetch: (req: Request) => app.fetch(req),
-};
+// -------------------------------------------------
+// Export NACH allen Routen
+// -------------------------------------------------
+
+export default app;
