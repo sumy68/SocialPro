@@ -198,4 +198,14 @@ app.get('/auth/tiktok/callback', async (c) => {
   return c.json({ ok: true, source: 'tiktok', code, state });
 });
 
+const BOOT_TS = new Date().toISOString();
+
+app.get("/api/_whoami", (c) =>
+  c.json({
+    boot: BOOT_TS,
+    fileHint: "this is the hono.ts build",
+    redirectUri: IG_REDIRECT_URI,
+  })
+);
+
 export default app;
