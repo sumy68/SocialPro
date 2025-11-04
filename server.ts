@@ -1,47 +1,15 @@
 // server.ts
-import { serve } from '@hono/node-server';
+// Starte Hono auf Render
 
-async function loadApp() {
-  try {
-    // Falls du später Aliases hast (z. B. "@")
-    const mod = await import('@/src/backend/hono');
-    return mod.default;
-  } catch {
-    // ✅ Funktioniert garantiert — richtiger Pfad!
-    const mod = await import('./src/backend/hono');
-    return mod.default;
-  }
-}
+import { serve } from "@hono/node-server";
+import app from "./backend/socialpro-backend/hono";
 
-(async () => {
-  const app = await loadApp();
-  const port = Number(process.env.PORT) || 3000;
+const port = Number(process.env.PORT || 10000);
 
-  const fetchHandler = (req: Request) => {
-    const url = new URL(req.url);
+console.log(`[server] Running on 0.0.0.0:${port}`);
 
-    // ✅ Render Healthcheck
-    if (url.pathname === '/healthz') {
-      return new Response(
-        JSON.stringify({ status: 'ok', message: 'API is running' }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-          },
-        }
-      );
-    }
-
-    return app.fetch(req);
-  };
-
-  serve({
-    fetch: fetchHandler,
-    hostname: '0.0.0.0', // ✅ wichtig für Render
-    port,
-  });
-
-  console.log(`[server] Running on http://0.0.0.0:${port} (health: /healthz)`);
-})();
+serve({
+  fetch: app.fetch,
+  hostname: "0.0.0.0", // notwendig für Render
+  port,
+});
