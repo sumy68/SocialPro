@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 // -------------------------------------------------
-// ENV Variablen (auf Render setzen!)
+// ENV Variablen (Render Dashboard setzen!)
 // -------------------------------------------------
 const LINKEDIN_CLIENT_ID = process.env.LINKEDIN_CLIENT_ID || "";
 const LINKEDIN_CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET || "";
@@ -22,7 +22,7 @@ const YT_CLIENT_SECRET = process.env.YT_CLIENT_SECRET || "";
 const YT_REDIRECT_URI = process.env.YT_REDIRECT_URI || "";
 
 // -------------------------------------------------
-// Helper: Deep Link zurück in die App
+// Helper: Deep Link zurück in die Expo App
 // -------------------------------------------------
 function buildAppRedirect(
   platform: string,
@@ -43,25 +43,19 @@ function buildAppRedirect(
   return base + extraQuery;
 }
 
-// HTML + JS Redirect (stabil in Safari/In-App Browsern)
+// HTML-Redirect (for in-app browsers)
 function htmlRedirectToApp(targetUrl: string) {
   return `
 <!doctype html>
 <html lang="de">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Zurück zur App…</title>
-  </head>
-  <body style="font-family: -apple-system, system-ui, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial;">
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>Zurück zur App</title></head>
+  <body style="font-family: system-ui">
     <p>Weiterleitung zurück zur App…</p>
     <script>
-      (function(){
-        try { window.location.replace(${JSON.stringify(targetUrl)}); } catch(e) {}
-        setTimeout(function(){ window.location.href = ${JSON.stringify(
-          targetUrl
-        )}; }, 1200);
-      })();
+      try { window.location.replace(${JSON.stringify(targetUrl)}); } catch(e) {}
+      setTimeout(function(){ window.location.href = ${JSON.stringify(
+        targetUrl
+      )}; }, 1200);
     </script>
     <a href="${targetUrl}">Falls nichts passiert, hier tippen</a>
   </body>
@@ -83,34 +77,14 @@ app.use(
 );
 
 // -------------------------------------------------
-// Health / Diagnostics
+// Health / Ping
 // -------------------------------------------------
-app.get("/", (c) =>
-  c.json({ ok: true, service: "socialpro-backend", version: 1 })
-);
-app.get("/status", (c) =>
-  c.json({
-    ok: true,
-    service: "socialpro-backend",
-    timestamp: new Date().toISOString(),
-  })
-);
-app.get("/health", (c) => c.json({ status: "ok" }));
-app.get("/healthz", (c) =>
-  c.json({
-    status: "ok",
-    message: "API is running",
-    service: "socialpro-backend",
-  })
-);
-app.get("/api/health", (c) =>
-  c.json({ ok: true, service: "socialpro-backend", scope: "api" })
-);
-// Sichtbarer Ping für schnellen Live-Check
+app.get("/", (c) => c.json({ ok: true, service: "socialpro-backend", version: 2 }));
+app.get("/status", (c) => c.json({ ok: true, ts: new Date().toISOString() }));
 app.get("/__ping", (c) => c.text("pong-socialpro"));
 
 // -------------------------------------------------
-// INSTAGRAM (Basic Display)
+// ✅ Instagram Graph API (correct 2025 flow)
 // -------------------------------------------------
 app.get("/api/oauth/instagram/debug-env", (c) =>
   c.json({
@@ -122,25 +96,24 @@ app.get("/api/oauth/instagram/debug-env", (c) =>
 
 app.get("/api/oauth/instagram/start", (c) => {
   if (!IG_CLIENT_ID || !IG_REDIRECT_URI) {
-    console.error("[instagram/start] Missing envs", {
-      hasClientId: Boolean(IG_CLIENT_ID),
-      hasRedirect: Boolean(IG_REDIRECT_URI),
-    });
-    return c.text("Server misconfigured: IG_CLIENT_ID / IG_REDIRECT_URI fehlen.", 500);
+    return c.text("Missing IG env vars", 500);
   }
 
   const state = crypto.randomUUID();
+  const scope = "pages_show_list,instagram_basic";
+
   const params = new URLSearchParams({
     client_id: IG_CLIENT_ID,
-    redirect_uri: IG_REDIRECT_URI, // MUSS in Meta-Whitelist sein
-    scope: "user_profile, user_media",
+    redirect_uri: IG_REDIRECT_URI,
     response_type: "code",
+    scope,
     state,
   });
 
-  const url = `https://api.instagram.com/oauth/authorize?${params.toString()}`;
-  console.log("[instagram/start] redirect ->", url);
-  return c.redirect(url);
+  const authUrl = `https://www.facebook.com/v20.0/dialog/oauth?${params.toString()}`;
+
+  console.log("[IG START] ", authUrl);
+  return c.redirect(authUrl);
 });
 
 app.get("/api/oauth/instagram/callback", async (c) => {
@@ -148,37 +121,30 @@ app.get("/api/oauth/instagram/callback", async (c) => {
   const state = c.req.query("state");
 
   if (!code) {
-    const target = buildAppRedirect("instagram", false, { message: "missing_code" });
-    return c.html(htmlRedirectToApp(target));
+    const fail = buildAppRedirect("instagram", false, { message: "missing_code" });
+    return c.html(htmlRedirectToApp(fail));
   }
 
   try {
-    if (!IG_CLIENT_ID || !IG_CLIENT_SECRET || !IG_REDIRECT_URI) {
-      throw new Error("Server misconfigured: IG envs fehlen.");
-    }
-
-    const tokenRes = await fetch("https://api.instagram.com/oauth/access_token", {
+    const tokenRes = await fetch("https://graph.facebook.com/v20.0/oauth/access_token", {
       method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         client_id: IG_CLIENT_ID,
         client_secret: IG_CLIENT_SECRET,
-        grant_type: "authorization_code",
-        redirect_uri: IG_REDIRECT_URI, // identisch zu START & Meta-Whitelist
+        redirect_uri: IG_REDIRECT_URI,
         code,
       }),
     });
 
     const tokenJson = await tokenRes.json();
-    console.log("[instagram/callback] token response:", tokenJson);
+    console.log("[IG TOKEN] ", tokenJson);
 
-    const target = buildAppRedirect("instagram", true, { state: state || "" });
-    return c.html(htmlRedirectToApp(target));
+    const ok = buildAppRedirect("instagram", true, { state: state || "" });
+    return c.html(htmlRedirectToApp(ok));
   } catch (err: any) {
-    console.error("[instagram/callback] error", err);
-    const target = buildAppRedirect("instagram", false, {
-      message: err?.message || "token_failed",
-    });
-    return c.html(htmlRedirectToApp(target));
+    const fail = buildAppRedirect("instagram", false, { message: err?.message });
+    return c.html(htmlRedirectToApp(fail));
   }
 });
 
@@ -189,10 +155,7 @@ app.get("/api/oauth/linkedin/callback", async (c) => {
   const code = c.req.query("code");
   const state = c.req.query("state");
 
-  if (!code) {
-    const target = buildAppRedirect("linkedin", false, { message: "missing_code" });
-    return c.html(htmlRedirectToApp(target));
-  }
+  if (!code) return c.html(htmlRedirectToApp(buildAppRedirect("linkedin", false)));
 
   try {
     const res = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
@@ -207,17 +170,11 @@ app.get("/api/oauth/linkedin/callback", async (c) => {
       }),
     });
 
-    const data = await res.json();
-    console.log("[linkedin/callback] token response:", data);
+    console.log("[LinkedIn Token]", await res.json());
 
-    const target = buildAppRedirect("linkedin", true, { state: state || "" });
-    return c.html(htmlRedirectToApp(target));
-  } catch (err: any) {
-    console.error("[linkedin/callback] error", err);
-    const target = buildAppRedirect("linkedin", false, {
-      message: err?.message || "token_failed",
-    });
-    return c.html(htmlRedirectToApp(target));
+    return c.html(htmlRedirectToApp(buildAppRedirect("linkedin", true, { state })));
+  } catch {
+    return c.html(htmlRedirectToApp(buildAppRedirect("linkedin", false)));
   }
 });
 
@@ -228,10 +185,7 @@ app.get("/api/oauth/tiktok/callback", async (c) => {
   const code = c.req.query("code");
   const state = c.req.query("state");
 
-  if (!code) {
-    const target = buildAppRedirect("tiktok", false, { message: "missing_code" });
-    return c.html(htmlRedirectToApp(target));
-  }
+  if (!code) return c.html(htmlRedirectToApp(buildAppRedirect("tiktok", false)));
 
   try {
     const res = await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
@@ -246,17 +200,11 @@ app.get("/api/oauth/tiktok/callback", async (c) => {
       }),
     });
 
-    const data = await res.json();
-    console.log("[tiktok/callback] token response:", data);
+    console.log("[TikTok Token]", await res.json());
 
-    const target = buildAppRedirect("tiktok", true, { state: state || "" });
-    return c.html(htmlRedirectToApp(target));
-  } catch (err: any) {
-    console.error("[tiktok/callback] error", err);
-    const target = buildAppRedirect("tiktok", false, {
-      message: err?.message || "token_failed",
-    });
-    return c.html(htmlRedirectToApp(target));
+    return c.html(htmlRedirectToApp(buildAppRedirect("tiktok", true, { state })));
+  } catch {
+    return c.html(htmlRedirectToApp(buildAppRedirect("tiktok", false)));
   }
 });
 
@@ -267,10 +215,7 @@ app.get("/api/oauth/youtube/callback", async (c) => {
   const code = c.req.query("code");
   const state = c.req.query("state");
 
-  if (!code) {
-    const target = buildAppRedirect("youtube", false, { message: "missing_code" });
-    return c.html(htmlRedirectToApp(target));
-  }
+  if (!code) return c.html(htmlRedirectToApp(buildAppRedirect("youtube", false)));
 
   try {
     const res = await fetch("https://oauth2.googleapis.com/token", {
@@ -285,21 +230,15 @@ app.get("/api/oauth/youtube/callback", async (c) => {
       }),
     });
 
-    const data = await res.json();
-    console.log("[youtube/callback] token response:", data);
+    console.log("[YouTube Token]", await res.json());
 
-    const target = buildAppRedirect("youtube", true, { state: state || "" });
-    return c.html(htmlRedirectToApp(target));
-  } catch (err: any) {
-    console.error("[youtube/callback] error", err);
-    const target = buildAppRedirect("youtube", false, {
-      message: err?.message || "token_failed",
-    });
-    return c.html(htmlRedirectToApp(target));
+    return c.html(htmlRedirectToApp(buildAppRedirect("youtube", true, { state })));
+  } catch {
+    return c.html(htmlRedirectToApp(buildAppRedirect("youtube", false)));
   }
 });
 
 // -------------------------------------------------
-// Export NACH allen Routen
+// Export
 // -------------------------------------------------
 export default app;
