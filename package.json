@@ -7,25 +7,19 @@
     "node": "22.x"
   },
   "scripts": {
-    "// expo dev": "––––––––––––––––––––––––––––––––––",
-    "start": "expo start -c",
-    "start:localhost": "expo start --localhost --port 8081 -c",
-    "start:lan": "expo start --lan -c",
-    "start:tunnel": "expo start --tunnel -c",
-    "start-web": "expo start --web -c",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
+  "build": "tsc -p tsconfig.server.json",
+  "render-build": "npm run build",
+  "render-start": "node dist/server.js",
+  "start": "expo start -c",
+  "start:localhost": "expo start --localhost --port 8081 -c",
+  "start:lan": "expo start --lan -c",
+  "start:tunnel": "expo start --tunnel -c",
+  "start-web": "expo start --web -c",
+  "android": "expo run:android",
+  "ios": "expo run:ios",
+  "lint": "expo lint"
+}
 
-    "// local server dev (optional)": "––––––––––––––––––––––––––––––",
-    "server:start": "tsx backend/socialpro-backend/hono.ts",
-
-    "// render build/start": "––––––––––––––––––––––––––––––––––",
-    "build": "tsc",
-    "render-build": "npm run build",
-    "render-start": "node dist/backend/socialpro-backend/hono.js",
-
-    "// lint": "––––––––––––––––––––––––––––––––––",
-    "lint": "expo lint"
   },
   "dependencies": {
     "@ai-sdk/react": "^2.0.76",
