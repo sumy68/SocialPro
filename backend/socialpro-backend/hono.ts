@@ -1,4 +1,4 @@
-// backend/socialpro-backend/hono.ts
+app.get('/__ping', c => c.text('pong-socialpro'))
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
