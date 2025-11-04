@@ -43,3 +43,6 @@ node_modules_old/
 backup_fix/
 health/
 backend/socialpro-backend/.env
+
+dist/
+
