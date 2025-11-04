@@ -12,12 +12,11 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 
 console.log("[ENV TEST]", process.env.EXPO_PUBLIC_APP_URL);
 
-// Splash direkt verhindern, aber Fehler schlucken (nie throwen)
+// Splash-Screen steuern, Fehler nie werfen
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const queryClient = new QueryClient();
 
-// Optional: Start im Tab-Bereich
 export const unstable_settings = {
   initialRouteName: "(tabs)",
 };
@@ -30,7 +29,7 @@ function RootLayoutNav() {
 
   const [appReady, setAppReady] = useState(false);
 
-  // 1) Splash niemals ewig stehen lassen (Fail-Open nach 2.5s)
+  // Splash Timeout + Hide
   useEffect(() => {
     let cancelled = false;
 
@@ -41,7 +40,6 @@ function RootLayoutNav() {
       }
     }, 2500);
 
-    // Sobald der App-Context „fertig“ meldet → sofort Splash weg
     if (!isLoading) {
       setAppReady(true);
       SplashScreen.hideAsync().catch(() => {});
@@ -53,7 +51,6 @@ function RootLayoutNav() {
     };
   }, [isLoading]);
 
-  // 2) Segment-Flags (für Redirect-Regeln)
   const { inOnboarding, inSubscription, inTabs, inWeeklyReview, allowOutsideTabs } = useMemo(() => {
     const list = Array.isArray(segments) ? (segments as unknown as string[]) : [];
     const first = list[0] || "";
@@ -64,36 +61,31 @@ function RootLayoutNav() {
       inSubscription: first === "subscription",
       inTabs: first === "(tabs)",
       inWeeklyReview: first === "weekly-review",
-      // ggf. eine Route erlauben, die außerhalb der Tabs liegt
       allowOutsideTabs:
         path === "onboarding/connect-platforms" ||
-        path === "connected/success",
+        path === "connected/success", // ✅ erlaubt
     };
   }, [segments]);
 
-  // 3) Redirects erst ausführen, wenn Navigation „ready“ UND App sichtbar ist
+  // Navigation rules
   useEffect(() => {
     if (!appReady) return;
-    if (!navState?.key) return; // Navigation noch nicht bereit → warten
+    if (!navState?.key) return;
 
-    // weekly-review nicht umleiten
     if (inWeeklyReview) return;
 
-    // Onboarding erzwungen
     if (!hasCompletedOnboarding && !inOnboarding) {
-      router.replace("/onboarding/welcome" as any);
+      router.replace("/onboarding/welcome");
       return;
     }
 
-    // Subscription erzwungen
     if (hasCompletedOnboarding && !hasActiveSubscription() && !inSubscription) {
-      router.replace("/subscription" as any);
+      router.replace("/subscription");
       return;
     }
 
-    // Fertig → in Tabs, falls wir nicht schon dort sind (außer erlaubte Einzelroute)
     if (hasCompletedOnboarding && hasActiveSubscription() && !inTabs && !allowOutsideTabs) {
-      router.replace("/(tabs)/(dashboard)" as any);
+      router.replace("/(tabs)/(dashboard)");
     }
   }, [
     appReady,
@@ -108,7 +100,7 @@ function RootLayoutNav() {
     router,
   ]);
 
-  // Wichtig: Den Stack IMMER rendern (kein "return null"), damit bei Delays trotzdem UI entsteht.
+  // ✅ remove "connect" screen — it's causing route warnings
   return (
     <Stack screenOptions={{ headerBackTitle: "Back" }}>
       <Stack.Screen name="onboarding/welcome" options={{ headerShown: false }} />
@@ -121,11 +113,7 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="weekly-review" options={{ headerShown: false, presentation: "card" }} />
 
-      {/* NEU: OAuth-Screens */}
-      <Stack.Screen
-        name="connect"
-        options={{ title: "Plattformen verbinden" }}
-      />
+      {/* ✅ OAuth Success Screen */}
       <Stack.Screen
         name="connected/success"
         options={{ title: "Verbindung", presentation: "modal" }}

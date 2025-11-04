@@ -20,7 +20,7 @@ export default async function startInstagramOAuth(state: string = 'test-user-123
 
   const returnUrl = AuthSession.makeRedirectUri({
     scheme: SCHEME,             // z. B. 'socialpro'
-    path: 'connected/success',  // entspricht app/connected/success.tsx
+    path: '/connected/success',  // entspricht app/connected/success.tsx
     preferLocalhost: true,
   });
 
