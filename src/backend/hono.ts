@@ -133,7 +133,7 @@ app.get("/api/oauth/instagram/start", (c) => {
   const params = new URLSearchParams({
     client_id: IG_CLIENT_ID,
     redirect_uri: IG_REDIRECT_URI, // MUSS in Meta-Whitelist sein
-    scope: "user_profile",
+    scope: "user_profile, user_media",
     response_type: "code",
     state,
   });
