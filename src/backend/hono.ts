@@ -143,7 +143,7 @@ app.get("/api/oauth/instagram/callback", async (c) => {
     const ok = buildAppRedirect("instagram", true, { state: state || "" });
     return c.html(htmlRedirectToApp(ok));
   } catch (err: any) {
-    const fail = buildAppRedirect("instagram", false, { message: err?.message });
+    const fail = buildAppRedirect("instagram", false, { message: err?.message || "token_failed" });
     return c.html(htmlRedirectToApp(fail));
   }
 });
@@ -155,7 +155,10 @@ app.get("/api/oauth/linkedin/callback", async (c) => {
   const code = c.req.query("code");
   const state = c.req.query("state");
 
-  if (!code) return c.html(htmlRedirectToApp(buildAppRedirect("linkedin", false)));
+  if (!code) {
+    const fail = buildAppRedirect("linkedin", false, { message: "missing_code" });
+    return c.html(htmlRedirectToApp(fail));
+  }
 
   try {
     const res = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
@@ -170,11 +173,14 @@ app.get("/api/oauth/linkedin/callback", async (c) => {
       }),
     });
 
-    console.log("[LinkedIn Token]", await res.json());
+    const data = await res.json();
+    console.log("[LinkedIn Token]", data);
 
-    return c.html(htmlRedirectToApp(buildAppRedirect("linkedin", true, { state })));
-  } catch {
-    return c.html(htmlRedirectToApp(buildAppRedirect("linkedin", false)));
+    const ok = buildAppRedirect("linkedin", true, { state: state || "" });
+    return c.html(htmlRedirectToApp(ok));
+  } catch (err: any) {
+    const fail = buildAppRedirect("linkedin", false, { message: err?.message || "token_failed" });
+    return c.html(htmlRedirectToApp(fail));
   }
 });
 
@@ -185,7 +191,10 @@ app.get("/api/oauth/tiktok/callback", async (c) => {
   const code = c.req.query("code");
   const state = c.req.query("state");
 
-  if (!code) return c.html(htmlRedirectToApp(buildAppRedirect("tiktok", false)));
+  if (!code) {
+    const fail = buildAppRedirect("tiktok", false, { message: "missing_code" });
+    return c.html(htmlRedirectToApp(fail));
+  }
 
   try {
     const res = await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
@@ -200,11 +209,14 @@ app.get("/api/oauth/tiktok/callback", async (c) => {
       }),
     });
 
-    console.log("[TikTok Token]", await res.json());
+    const data = await res.json();
+    console.log("[TikTok Token]", data);
 
-    return c.html(htmlRedirectToApp(buildAppRedirect("tiktok", true, { state })));
-  } catch {
-    return c.html(htmlRedirectToApp(buildAppRedirect("tiktok", false)));
+    const ok = buildAppRedirect("tiktok", true, { state: state || "" });
+    return c.html(htmlRedirectToApp(ok));
+  } catch (err: any) {
+    const fail = buildAppRedirect("tiktok", false, { message: err?.message || "token_failed" });
+    return c.html(htmlRedirectToApp(fail));
   }
 });
 
@@ -215,7 +227,10 @@ app.get("/api/oauth/youtube/callback", async (c) => {
   const code = c.req.query("code");
   const state = c.req.query("state");
 
-  if (!code) return c.html(htmlRedirectToApp(buildAppRedirect("youtube", false)));
+  if (!code) {
+    const fail = buildAppRedirect("youtube", false, { message: "missing_code" });
+    return c.html(htmlRedirectToApp(fail));
+  }
 
   try {
     const res = await fetch("https://oauth2.googleapis.com/token", {
@@ -230,11 +245,14 @@ app.get("/api/oauth/youtube/callback", async (c) => {
       }),
     });
 
-    console.log("[YouTube Token]", await res.json());
+    const data = await res.json();
+    console.log("[YouTube Token]", data);
 
-    return c.html(htmlRedirectToApp(buildAppRedirect("youtube", true, { state })));
-  } catch {
-    return c.html(htmlRedirectToApp(buildAppRedirect("youtube", false)));
+    const ok = buildAppRedirect("youtube", true, { state: state || "" });
+    return c.html(htmlRedirectToApp(ok));
+  } catch (err: any) {
+    const fail = buildAppRedirect("youtube", false, { message: err?.message || "token_failed" });
+    return c.html(htmlRedirectToApp(fail));
   }
 });
 
