@@ -46,3 +46,6 @@ backend/socialpro-backend/.env
 
 dist/
 
+
+dist/
+backup_fix/
