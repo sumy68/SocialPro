@@ -1,5 +1,7 @@
+// src/backend/hono.ts
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { randomUUID } from "node:crypto";
 
 // -------------------------------------------------
 // Hono Setup
@@ -16,11 +18,6 @@ app.use(
 );
 
 // -------------------------------------------------
-// ✅ Instagram Graph API Test Endpoint
-// -------------------------------------------------
-app.route("/api/instagram", instagramTest);
-
-// -------------------------------------------------
 // ENV Variablen (Render Dashboard setzen!)
 // -------------------------------------------------
 const LINKEDIN_CLIENT_ID = process.env.LINKEDIN_CLIENT_ID || "";
@@ -33,7 +30,7 @@ const TIKTOK_REDIRECT_URI = process.env.TIKTOK_REDIRECT_URI || "";
 
 const IG_CLIENT_ID = process.env.IG_CLIENT_ID || "";
 const IG_CLIENT_SECRET = process.env.IG_CLIENT_SECRET || "";
-const IG_REDIRECT_URI = process.env.IG_REDIRECT_URI || "";
+const IG_REDIRECT_URI = process.env.IG_REDIRECT_URI || ""; // z.B. https://socialpro-fnvo.onrender.com/api/oauth/instagram/callback
 
 const YT_CLIENT_ID = process.env.YT_CLIENT_ID || "";
 const YT_CLIENT_SECRET = process.env.YT_CLIENT_SECRET || "";
@@ -87,15 +84,21 @@ app.get("/", (c) => c.json({ ok: true, service: "socialpro-backend", version: 2 
 app.get("/status", (c) => c.json({ ok: true, ts: new Date().toISOString() }));
 app.get("/__ping", (c) => c.text("pong-socialpro"));
 
+// API Health (für deine curl-Checks)
+app.get("/api/healthz", (c) => c.json({ ok: true, ts: Date.now() }));
+
+// Optional: Commit/Version
+app.get("/api/version", (c) => c.text(process.env.RENDER_GIT_COMMIT || "dev"));
+
 // -------------------------------------------------
 // ✅ Instagram OAuth Flow (für User-Login)
 // -------------------------------------------------
-app.get("/api/oauth/instagram/start", (c) => {
+const instagramStart = (c: any) => {
   if (!IG_CLIENT_ID || !IG_REDIRECT_URI) {
     return c.text("Missing IG env vars", 500);
   }
 
-  const state = crypto.randomUUID();
+  const state = randomUUID();
   const scope = "pages_show_list,instagram_basic";
 
   const params = new URLSearchParams({
@@ -108,8 +111,14 @@ app.get("/api/oauth/instagram/start", (c) => {
 
   const authUrl = `https://www.facebook.com/v20.0/dialog/oauth?${params.toString()}`;
   console.log("[IG START]", authUrl);
-  return c.redirect(authUrl);
-});
+  return c.redirect(authUrl, 302);
+};
+
+// Neuer, sauberer Pfad
+app.get("/api/oauth/instagram/start", instagramStart);
+
+// Alias (falls du alte Tests mit /api/oaustart hast)
+app.get("/api/oaustart", instagramStart);
 
 app.get("/api/oauth/instagram/callback", async (c) => {
   const code = c.req.query("code");
@@ -159,7 +168,7 @@ app.get("/api/oauth/instagram/callback", async (c) => {
 });
 
 // -------------------------------------------------
-// LINKEDIN, TIKTOK, YOUTUBE (unchanged)
+// LINKEDIN, TIKTOK, YOUTUBE (Callbacks wie gehabt)
 // -------------------------------------------------
 app.get("/api/oauth/linkedin/callback", async (c) => {
   const code = c.req.query("code");
@@ -184,6 +193,11 @@ app.get("/api/oauth/youtube/callback", async (c) => {
   const ok = buildAppRedirect("youtube", true, { state: state || "" });
   return c.html(htmlRedirectToApp(ok));
 });
+
+// -------------------------------------------------
+// 404 JSON
+// -------------------------------------------------
+app.notFound((c) => c.json({ error: "Not Found", path: c.req.path }, 404));
 
 // -------------------------------------------------
 // Export
