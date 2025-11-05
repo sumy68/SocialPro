@@ -23,11 +23,11 @@ export default async function startInstagramOAuth(state: string = 'test-user-123
   // Deep link zurück in die App
   const returnUrl = AuthSession.makeRedirectUri({
     scheme: SCHEME,
-    path: 'connected/success'
+    path: 'connected/success',
   });
 
-  // Dein Backend übernimmt alles, nur state mitgeben
-  const startUrl = `${APP_URL}/auth/instagram/start?state=${encodeURIComponent(state)}`;
+  // ✅ richtiger Endpoint mit /api/oauth/instagram/start
+  const startUrl = `${APP_URL}/api/oauth/instagram/start?redirect_uri=${encodeURIComponent(returnUrl)}&state=${encodeURIComponent(state)}`;
 
   return WebBrowser.openAuthSessionAsync(startUrl, returnUrl);
 }
