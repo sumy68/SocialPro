@@ -1,7 +1,7 @@
 // app/utils/instagramOAuth.ts
-import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session';
-import Constants from 'expo-constants';
+import * as WebBrowser from "expo-web-browser";
+import * as AuthSession from "expo-auth-session";
+import Constants from "expo-constants";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -9,25 +9,28 @@ WebBrowser.maybeCompleteAuthSession();
  * Startet den Instagram OAuth Flow über dein Backend
  * und leitet nach dem Login zurück auf: app/connected/success.tsx
  */
-export default async function startInstagramOAuth(state: string = 'test-user-123') {
-  const { EXPO_PUBLIC_APP_URL, EXPO_PUBLIC_SCHEME } = Constants.expoConfig?.extra ?? {};
-  const APP_URL = (EXPO_PUBLIC_APP_URL as string) || '';
-  const SCHEME = (EXPO_PUBLIC_SCHEME as string) || 'socialpro';
+export default async function startInstagramOAuth(state: string = "test-user-123") {
+  const { EXPO_PUBLIC_APP_URL } = Constants.expoConfig?.extra ?? {};
+  const APP_URL = (EXPO_PUBLIC_APP_URL as string) || "";
 
   if (!APP_URL) {
-    throw new Error('EXPO_PUBLIC_APP_URL ist nicht gesetzt. Bitte in app.config.js hinterlegen.');
+    throw new Error("EXPO_PUBLIC_APP_URL ist nicht gesetzt. Bitte in app.config.js hinterlegen.");
   }
 
+  // ✅ funktioniert in Expo Go und echten Builds
   const returnUrl = AuthSession.makeRedirectUri({
-    scheme: SCHEME,             // z. B. 'socialpro'
-    path: '/connected/success',  // entspricht app/connected/success.tsx
+    path: "connected/success", // kein Slash am Anfang!
     preferLocalhost: true,
   });
 
+  // ✅ richtiger Backend-Endpoint
   const startUrl =
-    `${APP_URL}/auth/instagram/start` +
+    `${APP_URL}/api/oauth/instagram/start` +
     `?return_to=${encodeURIComponent(returnUrl)}` +
     `&state=${encodeURIComponent(state)}`;
+
+  console.log("[IG OAuth] startUrl =", startUrl);
+  console.log("[IG OAuth] returnUrl =", returnUrl);
 
   return WebBrowser.openAuthSessionAsync(startUrl, returnUrl);
 }
