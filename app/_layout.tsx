@@ -13,8 +13,14 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 
 console.log("[ENV TEST]", process.env.EXPO_PUBLIC_APP_URL);
 
-// Splash-Screen nur nativ steuern (Web hat keinen nativen Splash)
-if (Platform.OS !== "web") {
+// 🚫 Workaround: SplashScreen auf Web komplett stummschalten
+if (Platform.OS === "web") {
+  // @ts-ignore
+  SplashScreen.hideAsync = async () => {};
+  // @ts-ignore
+  SplashScreen.preventAutoHideAsync = async () => {};
+  console.log("⚠️ SplashScreen disabled for web context");
+} else {
   SplashScreen.preventAutoHideAsync().catch(() => {});
 }
 
@@ -29,7 +35,6 @@ function RootLayoutNav() {
   const router = useRouter();
   const segments = useSegments();
   const navState = useRootNavigationState();
-
   const [appReady, setAppReady] = useState(false);
 
   // Splash Timeout + Hide
@@ -45,10 +50,7 @@ function RootLayoutNav() {
     };
 
     const timeout = setTimeout(finish, 2500);
-
-    if (!isLoading) {
-      finish();
-    }
+    if (!isLoading) finish();
 
     return () => {
       cancelled = true;
@@ -72,10 +74,9 @@ function RootLayoutNav() {
     };
   }, [segments]);
 
+  // Navigation rules
   useEffect(() => {
-    if (!appReady) return;
-    if (!navState?.key) return;
-    if (inWeeklyReview) return;
+    if (!appReady || !navState?.key || inWeeklyReview) return;
 
     if (!hasCompletedOnboarding && !inOnboarding) {
       router.replace("/onboarding/welcome");
