@@ -1,6 +1,6 @@
 // server.ts
 import { serve } from "@hono/node-server";
-import app from "./src/backend/hono";
+import app from "./backend/hono"; // ✅ Pfad korrigiert
 
 const port = Number(process.env.PORT || 10000);
 
