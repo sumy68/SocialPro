@@ -3,8 +3,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments, useRootNavigationState } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
 import { Platform } from "react-native";
+import * as SplashScreen from "expo-splash-screen";
 
 import { AppProvider, useApp } from "@/contexts/AppContext";
 import { PlatformConnectionProvider } from "@/contexts/PlatformConnectionContext";
@@ -44,10 +44,8 @@ function RootLayoutNav() {
       }
     };
 
-    // Fallback-Timeout (2.5s)
     const timeout = setTimeout(finish, 2500);
 
-    // Sobald dein App-State geladen ist → Splash aus
     if (!isLoading) {
       finish();
     }
@@ -74,11 +72,9 @@ function RootLayoutNav() {
     };
   }, [segments]);
 
-  // Navigation rules
   useEffect(() => {
     if (!appReady) return;
     if (!navState?.key) return;
-
     if (inWeeklyReview) return;
 
     if (!hasCompletedOnboarding && !inOnboarding) {
@@ -118,8 +114,6 @@ function RootLayoutNav() {
       <Stack.Screen name="subscription" />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="weekly-review" options={{ headerShown: false, presentation: "card" }} />
-
-      {/* OAuth Success Screen */}
       <Stack.Screen
         name="connected/success"
         options={{ title: "Verbindung", presentation: "modal" }}
