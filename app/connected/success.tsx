@@ -1,4 +1,5 @@
-import { View, Text, Button } from "react-native";
+// app/connected/success.tsx
+import { View, Text, Button, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
@@ -10,9 +11,11 @@ export default function ConnectedSuccess() {
   const ok = params.ok === "1";
   const platform = params.platform ?? "unknown";
 
-  // Verhindert SplashError beim Zurückspringen
+  // ✅ Fix: SplashScreen nur nativ hiden, nie auf Web
   useEffect(() => {
-    SplashScreen.hideAsync().catch(() => {});
+    if (Platform.OS !== "web") {
+      SplashScreen.hideAsync().catch(() => {});
+    }
   }, []);
 
   return (
