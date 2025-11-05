@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments, useRootNavigationState } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { Platform } from "react-native";
 
 import { AppProvider, useApp } from "@/contexts/AppContext";
 import { PlatformConnectionProvider } from "@/contexts/PlatformConnectionContext";
@@ -12,8 +13,10 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 
 console.log("[ENV TEST]", process.env.EXPO_PUBLIC_APP_URL);
 
-// Splash-Screen steuern, Fehler nie werfen
-SplashScreen.preventAutoHideAsync().catch(() => {});
+// Splash-Screen nur nativ steuern (Web hat keinen nativen Splash)
+if (Platform.OS !== "web") {
+  SplashScreen.preventAutoHideAsync().catch(() => {});
+}
 
 const queryClient = new QueryClient();
 
@@ -33,16 +36,20 @@ function RootLayoutNav() {
   useEffect(() => {
     let cancelled = false;
 
-    const timeout = setTimeout(() => {
-      if (!cancelled) {
-        setAppReady(true);
+    const finish = () => {
+      if (cancelled) return;
+      setAppReady(true);
+      if (Platform.OS !== "web") {
         SplashScreen.hideAsync().catch(() => {});
       }
-    }, 2500);
+    };
 
+    // Fallback-Timeout (2.5s)
+    const timeout = setTimeout(finish, 2500);
+
+    // Sobald dein App-State geladen ist → Splash aus
     if (!isLoading) {
-      setAppReady(true);
-      SplashScreen.hideAsync().catch(() => {});
+      finish();
     }
 
     return () => {
@@ -63,7 +70,7 @@ function RootLayoutNav() {
       inWeeklyReview: first === "weekly-review",
       allowOutsideTabs:
         path === "onboarding/connect-platforms" ||
-        path === "connected/success", // ✅ erlaubt
+        path === "connected/success",
     };
   }, [segments]);
 
@@ -100,7 +107,6 @@ function RootLayoutNav() {
     router,
   ]);
 
-  // ✅ remove "connect" screen — it's causing route warnings
   return (
     <Stack screenOptions={{ headerBackTitle: "Back" }}>
       <Stack.Screen name="onboarding/welcome" options={{ headerShown: false }} />
@@ -113,7 +119,7 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="weekly-review" options={{ headerShown: false, presentation: "card" }} />
 
-      {/* ✅ OAuth Success Screen */}
+      {/* OAuth Success Screen */}
       <Stack.Screen
         name="connected/success"
         options={{ title: "Verbindung", presentation: "modal" }}
