@@ -1,6 +1,25 @@
-// src/backend/hono.ts
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { instagramTest } from "./routes/instagramTest";
+
+// -------------------------------------------------
+// Hono Setup
+// -------------------------------------------------
+const app = new Hono();
+
+app.use(
+  "*",
+  cors({
+    origin: "*",
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// -------------------------------------------------
+// ✅ Instagram Graph API Test Endpoint
+// -------------------------------------------------
+app.route("/api/instagram", instagramTest);
 
 // -------------------------------------------------
 // ENV Variablen (Render Dashboard setzen!)
@@ -63,20 +82,6 @@ function htmlRedirectToApp(targetUrl: string) {
 }
 
 // -------------------------------------------------
-// Hono Setup
-// -------------------------------------------------
-const app = new Hono();
-
-app.use(
-  "*",
-  cors({
-    origin: "*",
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
-  })
-);
-
-// -------------------------------------------------
 // Health / Ping
 // -------------------------------------------------
 app.get("/", (c) => c.json({ ok: true, service: "socialpro-backend", version: 2 }));
@@ -84,7 +89,7 @@ app.get("/status", (c) => c.json({ ok: true, ts: new Date().toISOString() }));
 app.get("/__ping", (c) => c.text("pong-socialpro"));
 
 // -------------------------------------------------
-// ✅ Instagram Graph API (modern flow)
+// ✅ Instagram OAuth Flow (für User-Login)
 // -------------------------------------------------
 app.get("/api/oauth/instagram/start", (c) => {
   if (!IG_CLIENT_ID || !IG_REDIRECT_URI) {
@@ -106,7 +111,6 @@ app.get("/api/oauth/instagram/start", (c) => {
   console.log("[IG START]", authUrl);
   return c.redirect(authUrl);
 });
-
 
 app.get("/api/oauth/instagram/callback", async (c) => {
   const code = c.req.query("code");
