@@ -1,3 +1,4 @@
+// app.config.js
 import 'dotenv/config';
 
 export default {
@@ -8,7 +9,7 @@ export default {
     orientation: 'portrait',
     icon: './assets/images/icon.png',
 
-    // Deep Link Schema (z. B. socialpro://)
+    // Deep Link Schema
     scheme: process.env.EXPO_PUBLIC_SCHEME || 'socialpro',
 
     userInterfaceStyle: 'automatic',
@@ -29,6 +30,10 @@ export default {
         NSCameraUsageDescription: 'Allow $(PRODUCT_NAME) to access your camera',
         NSMicrophoneUsageDescription: 'Allow $(PRODUCT_NAME) to access your microphone',
         UIBackgroundModes: ['audio'],
+        // 👇 erzwingt das korrekte Deep-Link-Scheme
+        CFBundleURLTypes: [
+          { CFBundleURLSchemes: ['socialpro'] },
+        ],
       },
     },
 
@@ -42,27 +47,19 @@ export default {
       permissions: ['INTERNET', 'CAMERA', 'RECORD_AUDIO'],
     },
 
-    web: {
-      favicon: './assets/images/favicon.png',
-    },
+    web: { favicon: './assets/images/favicon.png' },
 
     plugins: [
       'expo-router',
-      [
-        'expo-image-picker',
-        {
-          photosPermission:
-            'The app accesses your photos to let you share them with your friends.',
-        },
-      ],
+      ['expo-image-picker', {
+        photosPermission: 'The app accesses your photos to let you share them with your friends.',
+      }],
       ['expo-av', { microphonePermission: 'Allow $(PRODUCT_NAME) to access your microphone' }],
       'expo-web-browser',
       'expo-font',
     ],
 
-    experiments: {
-      typedRoutes: true,
-    },
+    experiments: { typedRoutes: true },
 
     extra: {
       EXPO_PUBLIC_APP_URL: process.env.EXPO_PUBLIC_APP_URL,

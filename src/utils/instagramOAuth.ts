@@ -1,39 +1,24 @@
 // src/utils/instagramOAuth.ts
-import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session';
-import Constants from 'expo-constants';
+import * as AuthSession from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
 
-WebBrowser.maybeCompleteAuthSession();
+const APP_URL =
+  process.env.EXPO_PUBLIC_APP_URL || "https://socialpro-fnvo.onrender.com";
 
-/**
- * Startet den Instagram OAuth Flow über dein Backend
- * und leitet nach erfolgreichem Login zurück auf:
- *   socialpro://connected/success
- */
-export default async function startInstagramOAuth(state: string = 'test-user-123') {
-  const { EXPO_PUBLIC_APP_URL, EXPO_PUBLIC_SCHEME } = Constants.expoConfig?.extra ?? {};
-
-  const APP_URL = String(EXPO_PUBLIC_APP_URL || '');
-  const SCHEME = String(EXPO_PUBLIC_SCHEME || 'socialpro');
-
-  if (!APP_URL) {
-    throw new Error('❌ EXPO_PUBLIC_APP_URL fehlt. Bitte in app.config.js setzen!');
-  }
-
-  // Deep-Link zurück in die App (z. B. socialpro://connected/success)
-  const returnUrl = AuthSession.makeRedirectUri({
-    scheme: SCHEME,
-    path: 'connected/success',
+export function getRedirectUri() {
+  const uri = AuthSession.makeRedirectUri({
+    scheme: "socialpro",
+    path: "connected/success",
   });
+  console.log("redirectUri 👉", uri);
+  return uri;
+}
 
-  // Richtiger Backend-Endpunkt
+export async function startInstagramLogin() {
+  const redirectUri = getRedirectUri();
   const startUrl = `${APP_URL}/api/oauth/instagram/start?redirect_uri=${encodeURIComponent(
-    returnUrl
-  )}&state=${encodeURIComponent(state)}`;
-
-  console.log('[Instagram OAuth] startUrl →', startUrl);
-  console.log('[Instagram OAuth] returnUrl →', returnUrl);
-
-  // Öffnet den Login in Safari / WebView
-  return WebBrowser.openAuthSessionAsync(startUrl, returnUrl);
+    redirectUri
+  )}`;
+  // Öffnet Safari und wartet auf Rückkehr zu redirectUri
+  return WebBrowser.openAuthSessionAsync(startUrl, redirectUri);
 }

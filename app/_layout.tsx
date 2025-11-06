@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments, useRootNavigationState } from "expo-router";
 import { Platform } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
+import * as Linking from "expo-linking";
 
 import { AppProvider, useApp } from "@/contexts/AppContext";
 import { PlatformConnectionProvider } from "@/contexts/PlatformConnectionContext";
@@ -13,7 +14,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 
 console.log("[ENV TEST]", process.env.EXPO_PUBLIC_APP_URL);
 
-// 🚫 Workaround: SplashScreen auf Web komplett stummschalten
+// 🚫 SplashScreen-Handling
 if (Platform.OS === "web") {
   // @ts-ignore
   SplashScreen.hideAsync = async () => {};
@@ -73,6 +74,37 @@ function RootLayoutNav() {
         path === "connected/success",
     };
   }, [segments]);
+
+  // 🔗 Global Deep-Link-Handler (socialpro://connected/success?page_id=&ig_user_id=)
+  useEffect(() => {
+    const handleUrl = (url?: string | null) => {
+      if (!url) return;
+      try {
+        const u = new URL(url);
+        // akzeptiere sowohl socialpro://connected/success als auch ggf. socialpro:///connected/success
+        const host = u.host || u.hostname; // 'connected'
+        const path = u.pathname;           // '/success'
+        if (host === "connected" && path === "/success") {
+          const page_id = u.searchParams.get("page_id") || "";
+          const ig_user_id = u.searchParams.get("ig_user_id") || "";
+          router.push({
+            pathname: "/connected/success",
+            params: { page_id, ig_user_id },
+          } as any);
+        }
+      } catch (e) {
+        console.warn("[Linking] parse error", e);
+      }
+    };
+
+    // Event Listener (App bereits offen)
+    const sub = Linking.addEventListener("url", ({ url }) => handleUrl(url));
+
+    // Initial URL (App via Deep Link gestartet)
+    Linking.getInitialURL().then(handleUrl).catch(() => {});
+
+    return () => sub.remove();
+  }, [router]);
 
   // Navigation rules
   useEffect(() => {
