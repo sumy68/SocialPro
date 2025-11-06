@@ -194,6 +194,16 @@ app.get("/api/oauth/youtube/callback", async (c) => {
   return c.html(htmlRedirectToApp(ok));
 });
 
+// Instagram Redirect-Fix (return_to handling)
+app.get("/auth/instagram/callback", (c) => {
+  const returnTo = c.req.query("return_to") || "socialpro://connected/success";
+  const url = new URL(returnTo);
+  url.searchParams.set("ok", "1");
+  url.searchParams.set("platform", "instagram");
+  return c.redirect(url.toString(), 302);
+});
+
+
 // -------------------------------------------------
 // 404 JSON
 // -------------------------------------------------

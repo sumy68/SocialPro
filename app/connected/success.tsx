@@ -1,7 +1,8 @@
 // app/connected/success.tsx
-import { View, Text, Button, Platform } from "react-native";
+import { View, Text, Button } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect } from "react";
+import { Platform } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 
 export default function ConnectedSuccess() {
@@ -9,9 +10,9 @@ export default function ConnectedSuccess() {
   const params = useLocalSearchParams();
 
   const ok = params.ok === "1";
-  const platform = params.platform ?? "unknown";
+  const platform = String(params.platform ?? "unknown");
+  const error = String(params.error ?? "");
 
-  // ✅ Fix: SplashScreen nur nativ hiden, nie auf Web
   useEffect(() => {
     if (Platform.OS !== "web") {
       SplashScreen.hideAsync().catch(() => {});
@@ -24,9 +25,12 @@ export default function ConnectedSuccess() {
         {ok ? "Erfolgreich verbunden ✅" : "Verbindung fehlgeschlagen ❌"}
       </Text>
 
-      <Text style={{ fontSize: 16, marginBottom: 20 }}>
-        Plattform: {platform}
-      </Text>
+      <Text style={{ fontSize: 16, marginBottom: 8 }}>Plattform: {platform}</Text>
+      {!ok && !!error && (
+        <Text style={{ fontSize: 14, color: "crimson", marginBottom: 20 }}>
+          {decodeURIComponent(error)}
+        </Text>
+      )}
 
       <Button title="Zurück" onPress={() => router.replace("/")} />
     </View>
