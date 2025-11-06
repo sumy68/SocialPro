@@ -1,3 +1,4 @@
+// contexts/AppContext.tsx
 import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -13,16 +14,27 @@ const STORAGE_KEYS = {
   POSTS: '@socialpro:posts',
 } as const;
 
+const ALL_PLATFORMS: Platform[] = ['linkedin', 'instagram', 'tiktok', 'youtube'];
+
+/** stellt sicher, dass alle Plattform-Einträge existieren */
+function ensureAllPlatforms(list: ConnectedPlatform[] | null | undefined): ConnectedPlatform[] {
+  const base = list?.slice() ?? [];
+  const map = new Map<Platform, ConnectedPlatform>(base.map(p => [p.platform, p]));
+  for (const p of ALL_PLATFORMS) {
+    if (!map.has(p)) map.set(p, { platform: p, connected: false });
+  }
+  return Array.from(map.values()).sort(
+    (a, b) => ALL_PLATFORMS.indexOf(a.platform) - ALL_PLATFORMS.indexOf(b.platform)
+  );
+}
+
 export const [AppProvider, useApp] = createContextHook(() => {
   const [language, setLanguageState] = useState<Language>('de');
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean>(false);
   const [companyInfo, setCompanyInfoState] = useState<CompanyInfo | null>(null);
-  const [connectedPlatforms, setConnectedPlatformsState] = useState<ConnectedPlatform[]>([
-    { platform: 'linkedin', connected: false },
-    { platform: 'instagram', connected: false },
-    { platform: 'tiktok', connected: false },
-    { platform: 'youtube', connected: false },
-  ]);
+  const [connectedPlatforms, setConnectedPlatformsState] = useState<ConnectedPlatform[]>(
+    ensureAllPlatforms([])
+  );
   const [subscription, setSubscriptionState] = useState<SubscriptionInfo>({
     plan: null,
     status: 'expired',
@@ -32,18 +44,16 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
   useEffect(() => {
     loadStoredData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadStoredData = async () => {
     try {
-      console.log('[AppContext] Loading stored data...');
-      
-      const timeoutPromise = new Promise((_, reject) => 
+      const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('Storage load timeout')), 3000)
       );
-      
-      const loadPromise = Promise.all([
 
+      const loadPromise = Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.LANGUAGE),
         AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING),
         AsyncStorage.getItem(STORAGE_KEYS.COMPANY_INFO),
@@ -59,46 +69,29 @@ export const [AppProvider, useApp] = createContextHook(() => {
         storedPlatforms,
         storedSubscription,
         storedPosts,
-      ] = await Promise.race([loadPromise, timeoutPromise]) as string[];
+      ] = (await Promise.race([loadPromise, timeoutPromise])) as (string | null)[];
 
-      if (storedLanguage) {
-        setLanguageState(storedLanguage as Language);
-      }
-      
-      if (storedOnboarding) {
-        setHasCompletedOnboarding(JSON.parse(storedOnboarding));
-      }
-      
-      if (storedCompanyInfo) {
-        setCompanyInfoState(JSON.parse(storedCompanyInfo));
-      }
-      
-      if (storedPlatforms) {
-        setConnectedPlatformsState(JSON.parse(storedPlatforms));
-      }
-      
-      if (storedSubscription) {
-        setSubscriptionState(JSON.parse(storedSubscription));
-      }
-      
+      if (storedLanguage) setLanguageState(storedLanguage as Language);
+      if (storedOnboarding) setHasCompletedOnboarding(JSON.parse(storedOnboarding));
+      if (storedCompanyInfo) setCompanyInfoState(JSON.parse(storedCompanyInfo));
+
+      // Platforms – immer all entries sicherstellen
+      const parsedPlatforms: ConnectedPlatform[] | null = storedPlatforms ? JSON.parse(storedPlatforms) : null;
+      setConnectedPlatformsState(ensureAllPlatforms(parsedPlatforms));
+
+      if (storedSubscription) setSubscriptionState(JSON.parse(storedSubscription));
+
       if (storedPosts) {
         try {
           const parsed = JSON.parse(storedPosts);
           setPostsState(parsed);
-        } catch (parseError) {
-          console.error('[AppContext] Error parsing stored posts, clearing corrupt data:', parseError);
+        } catch {
           await AsyncStorage.removeItem(STORAGE_KEYS.POSTS);
           setPostsState([]);
         }
       }
-
-      console.log('[AppContext] Data loaded successfully');
-    } catch (error: any) {
-      if (error.message === 'Storage load timeout') {
-        console.warn('[AppContext] Storage load timeout - using defaults');
-      } else {
-        console.error('[AppContext] Error loading stored data:', error);
-      }
+    } catch (error) {
+      console.warn('[AppContext] loadStoredData failed:', (error as Error)?.message);
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +99,6 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
   const setLanguage = useCallback(async (lang: Language) => {
     try {
-      console.log('[AppContext] Setting language to:', lang);
       await AsyncStorage.setItem(STORAGE_KEYS.LANGUAGE, lang);
       setLanguageState(lang);
     } catch (error) {
@@ -116,7 +108,6 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
   const completeOnboarding = useCallback(async (info: CompanyInfo) => {
     try {
-      console.log('[AppContext] Completing onboarding with company info');
       await AsyncStorage.setItem(STORAGE_KEYS.ONBOARDING, JSON.stringify(true));
       await AsyncStorage.setItem(STORAGE_KEYS.COMPANY_INFO, JSON.stringify(info));
       setHasCompletedOnboarding(true);
@@ -128,7 +119,6 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
   const updateCompanyInfo = useCallback(async (info: CompanyInfo) => {
     try {
-      console.log('[AppContext] Updating company info');
       await AsyncStorage.setItem(STORAGE_KEYS.COMPANY_INFO, JSON.stringify(info));
       setCompanyInfoState(info);
     } catch (error) {
@@ -136,40 +126,58 @@ export const [AppProvider, useApp] = createContextHook(() => {
     }
   }, []);
 
-  const connectPlatform = useCallback(async (
-    platform: Platform, 
-    accountName: string, 
-    accountId: string,
-    accessToken?: string,
-    refreshToken?: string,
-    expiresAt?: string
-  ) => {
-    try {
-      console.log('[AppContext] Connecting platform:', platform);
-      setConnectedPlatformsState(prev => {
-        const updated = prev.map(p =>
-          p.platform === platform
-            ? { ...p, connected: true, accountName, accountId, accessToken, refreshToken, expiresAt }
-            : p
-        );
-        AsyncStorage.setItem(STORAGE_KEYS.PLATFORMS, JSON.stringify(updated));
-        return updated;
-      });
-    } catch (error) {
-      console.error('[AppContext] Error connecting platform:', error);
-    }
-  }, []);
+  /**
+   * Markiert eine Plattform als verbunden + speichert Token/IDs.
+   * Wird z. B. nach erfolgreichem OAuth-Callback aufgerufen.
+   */
+  const connectPlatform = useCallback(
+    async (
+      platform: Platform,
+      accountName: string,
+      accountId: string,
+      accessToken?: string,
+      refreshToken?: string,
+      expiresAt?: string
+    ) => {
+      try {
+        setConnectedPlatformsState(prev => {
+          const ensured = ensureAllPlatforms(prev);
+          const updated = ensured.map(p =>
+            p.platform === platform
+              ? {
+                  ...p,
+                  connected: true,
+                  accountName,
+                  accountId,
+                  accessToken,
+                  refreshToken,
+                  expiresAt,
+                }
+              : p
+          );
+          AsyncStorage.setItem(STORAGE_KEYS.PLATFORMS, JSON.stringify(updated)).catch(() => {});
+          return updated;
+        });
+      } catch (error) {
+        console.error('[AppContext] Error connecting platform:', error);
+      }
+    },
+    []
+  );
 
+  /**
+   * Disconnect – setzt connected=false & cleart sensible Felder.
+   */
   const disconnectPlatform = useCallback(async (platform: Platform) => {
     try {
-      console.log('[AppContext] Disconnecting platform:', platform);
       setConnectedPlatformsState(prev => {
-        const updated = prev.map(p =>
+        const ensured = ensureAllPlatforms(prev);
+        const updated = ensured.map(p =>
           p.platform === platform
             ? { platform: p.platform, connected: false }
             : p
         );
-        AsyncStorage.setItem(STORAGE_KEYS.PLATFORMS, JSON.stringify(updated));
+        AsyncStorage.setItem(STORAGE_KEYS.PLATFORMS, JSON.stringify(updated)).catch(() => {});
         return updated;
       });
     } catch (error) {
@@ -179,16 +187,15 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
   const startTrial = useCallback(async (plan: 'monthly' | 'yearly') => {
     try {
-      console.log('[AppContext] Starting trial with plan:', plan);
       const trialEndsAt = new Date();
       trialEndsAt.setDate(trialEndsAt.getDate() + 3);
-      
+
       const newSubscription: SubscriptionInfo = {
         plan,
         status: 'trial',
         trialEndsAt: trialEndsAt.toISOString(),
       };
-      
+
       await AsyncStorage.setItem(STORAGE_KEYS.SUBSCRIPTION, JSON.stringify(newSubscription));
       setSubscriptionState(newSubscription);
     } catch (error) {
@@ -198,7 +205,6 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
   const updateSubscription = useCallback(async (subscriptionInfo: SubscriptionInfo) => {
     try {
-      console.log('[AppContext] Updating subscription');
       await AsyncStorage.setItem(STORAGE_KEYS.SUBSCRIPTION, JSON.stringify(subscriptionInfo));
       setSubscriptionState(subscriptionInfo);
     } catch (error) {
@@ -208,10 +214,9 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
   const addPost = useCallback(async (post: Post) => {
     try {
-      console.log('[AppContext] Adding post');
       setPostsState(prev => {
         const updated = [post, ...prev];
-        AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(updated));
+        AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(updated)).catch(() => {});
         return updated;
       });
     } catch (error) {
@@ -221,12 +226,9 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
   const updatePost = useCallback(async (postId: string, updates: Partial<Post>) => {
     try {
-      console.log('[AppContext] Updating post:', postId);
       setPostsState(prev => {
-        const updated = prev.map(p =>
-          p.id === postId ? { ...p, ...updates } : p
-        );
-        AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(updated));
+        const updated = prev.map(p => (p.id === postId ? { ...p, ...updates } : p));
+        AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(updated)).catch(() => {});
         return updated;
       });
     } catch (error) {
@@ -236,10 +238,9 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
   const deletePost = useCallback(async (postId: string) => {
     try {
-      console.log('[AppContext] Deleting post:', postId);
       setPostsState(prev => {
         const updated = prev.filter(p => p.id !== postId);
-        AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(updated));
+        AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(updated)).catch(() => {});
         return updated;
       });
     } catch (error) {
@@ -251,7 +252,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
     const baseReach = Math.floor(Math.random() * 5000) + 1000;
     const engagementRate = Math.random() * 0.15 + 0.02;
     const engagement = Math.floor(baseReach * engagementRate);
-    
+
     return {
       platform,
       reach: baseReach,
@@ -266,21 +267,15 @@ export const [AppProvider, useApp] = createContextHook(() => {
 
   const processScheduledPosts = useCallback(async () => {
     const now = new Date();
-    
+
     setPostsState(prev => {
       let hasChanges = false;
       const updated = prev.map(post => {
         if (post.status === 'scheduled' && post.autoPost) {
           const scheduledTime = new Date(post.scheduledDate);
-          
           if (scheduledTime <= now) {
-            console.log('[AppContext] Auto-posting scheduled post:', post.id);
             hasChanges = true;
-            
-            const performance = post.platforms.map(platform => 
-              generateRandomMetrics(platform)
-            );
-            
+            const performance = post.platforms.map(platform => generateRandomMetrics(platform));
             return {
               ...post,
               status: 'posted' as const,
@@ -289,41 +284,30 @@ export const [AppProvider, useApp] = createContextHook(() => {
             };
           }
         }
-        
+
         if (post.status === 'posted' && !post.performance) {
-          console.log('[AppContext] Generating metrics for posted post:', post.id);
           hasChanges = true;
-          
-          const performance = post.platforms.map(platform => 
-            generateRandomMetrics(platform)
-          );
-          
-          return {
-            ...post,
-            performance,
-          };
+          const performance = post.platforms.map(platform => generateRandomMetrics(platform));
+          return { ...post, performance };
         }
-        
+
         return post;
       });
-      
+
       if (hasChanges) {
-        AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(updated));
+        AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(updated)).catch(() => {});
       }
-      
+
       return updated;
     });
   }, []);
 
   useEffect(() => {
     if (isLoading) return;
-    
     processScheduledPosts();
-    
     const interval = setInterval(() => {
       processScheduledPosts();
     }, 30000);
-    
     return () => clearInterval(interval);
   }, [isLoading, processScheduledPosts]);
 
@@ -331,43 +315,46 @@ export const [AppProvider, useApp] = createContextHook(() => {
     return subscription.status === 'trial' || subscription.status === 'active';
   }, [subscription.status]);
 
-  return useMemo(() => ({
-    language,
-    setLanguage,
-    hasCompletedOnboarding,
-    completeOnboarding,
-    companyInfo,
-    updateCompanyInfo,
-    connectedPlatforms,
-    connectPlatform,
-    disconnectPlatform,
-    subscription,
-    startTrial,
-    updateSubscription,
-    hasActiveSubscription,
-    posts,
-    addPost,
-    updatePost,
-    deletePost,
-    isLoading,
-  }), [
-    language,
-    setLanguage,
-    hasCompletedOnboarding,
-    completeOnboarding,
-    companyInfo,
-    updateCompanyInfo,
-    connectedPlatforms,
-    connectPlatform,
-    disconnectPlatform,
-    subscription,
-    startTrial,
-    updateSubscription,
-    hasActiveSubscription,
-    posts,
-    addPost,
-    updatePost,
-    deletePost,
-    isLoading,
-  ]);
+  return useMemo(
+    () => ({
+      language,
+      setLanguage,
+      hasCompletedOnboarding,
+      completeOnboarding,
+      companyInfo,
+      updateCompanyInfo,
+      connectedPlatforms,
+      connectPlatform,
+      disconnectPlatform,
+      subscription,
+      startTrial,
+      updateSubscription,
+      hasActiveSubscription,
+      posts,
+      addPost,
+      updatePost,
+      deletePost,
+      isLoading,
+    }),
+    [
+      language,
+      setLanguage,
+      hasCompletedOnboarding,
+      completeOnboarding,
+      companyInfo,
+      updateCompanyInfo,
+      connectedPlatforms,
+      connectPlatform,
+      disconnectPlatform,
+      subscription,
+      startTrial,
+      updateSubscription,
+      hasActiveSubscription,
+      posts,
+      addPost,
+      updatePost,
+      deletePost,
+      isLoading,
+    ]
+  );
 });
