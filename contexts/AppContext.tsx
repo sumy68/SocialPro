@@ -1,4 +1,3 @@
-// contexts/AppContext.tsx
 import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -32,19 +31,13 @@ export const [AppProvider, useApp] = createContextHook(() => {
   const [language, setLanguageState] = useState<Language>('de');
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean>(false);
   const [companyInfo, setCompanyInfoState] = useState<CompanyInfo | null>(null);
-  const [connectedPlatforms, setConnectedPlatformsState] = useState<ConnectedPlatform[]>(
-    ensureAllPlatforms([])
-  );
-  const [subscription, setSubscriptionState] = useState<SubscriptionInfo>({
-    plan: null,
-    status: 'expired',
-  });
+  const [connectedPlatforms, setConnectedPlatformsState] = useState<ConnectedPlatform[]>(ensureAllPlatforms([]));
+  const [subscription, setSubscriptionState] = useState<SubscriptionInfo>({ plan: null, status: 'expired' });
   const [posts, setPostsState] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     loadStoredData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadStoredData = async () => {
@@ -75,7 +68,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
       if (storedOnboarding) setHasCompletedOnboarding(JSON.parse(storedOnboarding));
       if (storedCompanyInfo) setCompanyInfoState(JSON.parse(storedCompanyInfo));
 
-      // Platforms – immer all entries sicherstellen
+      // Plattformen immer vollständig sicherstellen
       const parsedPlatforms: ConnectedPlatform[] | null = storedPlatforms ? JSON.parse(storedPlatforms) : null;
       setConnectedPlatformsState(ensureAllPlatforms(parsedPlatforms));
 
@@ -126,15 +119,12 @@ export const [AppProvider, useApp] = createContextHook(() => {
     }
   }, []);
 
-  /**
-   * Markiert eine Plattform als verbunden + speichert Token/IDs.
-   * Wird z. B. nach erfolgreichem OAuth-Callback aufgerufen.
-   */
+  /** ✅ Plattform verbinden (z. B. nach OAuth) */
   const connectPlatform = useCallback(
     async (
       platform: Platform,
-      accountName: string,
-      accountId: string,
+      accountName?: string,
+      accountId?: string,
       accessToken?: string,
       refreshToken?: string,
       expiresAt?: string
@@ -147,8 +137,8 @@ export const [AppProvider, useApp] = createContextHook(() => {
               ? {
                   ...p,
                   connected: true,
-                  accountName,
-                  accountId,
+                  accountName: accountName ?? p.accountName,
+                  accountId: accountId ?? p.accountId,
                   accessToken,
                   refreshToken,
                   expiresAt,
@@ -165,17 +155,13 @@ export const [AppProvider, useApp] = createContextHook(() => {
     []
   );
 
-  /**
-   * Disconnect – setzt connected=false & cleart sensible Felder.
-   */
+  /** Plattform trennen */
   const disconnectPlatform = useCallback(async (platform: Platform) => {
     try {
       setConnectedPlatformsState(prev => {
         const ensured = ensureAllPlatforms(prev);
         const updated = ensured.map(p =>
-          p.platform === platform
-            ? { platform: p.platform, connected: false }
-            : p
+          p.platform === platform ? { platform: p.platform, connected: false } : p
         );
         AsyncStorage.setItem(STORAGE_KEYS.PLATFORMS, JSON.stringify(updated)).catch(() => {});
         return updated;
@@ -185,6 +171,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
     }
   }, []);
 
+  /** Trial & Subscription Handling */
   const startTrial = useCallback(async (plan: 'monthly' | 'yearly') => {
     try {
       const trialEndsAt = new Date();
@@ -212,6 +199,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
     }
   }, []);
 
+  /** Posts speichern etc. */
   const addPost = useCallback(async (post: Post) => {
     try {
       setPostsState(prev => {
@@ -248,6 +236,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
     }
   }, []);
 
+  /** automatische Dummy-Performance */
   const generateRandomMetrics = (platform: Platform) => {
     const baseReach = Math.floor(Math.random() * 5000) + 1000;
     const engagementRate = Math.random() * 0.15 + 0.02;
@@ -305,9 +294,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
   useEffect(() => {
     if (isLoading) return;
     processScheduledPosts();
-    const interval = setInterval(() => {
-      processScheduledPosts();
-    }, 30000);
+    const interval = setInterval(processScheduledPosts, 30000);
     return () => clearInterval(interval);
   }, [isLoading, processScheduledPosts]);
 
@@ -324,7 +311,7 @@ export const [AppProvider, useApp] = createContextHook(() => {
       companyInfo,
       updateCompanyInfo,
       connectedPlatforms,
-      connectPlatform,
+      connectPlatform, // <— wichtig: wird vom IG-Login aufgerufen
       disconnectPlatform,
       subscription,
       startTrial,
@@ -338,22 +325,11 @@ export const [AppProvider, useApp] = createContextHook(() => {
     }),
     [
       language,
-      setLanguage,
       hasCompletedOnboarding,
-      completeOnboarding,
       companyInfo,
-      updateCompanyInfo,
       connectedPlatforms,
-      connectPlatform,
-      disconnectPlatform,
       subscription,
-      startTrial,
-      updateSubscription,
-      hasActiveSubscription,
       posts,
-      addPost,
-      updatePost,
-      deletePost,
       isLoading,
     ]
   );

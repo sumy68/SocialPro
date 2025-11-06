@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -21,52 +21,24 @@ import { Platform } from "@/constants/types";
 import { useApp } from "@/contexts/AppContext";
 import * as WebBrowser from "expo-web-browser";
 import * as AuthSession from "expo-auth-session";
+import * as Linking from "expo-linking";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 
-// Safari-Session ggf. schließen (Expo Requirement)
 WebBrowser.maybeCompleteAuthSession();
 
-// ✅ ENV aus app.config.js (EXPO_PUBLIC_APP_URL / EXPO_PUBLIC_SCHEME)
-const { EXPO_PUBLIC_APP_URL, EXPO_PUBLIC_SCHEME } =
-  Constants.expoConfig?.extra ?? {};
+const { EXPO_PUBLIC_APP_URL, EXPO_PUBLIC_SCHEME } = Constants.expoConfig?.extra ?? {};
 const APP_URL = (EXPO_PUBLIC_APP_URL as string) || "";
 const API_BASE = `${APP_URL}/api`;
 const DEEP_LINK_SCHEME = (EXPO_PUBLIC_SCHEME as string) || "socialpro";
-
 const OAUTH_STATE = "test-user-123";
 
-// Deep-Link URI für Expo-App (muss zu app/connected/success.tsx passen)
 const REDIRECT_URI = AuthSession.makeRedirectUri({
   scheme: DEEP_LINK_SCHEME,
   path: "connected/success",
 });
 console.log("IG Redirect URI 👉", REDIRECT_URI);
 
-// ------------------- OAuth URL Builder -------------------
-function buildLinkedInAuthUrl() {
-  const redirectUri = encodeURIComponent(`${API_BASE}/oauth/linkedin/callback`);
-  const scope = encodeURIComponent("w_member_social r_liteprofile");
-  const state = encodeURIComponent(OAUTH_STATE);
-  return `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=DEIN_LINKEDIN_CLIENT_ID&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`;
-}
-function buildTikTokAuthUrl() {
-  const redirectUri = encodeURIComponent(`${API_BASE}/oauth/tiktok/callback`);
-  const scope = encodeURIComponent(
-    "user.info.basic video.list video.upload"
-  );
-  const state = encodeURIComponent(OAUTH_STATE);
-  return `https://www.tiktok.com/v2/auth/authorize/?client_key=DEIN_TIKTOK_CLIENT_KEY&response_type=code&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`;
-}
-function buildYouTubeAuthUrl() {
-  const redirectUri = encodeURIComponent(`${API_BASE}/oauth/youtube/callback`);
-  const scope = encodeURIComponent(
-    "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly"
-  );
-  const state = encodeURIComponent(OAUTH_STATE);
-  return `https://accounts.google.com/o/oauth2/v2/auth?client_id=DEIN_YT_CLIENT_ID&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&include_granted_scopes=true&state=${state}`;
-}
-
-// Helper zum Auslesen der Rückgabe-URL
 const parseQuery = (url: string) => {
   try {
     const u = new URL(url);
@@ -75,41 +47,87 @@ const parseQuery = (url: string) => {
       page_id: u.searchParams.get("page_id") ?? undefined,
       ig_user_id: u.searchParams.get("ig_user_id") ?? undefined,
       error: u.searchParams.get("error") ?? undefined,
+      status: u.searchParams.get("status") ?? undefined,
+      platform: u.searchParams.get("platform") ?? undefined,
     };
   } catch {
     return {};
   }
 };
 
-// ---------------------------------------------------------
 export default function ConnectPlatformsScreen() {
   const router = useRouter();
   const t = useTranslation();
-  const { connectedPlatforms, disconnectPlatform } = useApp();
+  const { connectedPlatforms, connectPlatform, disconnectPlatform } = useApp();
   const [connecting, setConnecting] = useState<Platform | null>(null);
+  const [igConnected, setIgConnected] = useState(false);
+
+  // ✅ Deep-Link abfangen & speichern
+  useEffect(() => {
+    const handleUrl = async (url: string) => {
+      const q = parseQuery(url);
+      if (q.platform === "instagram") {
+        if (q.status === "ok") {
+          await AsyncStorage.setItem("ig_connected", "1");
+          setIgConnected(true);
+          await connectPlatform("instagram", "Instagram Business", q.ig_user_id ?? "");
+          Alert.alert("Instagram", "Erfolgreich verbunden ✅");
+        } else {
+          await AsyncStorage.removeItem("ig_connected");
+          setIgConnected(false);
+          if (q.error) Alert.alert("Instagram", `Fehler: ${q.error}`);
+        }
+      }
+    };
+
+    Linking.getInitialURL().then((u) => u && handleUrl(u));
+    const sub = Linking.addEventListener("url", ({ url }) => handleUrl(url));
+    return () => sub.remove();
+  }, [connectPlatform]);
+
+  // ✅ gespeicherten Zustand laden
+  useEffect(() => {
+    AsyncStorage.getItem("ig_connected").then((v) => setIgConnected(v === "1"));
+  }, []);
 
   const startConnect = async (platform: Platform) => {
     try {
       setConnecting(platform);
 
       if (platform === "linkedin") {
-        return await WebBrowser.openBrowserAsync(buildLinkedInAuthUrl());
+        const redirectUri = encodeURIComponent(`${API_BASE}/oauth/linkedin/callback`);
+        const scope = encodeURIComponent("w_member_social r_liteprofile");
+        const state = encodeURIComponent(OAUTH_STATE);
+        return await WebBrowser.openBrowserAsync(
+          `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=DEIN_LINKEDIN_CLIENT_ID&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`
+        );
       }
+
       if (platform === "tiktok") {
-        return await WebBrowser.openBrowserAsync(buildTikTokAuthUrl());
+        const redirectUri = encodeURIComponent(`${API_BASE}/oauth/tiktok/callback`);
+        const scope = encodeURIComponent("user.info.basic video.list video.upload");
+        const state = encodeURIComponent(OAUTH_STATE);
+        return await WebBrowser.openBrowserAsync(
+          `https://www.tiktok.com/v2/auth/authorize/?client_key=DEIN_TIKTOK_CLIENT_KEY&response_type=code&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`
+        );
       }
+
       if (platform === "youtube") {
-        return await WebBrowser.openBrowserAsync(buildYouTubeAuthUrl());
+        const redirectUri = encodeURIComponent(`${API_BASE}/oauth/youtube/callback`);
+        const scope = encodeURIComponent(
+          "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly"
+        );
+        const state = encodeURIComponent(OAUTH_STATE);
+        return await WebBrowser.openBrowserAsync(
+          `https://accounts.google.com/o/oauth2/v2/auth?client_id=DEIN_YT_CLIENT_ID&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&include_granted_scopes=true&state=${state}`
+        );
       }
+
       if (platform === "instagram") {
-        // ✅ IG über Backend + korrektes Deep Link zurück in die App
         const startUrl = `${APP_URL}/api/oauth/instagram/start?redirect_uri=${encodeURIComponent(
           REDIRECT_URI
         )}`;
-        const result = await WebBrowser.openAuthSessionAsync(
-          startUrl,
-          REDIRECT_URI
-        );
+        const result = await WebBrowser.openAuthSessionAsync(startUrl, REDIRECT_URI);
 
         if (result.type === "success" && result.url) {
           const q = parseQuery(result.url);
@@ -118,10 +136,10 @@ export default function ConnectPlatformsScreen() {
             return;
           }
           if (q.page_id && q.ig_user_id) {
-            Alert.alert(
-              "Instagram",
-              `Verbunden ✅\nPage: ${q.page_id}\nIG: ${q.ig_user_id}`
-            );
+            await AsyncStorage.setItem("ig_connected", "1");
+            setIgConnected(true);
+            await connectPlatform("instagram", "Instagram Business", q.ig_user_id ?? "");
+            Alert.alert("Instagram", `Verbunden ✅\nPage: ${q.page_id}\nIG: ${q.ig_user_id}`);
             return;
           }
         }
@@ -152,6 +170,10 @@ export default function ConnectPlatformsScreen() {
         style: "destructive",
         onPress: async () => {
           await disconnectPlatform(platform);
+          if (platform === "instagram") {
+            await AsyncStorage.removeItem("ig_connected");
+            setIgConnected(false);
+          }
           Alert.alert("Done", `${t.platforms[platform]} disconnected`);
         },
       },
@@ -164,17 +186,13 @@ export default function ConnectPlatformsScreen() {
         options={{ title: t.onboarding.platforms.title, headerBackTitle: t.back }}
       />
 
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}
-      >
+      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
         <View style={styles.header}>
           <Text style={styles.title}>{t.onboarding.platforms.title}</Text>
           <Text style={styles.subtitle}>{t.onboarding.platforms.subtitle}</Text>
         </View>
 
         <View style={styles.platforms}>
-          {/* ✅ LinkedIn */}
           <PlatformCard
             icon={<Linkedin size={32} color="#0A66C2" />}
             name={t.platforms.linkedin}
@@ -185,7 +203,6 @@ export default function ConnectPlatformsScreen() {
             isConnecting={connecting === "linkedin"}
           />
 
-          {/* ✅ Instagram */}
           <PlatformCard
             icon={<Instagram size={32} color="#E1306C" />}
             name={t.platforms.instagram}
@@ -196,7 +213,6 @@ export default function ConnectPlatformsScreen() {
             isConnecting={connecting === "instagram"}
           />
 
-          {/* ✅ TikTok */}
           <PlatformCard
             icon={<Music2 size={32} color="#000000" />}
             name={t.platforms.tiktok}
@@ -207,7 +223,6 @@ export default function ConnectPlatformsScreen() {
             isConnecting={connecting === "tiktok"}
           />
 
-          {/* ✅ YouTube */}
           <PlatformCard
             icon={<Youtube size={32} color="#FF0000" />}
             name={t.platforms.youtube}
@@ -223,16 +238,13 @@ export default function ConnectPlatformsScreen() {
           onPress={() => router.push("/subscription" as any)}
           style={styles.skipButton}
         >
-          <Text style={styles.skipButtonText}>
-            {t.onboarding.platforms.connectLater}
-          </Text>
+          <Text style={styles.skipButtonText}>{t.onboarding.platforms.connectLater}</Text>
         </TouchableOpacity>
       </ScrollView>
     </>
   );
 }
 
-// ----------- PlatformCard -------------
 function PlatformCard({
   icon,
   name,
@@ -255,9 +267,7 @@ function PlatformCard({
   };
 
   return (
-    <View
-      style={[styles.platformCard, { borderLeftColor: bg, borderLeftWidth: 4 }]}
-    >
+    <View style={[styles.platformCard, { borderLeftColor: bg, borderLeftWidth: 4 }]}>
       <View style={styles.platformInfo}>
         {icon}
         <View style={styles.platformTextContainer}>
@@ -273,10 +283,7 @@ function PlatformCard({
         <ActivityIndicator color={bg} />
       ) : (
         <TouchableOpacity
-          style={[
-            styles.connectButton,
-            { backgroundColor: isConnected ? "#F3F4F6" : bg },
-          ]}
+          style={[styles.connectButton, { backgroundColor: isConnected ? "#F3F4F6" : bg }]}
           onPress={handlePress}
         >
           <Text
@@ -293,24 +300,12 @@ function PlatformCard({
   );
 }
 
-// ----------- Styles -------------
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8F9FA" },
   contentContainer: { padding: 24, paddingBottom: 40 },
   header: { alignItems: "center", marginBottom: 32 },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#0F1419",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    paddingHorizontal: 20,
-  },
+  title: { fontSize: 28, fontWeight: "700", color: "#0F1419", marginBottom: 8, textAlign: "center" },
+  subtitle: { fontSize: 16, color: "#666", textAlign: "center", paddingHorizontal: 20 },
   platforms: { gap: 16, marginBottom: 32 },
   platformCard: {
     backgroundColor: "#FFF",

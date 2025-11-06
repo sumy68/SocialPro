@@ -10,7 +10,11 @@ import React, { useEffect } from "react";
 export default function SettingsScreen() {
   const router = useRouter();
   const t = useTranslation();
-  const { language, setLanguage, subscription } = useApp();
+
+  // ⬇️ WICHTIG: connectedPlatforms aus AppContext ziehen
+  const { language, setLanguage, subscription, connectedPlatforms } = useApp();
+
+  // Token-Checker kann bleiben (nur nicht mehr für den Counter)
   const { statusMap, checking, checkAllPlatforms, refreshPlatformToken } = usePlatformConnection();
 
   useEffect(() => {
@@ -60,7 +64,8 @@ export default function SettingsScreen() {
     }
   };
 
-  const connectedCount = Object.values(statusMap).filter(p => p.connected).length;
+  // ✅ jetzt echter Count aus AppContext
+  const connectedCount = connectedPlatforms.filter(p => p.connected).length;
 
   return (
     <>
@@ -91,31 +96,23 @@ export default function SettingsScreen() {
               </View>
               <Text style={styles.settingLabel}>{t.settings.connectedPlatforms}</Text>
             </View>
+
+            {/* ✅ Badges + Zähler aus connectedPlatforms */}
             <View style={styles.platformStatusContainer}>
               {checking ? (
                 <ActivityIndicator size="small" color="#0A66C2" />
               ) : (
                 <View style={styles.platformBadges}>
-                  {Object.values(statusMap).map(platform => (
+                  {connectedPlatforms.map((p) => (
                     <View
-                      key={platform.platform}
+                      key={p.platform}
                       style={[
                         styles.platformBadge,
-                        {
-                          backgroundColor: platform.connected
-                            ? platform.isExpired
-                              ? '#FEF3C7'
-                              : '#D1FAE5'
-                            : '#F3F4F6',
-                        },
+                        { backgroundColor: p.connected ? '#D1FAE5' : '#F3F4F6' },
                       ]}
                     >
-                      {platform.connected ? (
-                        platform.isExpired ? (
-                          <AlertCircle size={12} color="#F59E0B" />
-                        ) : (
-                          <CheckCircle size={12} color="#10B981" />
-                        )
+                      {p.connected ? (
+                        <CheckCircle size={12} color="#10B981" />
                       ) : (
                         <View style={styles.disconnectedDot} />
                       )}
@@ -127,6 +124,7 @@ export default function SettingsScreen() {
             </View>
           </TouchableOpacity>
 
+          {/* Optional: Warnbanner weiterhin über statusMap (wenn dein Token-Checker Expiry kennt) */}
           {Object.values(statusMap).some(p => p.connected && p.isExpired) && (
             <View style={styles.warningBanner}>
               <AlertCircle size={16} color="#F59E0B" />
