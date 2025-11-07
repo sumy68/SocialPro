@@ -5,9 +5,10 @@ import { randomBytes } from 'crypto'
 const CLIENT_ID = process.env.LINKEDIN_CLIENT_ID!
 const CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET!
 const APP_URL = process.env.APP_URL || 'https://socialpro-fnvo.onrender.com'
-const REDIRECT_URI = `${APP_URL}/api/oauth/linkedin/callback`
+// erlaub Overwrite per ENV (vermeidet redirect_uri-mismatch)
+const REDIRECT_URI = process.env.LI_REDIRECT_URI || `${APP_URL}/api/oauth/linkedin/callback`
 
-// ✅ HIER: Scopes explizit drin (Profil + Email + optional Posten)
+// Scopes: Profil + Email; w_member_social optional fürs Posten
 const SCOPES = ['r_liteprofile', 'r_emailaddress', 'w_member_social'].join(' ')
 
 function requireEnv(name: string, v?: string) {
@@ -20,7 +21,7 @@ requireEnv('APP_URL', APP_URL)
 
 export const linkedinRouter = new Hono()
 
-// 1️⃣ Start → LinkedIn Login Dialog
+// 1) Start → LinkedIn Login Dialog (mit CSRF state cookie)
 linkedinRouter.get('/start', (c) => {
   const state = randomBytes(16).toString('hex')
   setCookie(c, 'li_state', state, { httpOnly: true, sameSite: 'Lax', path: '/' })
@@ -30,12 +31,12 @@ linkedinRouter.get('/start', (c) => {
     `?response_type=code` +
     `&client_id=${encodeURIComponent(CLIENT_ID)}` +
     `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-    `&scope=${encodeURIComponent(SCOPES)}` + // 👈 Scopes eingebaut!
+    `&scope=${encodeURIComponent(SCOPES)}` +
     `&state=${encodeURIComponent(state)}`
   return c.redirect(url, 302)
 })
 
-// 2️⃣ Callback → Deep Link / Web-Fallback
+// 2) Callback → nur Weiterleitung (App Deep Link / Web-Fallback), kein Token-Tausch hier
 linkedinRouter.get('/callback', (c) => {
   const u = new URL(c.req.url)
   const code = u.searchParams.get('code') ?? ''
@@ -51,18 +52,19 @@ linkedinRouter.get('/callback', (c) => {
   const deepFail = `socialpro://linkedin/fail${error ? `?error=${encodeURIComponent(error)}` : ''}`
 
   const ua = (c.req.header('user-agent') || '').toLowerCase()
-  const isApp = ua.includes('iphone') || ua.includes('ipad') || ua.includes('android') || ua.includes('wv') || ua.includes('crios') || ua.includes('fxios')
+  const isApp =
+    ua.includes('iphone') || ua.includes('ipad') || ua.includes('android') ||
+    ua.includes('wv') || ua.includes('crios') || ua.includes('fxios')
 
   if (isApp) return c.redirect(error ? deepFail : deepSuccess, 302)
 
-  const webBase = APP_URL
   const web = error
-    ? `${webBase}/connected/linkedin-fail${error ? `?error=${encodeURIComponent(error)}` : ''}`
-    : `${webBase}/connected/linkedin-success${code ? `?code=${encodeURIComponent(code)}` : ''}`
+    ? `${APP_URL}/connected/linkedin-fail${error ? `?error=${encodeURIComponent(error)}` : ''}`
+    : `${APP_URL}/connected/linkedin-success${code ? `?code=${encodeURIComponent(code)}` : ''}`
   return c.redirect(web, 303)
 })
 
-// 3️⃣ Callback/Exchange → Code gegen Token tauschen
+// 3) Exchange → tauscht code gegen Token, liefert JSON (oder Deep Link)
 linkedinRouter.get('/callback/exchange', async (c) => {
   const code = c.req.query('code')
   if (!code) return c.json({ ok: false, error: 'missing_code' }, 400)
@@ -91,13 +93,13 @@ linkedinRouter.get('/callback/exchange', async (c) => {
     const token = JSON.parse(tokenTxt) as { access_token: string; expires_in: number }
     const accessToken = token.access_token
 
-    // Profil holen
+    // Profil
     const meResp = await fetch('https://api.linkedin.com/v2/me', {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
     const me = await meResp.json()
 
-    // Email holen
+    // Email
     const emailResp = await fetch(
       'https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))',
       { headers: { Authorization: `Bearer ${accessToken}` } }
