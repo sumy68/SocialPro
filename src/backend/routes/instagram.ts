@@ -43,15 +43,24 @@ instagramRouter.get('/callback/exchange', async (c) => {
       return c.redirect('socialpro://connected/fail?error=no_instagram_business_account', 302)
     }
 
-    // 4) Zurück in die App (ohne Token – safer)
+    // 4) Erfolgreich – entweder JSON oder Redirect zurück in App
     const successUrl =
       'socialpro://connected/success'
       + '?page_id=' + encodeURIComponent(usedPageId || '')
       + '&ig_user_id=' + encodeURIComponent(igId)
 
+    const wantsJSON = (c.req.header('accept') || '').includes('application/json')
+    if (wantsJSON) {
+      return c.json({ ok: true, page_id: usedPageId, ig_user_id: igId })
+    }
+
     return c.redirect(successUrl, 302)
   } catch (err) {
     console.error('OAuth error:', err)
+    const wantsJSON = (c.req.header('accept') || '').includes('application/json')
+    if (wantsJSON) {
+      return c.json({ ok: false, error: 'exchange_failed' }, 400)
+    }
     return c.redirect('socialpro://connected/fail?error=exchange_failed', 302)
   }
 })
