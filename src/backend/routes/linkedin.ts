@@ -1,82 +1,136 @@
 import { Hono } from 'hono'
 import { setCookie, getCookie } from 'hono/cookie'
 import { randomBytes } from 'crypto'
-import fetch from 'node-fetch'
-
-export const linkedinRouter = new Hono()
 
 const CLIENT_ID = process.env.LINKEDIN_CLIENT_ID!
 const CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET!
 const APP_URL = process.env.APP_URL || 'https://socialpro-fnvo.onrender.com'
 const REDIRECT_URI = `${APP_URL}/api/oauth/linkedin/callback`
-const SCOPES = ['openid','profile','email','offline_access','w_member_social'].join(' ')
 
-// 🔹 Login starten
-linkedinRouter.get('/start', async (c) => {
+// Minimal-Scopes (Profil + Email). Für Posten: 'w_member_social' ergänzen.
+const SCOPES = ['r_liteprofile', 'r_emailaddress'/*, 'w_member_social'*/].join(' ')
+
+function requireEnv(name: string, v?: string) {
+  if (!v) throw new Error(`[ENV] Missing ${name}`)
+  return v
+}
+requireEnv('LINKEDIN_CLIENT_ID', CLIENT_ID)
+requireEnv('LINKEDIN_CLIENT_SECRET', CLIENT_SECRET)
+requireEnv('APP_URL', APP_URL)
+
+// Router
+export const linkedinRouter = new Hono()
+
+// 1) Start → LinkedIn Consent (mit CSRF state in Cookie)
+linkedinRouter.get('/start', (c) => {
   const state = randomBytes(16).toString('hex')
-  setCookie(c, 'linkedin_state', state, { httpOnly: true, sameSite: 'Lax', path: '/' })
+  setCookie(c, 'li_state', state, { httpOnly: true, sameSite: 'Lax', path: '/' })
 
-  const url = new URL('https://www.linkedin.com/oauth/v2/authorization')
-  url.searchParams.set('response_type', 'code')
-  url.searchParams.set('client_id', CLIENT_ID)
-  url.searchParams.set('redirect_uri', REDIRECT_URI)
-  url.searchParams.set('scope', SCOPES)
-  url.searchParams.set('state', state)
-
-  return c.redirect(url.toString())
+  const url =
+    `https://www.linkedin.com/oauth/v2/authorization` +
+    `?response_type=code` +
+    `&client_id=${encodeURIComponent(CLIENT_ID)}` +
+    `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+    `&scope=${encodeURIComponent(SCOPES)}` +
+    `&state=${encodeURIComponent(state)}`
+  return c.redirect(url, 302)
 })
 
-// 🔹 Callback & Tokens speichern
-linkedinRouter.get('/callback', async (c) => {
-  const url = new URL(c.req.url)
-  const code = url.searchParams.get('code')
-  const state = url.searchParams.get('state')
-  const saved = getCookie(c, 'linkedin_state')
+/**
+ * 2) Callback → NUR Weiterleitung:
+ *  - App-UserAgent → Deep Link in die App mit ?code=...
+ *  - Desktop → 303 auf Web-Fallback, z.B. /connected/linkedin-success
+ *  (Kein Token-Tausch hier!)
+ */
+linkedinRouter.get('/callback', (c) => {
+  const u = new URL(c.req.url)
+  const code = u.searchParams.get('code') ?? ''
+  const error = u.searchParams.get('error') ?? ''
+  const state = u.searchParams.get('state') ?? ''
+  const saved = getCookie(c, 'li_state') || ''
 
-  if (!code || !state || state !== saved)
-    return c.text('Invalid state', 400)
+  // CSRF basic check (nicht blockend, aber loggen)
+  if (state && saved && state !== saved) {
+    console.warn('[LI CALLBACK] state mismatch', { state, saved })
+  }
 
-  const tokenRes = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
+  const deepSuccess = `socialpro://linkedin/success${code ? `?code=${encodeURIComponent(code)}` : ''}`
+  const deepFail    = `socialpro://linkedin/fail${error ? `?error=${encodeURIComponent(error)}` : ''}`
+
+  const ua = (c.req.header('user-agent') || '').toLowerCase()
+  const isApp =
+    ua.includes('iphone') || ua.includes('ipad') || ua.includes('android') ||
+    ua.includes('wv') || ua.includes('crios') || ua.includes('fxios')
+
+  if (isApp) {
+    return c.redirect(error ? deepFail : deepSuccess, 302)
+  }
+
+  const webBase = APP_URL
+  const web = error
+    ? `${webBase}/connected/linkedin-fail${error ? `?error=${encodeURIComponent(error)}` : ''}`
+    : `${webBase}/connected/linkedin-success${code ? `?code=${encodeURIComponent(code)}` : ''}`
+  return c.redirect(web, 303)
+})
+
+/**
+ * 3) Exchange → tauscht ?code gegen Access Token und liefert JSON
+ *    (App ruft diesen Endpoint mit Accept: application/json auf)
+ */
+linkedinRouter.get('/callback/exchange', async (c) => {
+  const code = c.req.query('code')
+  if (!code) return c.json({ ok: false, error: 'missing_code' }, 400)
+
+  try {
+    // Token holen
+    const body = new URLSearchParams({
       grant_type: 'authorization_code',
       code,
       redirect_uri: REDIRECT_URI,
       client_id: CLIENT_ID,
       client_secret: CLIENT_SECRET,
     })
-  })
-  const tokenData = await tokenRes.json() as any
-  if (!tokenData.access_token) return c.json(tokenData, 400)
 
-  // Token-Cookies (Demo; später DB)
-  setCookie(c, 'linkedin_access', tokenData.access_token, { httpOnly: true, sameSite: 'Lax', path: '/' })
-  if (tokenData.refresh_token) {
-    setCookie(c, 'linkedin_refresh', tokenData.refresh_token, { httpOnly: true, sameSite: 'Lax', path: '/' })
-  }
-
-  return c.redirect('socialpro://connected/success?provider=linkedin')
-})
-
-// 🔹 Helper: Token Refresh (später z. B. in Cron verwenden)
-linkedinRouter.get('/refresh', async (c) => {
-  const refreshToken = getCookie(c, 'linkedin_refresh')
-  if (!refreshToken) return c.text('no refresh token', 400)
-
-  const res = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'refresh_token',
-      refresh_token: refreshToken,
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
+    const tokenResp = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
     })
-  })
-  const data = await res.json() as any
-  if (!data.access_token) return c.json(data, 400)
 
-  setCookie(c, 'linkedin_access', data.access_token, { httpOnly: true, sameSite: 'Lax', path: '/' })
-  return c.json({ ok: true, newToken: true })
+    const tokenTxt = await tokenResp.text()
+    if (!tokenResp.ok) {
+      console.error('LI token exchange failed:', tokenResp.status, tokenTxt)
+      return c.json({ ok: false, error: 'exchange_failed' }, 400)
+    }
+    const token = JSON.parse(tokenTxt) as { access_token: string; expires_in: number }
+    const accessToken = token.access_token
+
+    // Profil
+    const meResp = await fetch('https://api.linkedin.com/v2/me', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+    const me = await meResp.json()
+
+    // Email
+    const emailResp = await fetch(
+      'https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))',
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    )
+    const emailJson: any = await emailResp.json()
+    const email = emailJson?.elements?.[0]?.['handle~']?.emailAddress ?? null
+
+    // App-First: JSON
+    const wantsJSON = (c.req.header('accept') || '').includes('application/json')
+    const payload = { ok: true, me, email }
+    if (wantsJSON) return c.json(payload)
+
+    // Optional Deep Link (falls im Browser geöffnet)
+    const deep = `socialpro://linkedin/success${email ? `?li_email=${encodeURIComponent(email)}` : ''}`
+    return c.redirect(deep, 302)
+  } catch (e) {
+    console.error('LI exchange error:', e)
+    const wantsJSON = (c.req.header('accept') || '').includes('application/json')
+    if (wantsJSON) return c.json({ ok: false, error: 'exchange_failed' }, 400)
+    return c.redirect('socialpro://linkedin/fail?error=exchange_failed', 302)
+  }
 })
