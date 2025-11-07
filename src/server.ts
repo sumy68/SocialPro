@@ -12,6 +12,12 @@ const app = new Hono()
 // CORS (falls du die Start-URL im In-App Browser öffnest)
 app.use('*', cors())
 
+// Version/Deploy-Marker (für Render-Check)
+app.get('/version', (c) =>
+  c.text('build:v3 ' + (process.env.RENDER_GIT_COMMIT || 'local'))
+)
+console.log('[deploy] build v3 loaded')
+
 // Healthcheck für Render
 app.get('/health', (c) => c.text('ok'))
 
@@ -29,10 +35,13 @@ app.get('/api/oauth/instagram/callback', async (c) => {
 
   // TODO: Wenn du hier Tokens tauschst, erst machen, dann redirecten.
 
-  const deepLink = `socialpro://connected/success${code ? `?code=${encodeURIComponent(code)}` : ''}`
+  const deepLink = `socialpro://connected/success${
+    code ? `?code=${encodeURIComponent(code)}` : ''
+  }`
 
   const ua = (c.req.header('user-agent') || '').toLowerCase()
-  const isIOSApp = ua.includes('iphone') || ua.includes('ipad') || ua.includes('crios') || ua.includes('fxios')
+  const isIOSApp =
+    ua.includes('iphone') || ua.includes('ipad') || ua.includes('crios') || ua.includes('fxios')
   const isAndroidApp = ua.includes('android') || ua.includes('wv')
   const cameFromApp = isIOSApp || isAndroidApp
 
@@ -43,7 +52,9 @@ app.get('/api/oauth/instagram/callback', async (c) => {
 
   // Web-Fallback (für Desktop/Safari „Adresse ungültig“-Case)
   const webFallback = process.env.APP_URL
-    ? `${process.env.APP_URL}/connected/success${code ? `?code=${encodeURIComponent(code)}` : ''}`
+    ? `${process.env.APP_URL}/connected/success${
+        code ? `?code=${encodeURIComponent(code)}` : ''
+      }`
     : null
 
   if (webFallback) {
