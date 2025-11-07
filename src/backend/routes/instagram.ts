@@ -1,53 +1,57 @@
-import { Hono } from 'hono';
+import { Hono } from 'hono'
 import {
   getAuthUrl,
   exchangeCodeForToken,
   fetchPages,
   fetchIgBusinessAccountId,
-} from '../utils/instagramOAuth';
+} from '../utils/instagramOAuth'
 
-export const instagramRouter = new Hono();
+export const instagramRouter = new Hono()
 
 // Start → Facebook Login Dialog
 instagramRouter.get('/start', (c) => {
-  const url = getAuthUrl();
-  return c.redirect(url, 302);
-});
+  const url = getAuthUrl()
+  return c.redirect(url, 302)
+})
 
-// Callback → Token holen → Pages → IG Business ID → Deep Link zurück in App
-instagramRouter.get('/callback', async (c) => {
-  const code = c.req.query('code');
-  if (!code) return c.redirect('socialpro://connected/fail?error=missing_code', 302);
+// Callback-EXCHANGE (umbenannt): Token holen → Pages → IG Business ID → Deep Link zurück in App
+// WICHTIG: server.ts handled jetzt /api/oauth/instagram/callback (Deep-Link/Web-Fallback).
+// Dieser Endpoint ist NUR für den tatsächlichen Token-Exchange gedacht.
+instagramRouter.get('/callback/exchange', async (c) => {
+  const code = c.req.query('code')
+  if (!code) return c.redirect('socialpro://connected/fail?error=missing_code', 302)
 
   try {
     // 1) User-Token
-    const token = await exchangeCodeForToken(code);
-    const userToken = token.access_token;
+    const token = await exchangeCodeForToken(code)
+    const userToken = token.access_token
 
     // 2) Pages ziehen
-    const pages = await fetchPages(userToken);
-    if (!pages.length) return c.redirect('socialpro://connected/fail?error=no_pages', 302);
+    const pages = await fetchPages(userToken)
+    if (!pages.length) return c.redirect('socialpro://connected/fail?error=no_pages', 302)
 
     // 3) Page mit IG Business Account finden
-    let igId: string | null = null;
-    let usedPageId: string | null = null;
+    let igId: string | null = null
+    let usedPageId: string | null = null
 
     for (const p of pages) {
-      const maybe = await fetchIgBusinessAccountId(p.id, p.access_token || userToken);
-      if (maybe) { igId = maybe; usedPageId = p.id; break; }
+      const maybe = await fetchIgBusinessAccountId(p.id, p.access_token || userToken)
+      if (maybe) { igId = maybe; usedPageId = p.id; break }
     }
 
-    if (!igId) return c.redirect('socialpro://connected/fail?error=no_instagram_business_account', 302);
+    if (!igId) {
+      return c.redirect('socialpro://connected/fail?error=no_instagram_business_account', 302)
+    }
 
     // 4) Zurück in die App (ohne Token – safer)
     const successUrl =
       'socialpro://connected/success'
       + '?page_id=' + encodeURIComponent(usedPageId || '')
-      + '&ig_user_id=' + encodeURIComponent(igId);
+      + '&ig_user_id=' + encodeURIComponent(igId)
 
-    return c.redirect(successUrl, 302);
+    return c.redirect(successUrl, 302)
   } catch (err) {
-    console.error('OAuth error:', err);
-    return c.redirect('socialpro://connected/fail?error=exchange_failed', 302);
+    console.error('OAuth error:', err)
+    return c.redirect('socialpro://connected/fail?error=exchange_failed', 302)
   }
-});
+})
