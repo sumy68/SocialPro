@@ -54,8 +54,9 @@ youtubeRouter.get('/callback', async (c) => {
       client_secret: CLIENT_SECRET,
       redirect_uri: REDIRECT_URI,
       grant_type: 'authorization_code',
-    })
+    }).toString()
   })
+
   const data = await res.json() as any
   if (!data.access_token) return c.json(data, 400)
 
@@ -80,8 +81,9 @@ youtubeRouter.get('/refresh', async (c) => {
       client_secret: CLIENT_SECRET,
       refresh_token: rt,
       grant_type: 'refresh_token',
-    })
+    }).toString()
   })
+
   const data = await res.json() as any
   if (!data.access_token) return c.json(data, 400)
 

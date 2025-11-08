@@ -18,3 +18,9 @@ android/build/
 
 # 🔒 Env
 .env*
+.env
+.env.local
+
+# local junk
+node_modules_old/
+

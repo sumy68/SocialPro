@@ -1,16 +1,27 @@
 {
   "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
     "target": "ES2022",
     "module": "CommonJS",
     "moduleResolution": "Node",
-    "outDir": "dist",
-    "rootDir": "src",
-    "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
+    "strict": false,
+    "types": [
+      "node"
+    ],
     "resolveJsonModule": true,
-    "types": ["node"],
-    "lib": ["ES2022", "DOM"]
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ]
+    }
   },
-  "include": ["src/**/*.ts"]
+  "include": [
+    "src/server.ts",
+    "src/backend/**/*.ts",
+    "src/api/**/*.ts"
+  ]
 }

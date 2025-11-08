@@ -12,12 +12,11 @@ const CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET!
 const REDIRECT_URI = `${APP_URL}/api/oauth/tiktok/callback`
 
 // ✅ Scopes je nach Bedarf (Basics + Upload)
-const SCOPES = ['user.info.basic','video.upload'].join(',')
+const SCOPES = ['user.info.basic', 'video.upload'].join(',')
 
 // 🔐 OAuth URLs (Login Kit)
-// NOTE: Endpoints je nach TikTok-Produkt leicht unterschiedlich – diese hier sind die gängigen Login/OAuth-Endpoints.
 const AUTHORIZE_URL = 'https://www.tiktok.com/auth/authorize/'
-const TOKEN_URL     = 'https://www.tiktok.com/auth/token/'
+const TOKEN_URL = 'https://www.tiktok.com/auth/token/'
 
 // Start
 tiktokRouter.get('/start', (c) => {
@@ -43,22 +42,23 @@ tiktokRouter.get('/callback', async (c) => {
 
   const res = await fetch(TOKEN_URL, {
     method: 'POST',
-    headers: { 'Content-Type':'application/x-www-form-urlencoded' },
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       client_key: CLIENT_KEY,
       client_secret: CLIENT_SECRET,
       code,
       grant_type: 'authorization_code',
       redirect_uri: REDIRECT_URI,
-    })
+    }).toString(), // 👈 FIX: .toString()
   })
+
   const data = await res.json() as any
   if (!data.access_token && !data.data?.access_token) return c.json(data, 400)
 
   const access = data.access_token ?? data.data.access_token
   const refresh = data.refresh_token ?? data.data?.refresh_token
-  setCookie(c, 'tt_access', access, { httpOnly:true, sameSite:'Lax', path:'/' })
-  if (refresh) setCookie(c, 'tt_refresh', refresh, { httpOnly:true, sameSite:'Lax', path:'/' })
+  setCookie(c, 'tt_access', access, { httpOnly: true, sameSite: 'Lax', path: '/' })
+  if (refresh) setCookie(c, 'tt_refresh', refresh, { httpOnly: true, sameSite: 'Lax', path: '/' })
 
   return c.redirect('socialpro://connected/success?provider=tiktok')
 })
@@ -70,18 +70,19 @@ tiktokRouter.get('/refresh', async (c) => {
 
   const res = await fetch(TOKEN_URL, {
     method: 'POST',
-    headers: { 'Content-Type':'application/x-www-form-urlencoded' },
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       client_key: CLIENT_KEY,
       client_secret: CLIENT_SECRET,
       grant_type: 'refresh_token',
       refresh_token: rt,
-    })
+    }).toString(), // 👈 FIX: .toString()
   })
+
   const data = await res.json() as any
   const access = data.access_token ?? data.data?.access_token
   if (!access) return c.json(data, 400)
 
-  setCookie(c, 'tt_access', access, { httpOnly:true, sameSite:'Lax', path:'/' })
-  return c.json({ ok:true })
+  setCookie(c, 'tt_access', access, { httpOnly: true, sameSite: 'Lax', path: '/' })
+  return c.json({ ok: true })
 })

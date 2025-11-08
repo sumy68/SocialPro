@@ -9,7 +9,9 @@ const APP_URL = process.env.APP_URL || 'https://socialpro-fnvo.onrender.com'
 const REDIRECT_URI = process.env.LI_REDIRECT_URI || `${APP_URL}/api/oauth/linkedin/callback`
 
 // Scopes: Profil + Email; w_member_social optional fürs Posten
-const SCOPES = ['r_liteprofile', 'r_emailaddress', 'w_member_social'].join(' ')
+// statt ['r_liteprofile','r_emailaddress','w_member_social']
+const SCOPES = ['r_liteprofile', 'r_emailaddress'].join(' ')
+
 
 function requireEnv(name: string, v?: string) {
   if (!v) throw new Error(`[ENV] Missing ${name}`)
@@ -120,3 +122,5 @@ linkedinRouter.get('/callback/exchange', async (c) => {
     return c.redirect('socialpro://linkedin/fail?error=exchange_failed', 302)
   }
 })
+
+linkedinRouter.get('/ping', c => c.text('li pong'))

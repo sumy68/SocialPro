@@ -3,7 +3,7 @@ async function handleRequest(request: Request) {
   console.log('[API Route] Handling request:', request.method, url.pathname);
   
   try {
-    const { default: honoApp } = await import('@/backend/hono');
+    const { app: honoApp } = await import('../../hono');
     const response = await honoApp.fetch(request);
     console.log('[API Route] Response status:', response.status);
     return response;
