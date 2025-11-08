@@ -1,3 +1,4 @@
+// app/onboarding/connect-platforms.tsx
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -27,8 +28,9 @@ import Constants from "expo-constants";
 
 WebBrowser.maybeCompleteAuthSession();
 
-const { EXPO_PUBLIC_APP_URL, EXPO_PUBLIC_SCHEME } = Constants.expoConfig?.extra ?? {};
-const APP_URL = (EXPO_PUBLIC_APP_URL as string) || "http://localhost:10000"; // ✅ Fallback für Lokaltests
+const { EXPO_PUBLIC_APP_URL, EXPO_PUBLIC_SCHEME } =
+  Constants.expoConfig?.extra ?? {};
+const APP_URL = (EXPO_PUBLIC_APP_URL as string) || "http://localhost:10000";
 const API_BASE = `${APP_URL}/api`;
 const DEEP_LINK_SCHEME = (EXPO_PUBLIC_SCHEME as string) || "socialpro";
 const OAUTH_STATE = "test-user-123";
@@ -73,7 +75,11 @@ export default function ConnectPlatformsScreen() {
         if (q.status === "ok") {
           await AsyncStorage.setItem("ig_connected", "1");
           setIgConnected(true);
-          await connectPlatform("instagram", "Instagram Business", q.ig_user_id ?? "");
+          await connectPlatform(
+            "instagram",
+            "Instagram Business",
+            q.ig_user_id ?? ""
+          );
           Alert.alert("Instagram", "Erfolgreich verbunden ✅");
         } else {
           await AsyncStorage.removeItem("ig_connected");
@@ -90,7 +96,9 @@ export default function ConnectPlatformsScreen() {
 
   // ✅ gespeicherten Zustand laden
   useEffect(() => {
-    AsyncStorage.getItem("ig_connected").then((v) => setIgConnected(v === "1"));
+    AsyncStorage.getItem("ig_connected").then((v) =>
+      setIgConnected(v === "1")
+    );
   }, []);
 
   const startConnect = async (platform: Platform) => {
@@ -104,7 +112,11 @@ export default function ConnectPlatformsScreen() {
           path: "linkedin/success",
         });
 
-        const res = await AuthSession.openAuthSessionAsync(START_URL, redirectUri);
+        // ✅ FIX: WebBrowser.openAuthSessionAsync statt AuthSession.openAuthSessionAsync
+        const res = await WebBrowser.openAuthSessionAsync(
+          START_URL,
+          redirectUri
+        );
 
         if (res.type !== "success" || !res.url) {
           throw new Error("Login abgebrochen");
@@ -117,7 +129,9 @@ export default function ConnectPlatformsScreen() {
         if (!code) throw new Error("Kein Code erhalten");
 
         const ex = await fetch(
-          `${APP_URL}/api/oauth/linkedin/callback/exchange?code=${encodeURIComponent(code)}`,
+          `${APP_URL}/api/oauth/linkedin/callback/exchange?code=${encodeURIComponent(
+            code
+          )}`,
           { headers: { Accept: "application/json" } }
         );
         const data = await ex.json();
@@ -131,7 +145,9 @@ export default function ConnectPlatformsScreen() {
 
       if (platform === "tiktok") {
         const redirectUri = encodeURIComponent(`${API_BASE}/oauth/tiktok/callback`);
-        const scope = encodeURIComponent("user.info.basic video.list video.upload");
+        const scope = encodeURIComponent(
+          "user.info.basic video.list video.upload"
+        );
         const state = encodeURIComponent(OAUTH_STATE);
         return await WebBrowser.openBrowserAsync(
           `https://www.tiktok.com/v2/auth/authorize/?client_key=DEIN_TIKTOK_CLIENT_KEY&response_type=code&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`
@@ -153,7 +169,10 @@ export default function ConnectPlatformsScreen() {
         const startUrl = `${APP_URL}/api/oauth/instagram/start?redirect_uri=${encodeURIComponent(
           REDIRECT_URI
         )}`;
-        const result = await WebBrowser.openAuthSessionAsync(startUrl, REDIRECT_URI);
+        const result = await WebBrowser.openAuthSessionAsync(
+          startUrl,
+          REDIRECT_URI
+        );
 
         if (result.type === "success" && result.url) {
           const q = parseQuery(result.url);
@@ -164,8 +183,15 @@ export default function ConnectPlatformsScreen() {
           if (q.page_id && q.ig_user_id) {
             await AsyncStorage.setItem("ig_connected", "1");
             setIgConnected(true);
-            await connectPlatform("instagram", "Instagram Business", q.ig_user_id ?? "");
-            Alert.alert("Instagram", `Verbunden ✅\nPage: ${q.page_id}\nIG: ${q.ig_user_id}`);
+            await connectPlatform(
+              "instagram",
+              "Instagram Business",
+              q.ig_user_id ?? ""
+            );
+            Alert.alert(
+              "Instagram",
+              `Verbunden ✅\nPage: ${q.page_id}\nIG: ${q.ig_user_id}`
+            );
             return;
           }
         }
@@ -175,7 +201,10 @@ export default function ConnectPlatformsScreen() {
           return;
         }
 
-        Alert.alert("Instagram", "Unbekanntes Ergebnis. Bitte erneut versuchen.");
+        Alert.alert(
+          "Instagram",
+          "Unbekanntes Ergebnis. Bitte erneut versuchen."
+        );
         return;
       }
 

@@ -3,12 +3,13 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./app/*"]
+      "@/*": ["*"],          // @ zeigt auf Projektroot (z. B. constants/, hooks/, app/, etc.)
+      "@app/*": ["app/*"]    // optionaler Alias nur für /app
     },
     "types": ["expo-router"],            // bessere Route-Typen
     "moduleResolution": "Bundler",       // TS5 + RN/Expo friendly
     "jsx": "react-jsx",                  // moderne JSX-Transform
-    "noEmit": true,                      // wir emitten eh nix (Babel)
+    "noEmit": true,                      // Babel übernimmt das
     "isolatedModules": true,             // für Babel/metro
     "skipLibCheck": true,                // schneller, weniger Lärm
     "resolveJsonModule": true            // falls du JSON importierst

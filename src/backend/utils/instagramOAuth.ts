@@ -23,7 +23,7 @@ export function getAuthUrl() {
     redirect_uri: IG_REDIRECT_URI,
     response_type: 'code',
     scope: OAUTH_SCOPES,
-    state: 'xyz',
+    state: 'sp_ig',
   });
   return FB_DIALOG_OAUTH + '?' + params.toString();
 }
