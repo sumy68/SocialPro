@@ -12,9 +12,12 @@ const OAUTH_STATE = 'sp_ig' // muss mit getAuthUrl() matchen
 
 export const instagramRouter = new Hono()
 
+// quick ping zum Live-Check
+instagramRouter.get('/_ping', (c) => c.json({ ok: true }))
+
 // /api/oauth/instagram/start → Facebook Login
 instagramRouter.get('/start', (c) => {
-  const url = getAuthUrl() // sollte redirect_uri = APP_URL/api/oauth/instagram/callback + state=sp_ig setzen
+  const url = getAuthUrl() // redirect_uri = APP_URL/api/oauth/instagram/callback + state=sp_ig
   return c.redirect(url, 302)
 })
 
@@ -28,11 +31,10 @@ instagramRouter.get('/callback', async (c) => {
   if (!code) {
     return c.redirect(`${APP_SCHEME_FAIL}?platform=instagram&error=missing_code`, 302)
   }
-  // delegiere auf den Exchange-Flow
   return instagramExchange(c, code)
 })
 
-// Reiner Exchange-Endpoint (kannst du auch direkt hitten)
+// Reiner Exchange-Endpoint (optional direkt aufrufbar)
 instagramRouter.get('/callback/exchange', async (c) => {
   const code = c.req.query('code')
   if (!code) {
