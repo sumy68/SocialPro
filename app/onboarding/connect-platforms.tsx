@@ -28,7 +28,7 @@ import Constants from "expo-constants";
 WebBrowser.maybeCompleteAuthSession();
 
 const { EXPO_PUBLIC_APP_URL, EXPO_PUBLIC_SCHEME } = Constants.expoConfig?.extra ?? {};
-const APP_URL = (EXPO_PUBLIC_APP_URL as string) || "";
+const APP_URL = (EXPO_PUBLIC_APP_URL as string) || "http://localhost:10000"; // ✅ Fallback für Lokaltests
 const API_BASE = `${APP_URL}/api`;
 const DEEP_LINK_SCHEME = (EXPO_PUBLIC_SCHEME as string) || "socialpro";
 const OAUTH_STATE = "test-user-123";
@@ -39,9 +39,11 @@ const REDIRECT_URI = AuthSession.makeRedirectUri({
 });
 console.log("IG Redirect URI 👉", REDIRECT_URI);
 
+// ✅ intent:// Fix + Parsing
 const parseQuery = (url: string) => {
   try {
-    const u = new URL(url);
+    const safe = url.replace(/^intent:\/\//, "https://");
+    const u = new URL(safe);
     return {
       path: u.pathname,
       page_id: u.searchParams.get("page_id") ?? undefined,
@@ -49,6 +51,7 @@ const parseQuery = (url: string) => {
       error: u.searchParams.get("error") ?? undefined,
       status: u.searchParams.get("status") ?? undefined,
       platform: u.searchParams.get("platform") ?? undefined,
+      code: u.searchParams.get("code") ?? undefined,
     };
   } catch {
     return {};
@@ -95,12 +98,35 @@ export default function ConnectPlatformsScreen() {
       setConnecting(platform);
 
       if (platform === "linkedin") {
-        const redirectUri = encodeURIComponent(`${API_BASE}/oauth/linkedin/callback`);
-        const scope = encodeURIComponent("w_member_social r_liteprofile");
-        const state = encodeURIComponent(OAUTH_STATE);
-        return await WebBrowser.openBrowserAsync(
-          `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=DEIN_LINKEDIN_CLIENT_ID&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`
+        const START_URL = `${APP_URL}/api/oauth/linkedin/start`;
+        const redirectUri = AuthSession.makeRedirectUri({
+          scheme: DEEP_LINK_SCHEME,
+          path: "linkedin/success",
+        });
+
+        const res = await AuthSession.openAuthSessionAsync(START_URL, redirectUri);
+
+        if (res.type !== "success" || !res.url) {
+          throw new Error("Login abgebrochen");
+        }
+
+        const url = new URL(res.url);
+        const code = url.searchParams.get("code");
+        const error = url.searchParams.get("error");
+        if (error) throw new Error(`LinkedIn error: ${error}`);
+        if (!code) throw new Error("Kein Code erhalten");
+
+        const ex = await fetch(
+          `${APP_URL}/api/oauth/linkedin/callback/exchange?code=${encodeURIComponent(code)}`,
+          { headers: { Accept: "application/json" } }
         );
+        const data = await ex.json();
+        if (!ex.ok || !data?.ok)
+          throw new Error(`Exchange failed: ${data?.error || ex.status}`);
+
+        await connectPlatform("linkedin", "LinkedIn", data?.email ?? "");
+        Alert.alert("LinkedIn", "Erfolgreich verbunden ✅");
+        return;
       }
 
       if (platform === "tiktok") {

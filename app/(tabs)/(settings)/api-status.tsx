@@ -25,7 +25,7 @@ export default function APIStatusScreen() {
     const startTime = Date.now();
     try {
       // 👉 ping deinen echten Health-Endpoint
-      const res = await fetch(`${url}/healthz`, { method: 'GET' });
+      const res = await fetch(`${url}/health`, { method: 'GET' });
       const endTime = Date.now();
       setResponseTime(endTime - startTime);
 
@@ -58,7 +58,7 @@ export default function APIStatusScreen() {
     'EXPO_PUBLIC_DEMO_MODE': process.env.EXPO_PUBLIC_DEMO_MODE ?? 'Not set',
     'Platform': RNPlatform.OS,
     'Current Base URL': baseUrl,
-    'Health URL': baseUrl ? `${baseUrl}/healthz` : '…',
+    'Health URL': baseUrl ? `${baseUrl}/health` : '…',
   };
 
   return (
@@ -126,8 +126,8 @@ export default function APIStatusScreen() {
           ) : (
             <Text style={styles.helpText}>
               <Text style={styles.bold}>No connection to backend.</Text>{'\n\n'}
-              1) Öffne im Browser: {baseUrl || '<BASE_URL>'}/healthz {'\n'}
-              2) Falls 404: Ist <Text style={styles.bold}>/healthz</Text> im Server implementiert? (bei dir: ja){'\n'}
+              1) Öffne im Browser: {baseUrl || '<BASE_URL>'}/health {'\n'}
+              2) Falls 404: Ist <Text style={styles.bold}>/health</Text> im Server implementiert? (bei dir: ja){'\n'}
               3) Render-Dashboard: letzte Deploy-Logs checken{'\n'}
               4) In <Text style={styles.bold}>.env.development / .env.production</Text> sicherstellen:{'\n'}
               {'   '}EXPO_PUBLIC_APP_URL = https://socialpro-fnvo.onrender.com{'\n'}

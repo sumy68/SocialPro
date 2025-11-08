@@ -1,48 +1,22 @@
 {
+  "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "jsx": "react-native",
-    "target": "esnext",
-    "module": "esnext",
-    "lib": [
-      "dom",
-      "esnext"
-    ],
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "allowJs": true,
-    "strict": false,
-    "noEmit": true,
-    "noImplicitAny": false,
-    "ignoreDeprecations": "5.0",
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "src/*"
-      ]
-    }
+      "@/*": ["./app/*"]
+    },
+    "types": ["expo-router"],            // bessere Route-Typen
+    "moduleResolution": "Bundler",       // TS5 + RN/Expo friendly
+    "jsx": "react-jsx",                  // moderne JSX-Transform
+    "noEmit": true,                      // wir emitten eh nix (Babel)
+    "isolatedModules": true,             // für Babel/metro
+    "skipLibCheck": true,                // schneller, weniger Lärm
+    "resolveJsonModule": true            // falls du JSON importierst
   },
   "include": [
-    "app",
-    "src",
-    "contexts",
-    "hooks",
-    "lib",
-    "services",
-    "components",
-    "types",
-    "util",
+    "**/*.ts",
+    "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "backend",
-    "socialpro-backend",
-    "**/*.spec.ts",
-    "**/*.test.ts"
-  ],
-  "extends": "node_modules/expo/tsconfig.base"
+  ]
 }
