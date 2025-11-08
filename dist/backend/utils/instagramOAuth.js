@@ -1,10 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.IG_REDIRECT_URI = void 0;
-exports.getAuthUrl = getAuthUrl;
-exports.exchangeCodeForToken = exchangeCodeForToken;
-exports.fetchPages = fetchPages;
-exports.fetchIgBusinessAccountId = fetchIgBusinessAccountId;
 function requireEnv(name) {
     const v = process.env[name];
     if (!v)
@@ -14,27 +7,27 @@ function requireEnv(name) {
 const IG_CLIENT_ID = requireEnv('IG_CLIENT_ID'); // Meta App ID
 const IG_CLIENT_SECRET = requireEnv('IG_CLIENT_SECRET'); // Meta App Secret
 const APP_URL = requireEnv('APP_URL'); // https://socialpro-fnvo.onrender.com
-exports.IG_REDIRECT_URI = APP_URL + '/api/oauth/instagram/callback';
+export const IG_REDIRECT_URI = APP_URL + '/api/oauth/instagram/callback';
 const FB_DIALOG_OAUTH = 'https://www.facebook.com/v20.0/dialog/oauth';
 const GRAPH = 'https://graph.facebook.com/v20.0';
 const GRAPH_TOKEN_URL = GRAPH + '/oauth/access_token';
 // minimale Scopes für IG Graph
 const OAUTH_SCOPES = 'pages_show_list,instagram_basic';
-function getAuthUrl() {
+export function getAuthUrl() {
     const params = new URLSearchParams({
         client_id: IG_CLIENT_ID,
-        redirect_uri: exports.IG_REDIRECT_URI,
+        redirect_uri: IG_REDIRECT_URI,
         response_type: 'code',
         scope: OAUTH_SCOPES,
         state: 'sp_ig',
     });
     return FB_DIALOG_OAUTH + '?' + params.toString();
 }
-async function exchangeCodeForToken(code) {
+export async function exchangeCodeForToken(code) {
     const params = new URLSearchParams({
         client_id: IG_CLIENT_ID,
         client_secret: IG_CLIENT_SECRET,
-        redirect_uri: exports.IG_REDIRECT_URI,
+        redirect_uri: IG_REDIRECT_URI,
         code,
     });
     const res = await fetch(GRAPH_TOKEN_URL + '?' + params.toString(), { method: 'GET' });
@@ -45,7 +38,7 @@ async function exchangeCodeForToken(code) {
     return res.json(); // { access_token, token_type, expires_in }
 }
 /** Listet FB Pages des Users */
-async function fetchPages(userToken) {
+export async function fetchPages(userToken) {
     const url = GRAPH + '/me/accounts?fields=id,name,access_token&access_token=' + encodeURIComponent(userToken);
     const res = await fetch(url);
     if (!res.ok)
@@ -54,7 +47,7 @@ async function fetchPages(userToken) {
     return data.data || [];
 }
 /** Holt IG Business Account ID zu einer FB Page */
-async function fetchIgBusinessAccountId(pageId, userOrPageToken) {
+export async function fetchIgBusinessAccountId(pageId, userOrPageToken) {
     const url = GRAPH + '/' + pageId + '?fields=instagram_business_account&access_token=' + encodeURIComponent(userOrPageToken);
     const res = await fetch(url);
     if (!res.ok)

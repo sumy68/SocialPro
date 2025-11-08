@@ -1,19 +1,16 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.instagramRouter = void 0;
 // src/backend/routes/instagram.ts
-const hono_1 = require("hono");
-const instagramOAuth_1 = require("../utils/instagramOAuth");
+import { Hono } from 'hono';
+import { getAuthUrl, exchangeCodeForToken, fetchPages, fetchIgBusinessAccountId, } from '../utils/instagramOAuth.js';
 const APP_SCHEME_SUCCESS = 'socialpro://connected/success';
 const APP_SCHEME_FAIL = 'socialpro://connected/fail';
 const OAUTH_STATE = 'sp_ig'; // muss mit getAuthUrl() matchen
-exports.instagramRouter = new hono_1.Hono();
+export const instagramRouter = new Hono();
 // Quick ping zum Live-Check
-exports.instagramRouter.get('/_ping', (c) => c.json({ ok: true }));
+instagramRouter.get('/_ping', (c) => c.json({ ok: true }));
 // /api/oauth/instagram/start → Facebook Login
-exports.instagramRouter.get('/start', (c) => {
+instagramRouter.get('/start', (c) => {
     try {
-        const url = (0, instagramOAuth_1.getAuthUrl)(); // redirect_uri = APP_URL/api/oauth/instagram/callback + state=sp_ig
+        const url = getAuthUrl(); // redirect_uri = APP_URL/api/oauth/instagram/callback + state=sp_ig
         return c.redirect(url, 302);
     }
     catch (e) {
@@ -22,7 +19,7 @@ exports.instagramRouter.get('/start', (c) => {
     }
 });
 // Meta callback (die URL, die du in der Meta-App hinterlegst)
-exports.instagramRouter.get('/callback', async (c) => {
+instagramRouter.get('/callback', async (c) => {
     const code = c.req.query('code');
     const state = c.req.query('state');
     if (state && state !== OAUTH_STATE) {
@@ -34,7 +31,7 @@ exports.instagramRouter.get('/callback', async (c) => {
     return instagramExchange(c, code);
 });
 // Reiner Exchange-Endpoint (optional direkt aufrufbar)
-exports.instagramRouter.get('/callback/exchange', async (c) => {
+instagramRouter.get('/callback/exchange', async (c) => {
     const code = c.req.query('code');
     if (!code) {
         return c.redirect(`${APP_SCHEME_FAIL}?platform=instagram&error=missing_code`, 302);
@@ -44,10 +41,10 @@ exports.instagramRouter.get('/callback/exchange', async (c) => {
 async function instagramExchange(c, code) {
     try {
         // 1) code → user token
-        const token = await (0, instagramOAuth_1.exchangeCodeForToken)(code);
+        const token = await exchangeCodeForToken(code);
         const userToken = token.access_token;
         // 2) Seiten holen
-        const pages = await (0, instagramOAuth_1.fetchPages)(userToken);
+        const pages = await fetchPages(userToken);
         if (!pages.length) {
             return c.redirect(`${APP_SCHEME_FAIL}?platform=instagram&error=no_pages`, 302);
         }
@@ -55,7 +52,7 @@ async function instagramExchange(c, code) {
         let igId = null;
         let usedPageId = null;
         for (const p of pages) {
-            const maybe = await (0, instagramOAuth_1.fetchIgBusinessAccountId)(p.id, p.access_token || userToken);
+            const maybe = await fetchIgBusinessAccountId(p.id, p.access_token || userToken);
             if (maybe) {
                 igId = maybe;
                 usedPageId = p.id;

@@ -1,10 +1,9 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.linkedinRouter = void 0;
-const hono_1 = require("hono");
-const cookie_1 = require("hono/cookie");
-const crypto_1 = require("crypto");
-exports.linkedinRouter = new hono_1.Hono();
+// src/backend/routes/linkedin.ts
+// ESM + Hono v4 (Node 20) — copy/paste ready
+import { Hono } from 'hono';
+import { setCookie, getCookie } from 'hono/cookie';
+import { randomBytes } from 'node:crypto';
+export const linkedinRouter = new Hono();
 function getCfg() {
     const APP_URL = process.env.APP_URL || 'https://socialpro-fnvo.onrender.com';
     const CLIENT_ID = process.env.LINKEDIN_CLIENT_ID || '';
@@ -24,16 +23,19 @@ function ensureEnv() {
     return missing;
 }
 const SCOPES = ['r_liteprofile', 'r_emailaddress'].join(' ');
-exports.linkedinRouter.get('/ping', c => c.text('li pong'));
-// Start
-exports.linkedinRouter.get('/start', (c) => {
+linkedinRouter.get('/ping', (c) => c.text('li pong'));
+// --- START ---
+linkedinRouter.get('/start', (c) => {
     const missing = ensureEnv();
-    if (missing.length) {
+    if (missing.length)
         return c.text(`[ENV] Missing: ${missing.join(', ')}`, 500);
-    }
     const { CLIENT_ID, REDIRECT_URI } = getCfg();
-    const state = (0, crypto_1.randomBytes)(16).toString('hex');
-    (0, cookie_1.setCookie)(c, 'li_state', state, { httpOnly: true, sameSite: 'Lax', path: '/' });
+    const state = randomBytes(16).toString('hex');
+    setCookie(c, 'li_state', state, {
+        httpOnly: true,
+        sameSite: 'Lax',
+        path: '/',
+    });
     const url = `https://www.linkedin.com/oauth/v2/authorization` +
         `?response_type=code` +
         `&client_id=${encodeURIComponent(CLIENT_ID)}` +
@@ -42,22 +44,21 @@ exports.linkedinRouter.get('/start', (c) => {
         `&state=${encodeURIComponent(state)}`;
     return c.redirect(url, 302);
 });
-// Callback → leitet nur weiter
-exports.linkedinRouter.get('/callback', (c) => {
+// --- CALLBACK ---
+linkedinRouter.get('/callback', (c) => {
     const { APP_URL } = getCfg();
     const u = new URL(c.req.url);
     const code = u.searchParams.get('code') ?? '';
     const error = u.searchParams.get('error') ?? '';
     const state = u.searchParams.get('state') ?? '';
-    const saved = (0, cookie_1.getCookie)(c, 'li_state') || '';
+    const saved = getCookie(c, 'li_state') || '';
     if (state && saved && state !== saved) {
         console.warn('[LI CALLBACK] state mismatch', { state, saved });
     }
     const deepSuccess = `socialpro://linkedin/success${code ? `?code=${encodeURIComponent(code)}` : ''}`;
     const deepFail = `socialpro://linkedin/fail${error ? `?error=${encodeURIComponent(error)}` : ''}`;
     const ua = (c.req.header('user-agent') || '').toLowerCase();
-    const isApp = ua.includes('iphone') || ua.includes('ipad') || ua.includes('android') ||
-        ua.includes('wv') || ua.includes('crios') || ua.includes('fxios');
+    const isApp = /iphone|ipad|android|wv|crios|fxios/.test(ua);
     if (isApp)
         return c.redirect(error ? deepFail : deepSuccess, 302);
     const web = error
@@ -65,8 +66,8 @@ exports.linkedinRouter.get('/callback', (c) => {
         : `${APP_URL}/connected/linkedin-success${code ? `?code=${encodeURIComponent(code)}` : ''}`;
     return c.redirect(web, 303);
 });
-// Exchange
-exports.linkedinRouter.get('/callback/exchange', async (c) => {
+// --- EXCHANGE ---
+linkedinRouter.get('/callback/exchange', async (c) => {
     const missing = ensureEnv();
     if (missing.length)
         return c.json({ ok: false, error: `missing_env:${missing.join(',')}` }, 500);

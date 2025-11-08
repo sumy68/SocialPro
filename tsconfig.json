@@ -1,23 +1,17 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["*"],          // @ zeigt auf Projektroot (z. B. constants/, hooks/, app/, etc.)
-      "@app/*": ["app/*"]    // optionaler Alias nur für /app
-    },
-    "types": ["expo-router"],            // bessere Route-Typen
-    "moduleResolution": "Bundler",       // TS5 + RN/Expo friendly
-    "jsx": "react-jsx",                  // moderne JSX-Transform
-    "noEmit": true,                      // Babel übernimmt das
-    "isolatedModules": true,             // für Babel/metro
-    "skipLibCheck": true,                // schneller, weniger Lärm
-    "resolveJsonModule": true            // falls du JSON importierst
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "module": "commonjs",
+    "target": "ES2020",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "types": ["node"]
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-  ]
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/app/**", "src/api/**", "**/*.test.ts", "**/*.spec.ts"]
 }

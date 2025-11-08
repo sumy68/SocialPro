@@ -1,48 +1,10 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.GET = GET;
-exports.POST = POST;
-exports.PUT = PUT;
-exports.DELETE = DELETE;
-exports.OPTIONS = OPTIONS;
+// src/api/api/[[...route]].ts
 async function handleRequest(request) {
     const url = new URL(request.url);
     console.log('[API Route] Handling request:', request.method, url.pathname);
     try {
-        const { app: honoApp } = await Promise.resolve().then(() => __importStar(require('../../hono')));
+        // NodeNext/ESM needs explicit .js for relative imports
+        const { app: honoApp } = await import('../../hono.js');
         const response = await honoApp.fetch(request);
         console.log('[API Route] Response status:', response.status);
         return response;
@@ -52,25 +14,25 @@ async function handleRequest(request) {
         return new Response(JSON.stringify({
             error: 'Internal server error',
             message: error?.message || 'Unknown error',
-            stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+            stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined,
         }), {
             status: 500,
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json' },
         });
     }
 }
-async function GET(request) {
+export async function GET(request) {
     return handleRequest(request);
 }
-async function POST(request) {
+export async function POST(request) {
     return handleRequest(request);
 }
-async function PUT(request) {
+export async function PUT(request) {
     return handleRequest(request);
 }
-async function DELETE(request) {
+export async function DELETE(request) {
     return handleRequest(request);
 }
-async function OPTIONS(request) {
+export async function OPTIONS(request) {
     return handleRequest(request);
 }

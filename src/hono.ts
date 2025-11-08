@@ -1,14 +1,11 @@
-import { Hono } from 'hono'
-import { linkedinRouter } from './backend/routes/linkedin'
-import { instagramRouter } from './backend/routes/instagram'
+// src/hono.ts
+import { Hono, type Context } from 'hono';
+import { linkedinRouter } from './backend/routes/linkedin.js';
 
-export const app = new Hono()
+const app = new Hono();
 
-app.get('/health', c => c.json({ status: 'ok' }))
+app.route('/api/oauth/linkedin', linkedinRouter);
+app.get('/health', (c: Context) => c.text('ok'));
 
-app.route('/api/oauth/linkedin', linkedinRouter)
-app.route('/api/oauth/instagram', instagramRouter)
-
-console.log('[boot] IG router mounted at /api/oauth/instagram')
-
-// bump 1762624362
+export default app;
+export { app };

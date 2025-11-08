@@ -5,7 +5,7 @@ import {
   exchangeCodeForToken,
   fetchPages,
   fetchIgBusinessAccountId,
-} from '../utils/instagramOAuth'
+} from '../utils/instagramOAuth.js'
 
 const APP_SCHEME_SUCCESS = 'socialpro://connected/success'
 const APP_SCHEME_FAIL = 'socialpro://connected/fail'
