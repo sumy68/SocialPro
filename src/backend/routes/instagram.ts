@@ -1,3 +1,4 @@
+// src/backend/routes/instagram.ts
 import { Hono } from 'hono'
 import {
   getAuthUrl,
@@ -12,25 +13,32 @@ const OAUTH_STATE = 'sp_ig' // muss mit getAuthUrl() matchen
 
 export const instagramRouter = new Hono()
 
-// quick ping zum Live-Check
+// Quick ping zum Live-Check
 instagramRouter.get('/_ping', (c) => c.json({ ok: true }))
 
 // /api/oauth/instagram/start → Facebook Login
 instagramRouter.get('/start', (c) => {
-  const url = getAuthUrl() // redirect_uri = APP_URL/api/oauth/instagram/callback + state=sp_ig
-  return c.redirect(url, 302)
+  try {
+    const url = getAuthUrl() // redirect_uri = APP_URL/api/oauth/instagram/callback + state=sp_ig
+    return c.redirect(url, 302)
+  } catch (e) {
+    console.error('IG /start err:', e)
+    return c.redirect(`${APP_SCHEME_FAIL}?platform=instagram&error=start_failed`, 302)
+  }
 })
 
 // Meta callback (die URL, die du in der Meta-App hinterlegst)
 instagramRouter.get('/callback', async (c) => {
   const code = c.req.query('code')
   const state = c.req.query('state')
+
   if (state && state !== OAUTH_STATE) {
     return c.redirect(`${APP_SCHEME_FAIL}?platform=instagram&error=bad_state`, 302)
   }
   if (!code) {
     return c.redirect(`${APP_SCHEME_FAIL}?platform=instagram&error=missing_code`, 302)
   }
+
   return instagramExchange(c, code)
 })
 
