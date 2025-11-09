@@ -1,59 +1,61 @@
 // src/backend/routes/linkedin.ts
-import { Hono } from 'hono'
-import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
+import { Hono } from 'hono';
+import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 
-export const linkedinRouter = new Hono()
+export const linkedinRouter = new Hono();
 
-// /start – state erzeugen & als Cookie setzen
+// /start: state setzen
 linkedinRouter.get('/start', (c) => {
-  const state = crypto.randomUUID().replace(/-/g, '')
+  const state = crypto.randomUUID().replace(/-/g, '');
   const params = new URLSearchParams({
     response_type: 'code',
-    client_id: process.env.LI_CLIENT_ID ?? '',
+    client_id: process.env.LINKEDIN_CLIENT_ID!,
     redirect_uri: `${process.env.PUBLIC_BASE_URL}/api/oauth/linkedin/callback`,
     scope: 'openid profile email',
     state,
-  })
+  });
+
+  // Cookie sicher setzen
   setCookie(c, 'li_state', state, {
     httpOnly: true,
-    secure: true,
     sameSite: 'Lax',
-    path: '/',
-  })
-  return c.redirect(`https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`, 302)
-})
+    secure: true,      // auf Render via HTTPS: true
+    path: '/',         // wichtig, damit es im Callback mitkommt
+    maxAge: 10 * 60,   // 10 min
+  });
 
-// /callback – state prüfen (STRIKT), Cookie löschen, dann weitermachen
+  return c.redirect(`https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`);
+});
+
+// /callback: state prüfen
 linkedinRouter.get('/callback', async (c) => {
-  const qs = c.req.query()
-  const code = qs.code
-  const state = qs.state
-  const cookieState = getCookie(c, 'li_state')
+  const qState = c.req.query('state') ?? '';
+  const cookieState = getCookie(c, 'li_state') ?? '';
 
-  // 1) MUSS vorhanden & identisch sein
-  if (!state || !cookieState || state !== cookieState) {
-    // Cookie weg, um Replays zu vermeiden
-    deleteCookie(c, 'li_state', { path: '/' })
+  if (!qState || !cookieState || qState !== cookieState) {
+    // Cookie aufräumen
+    deleteCookie(c, 'li_state', { path: '/' });
     return c.redirect(
       'socialpro://connected/failure?provider=linkedin&reason=state_mismatch',
       302
-    )
+    );
   }
 
-  // 2) Einmal-Token verbrauchen
-  deleteCookie(c, 'li_state', { path: '/' })
+  // Optional: Cookie nach erfolgreicher Prüfung invalidieren
+  deleteCookie(c, 'li_state', { path: '/' });
 
-  // 3) Ab hier: echten Token-Exchange machen (oder für Dummy-Code testweise short-circuit)
-  if (!code || code === 'dummy_code') {
+  // TODO: echten Token-Exchange machen; bis dahin nur Platzhalter:
+  const code = c.req.query('code') ?? '';
+  if (!code) {
     return c.redirect(
-      'socialpro://connected/failure?provider=linkedin&reason=not_exchanged_yet',
+      'socialpro://connected/failure?provider=linkedin&reason=missing_code',
       302
-    )
+    );
   }
 
-  // … hier deinen echten Code→Token-Exchange implementieren …
-  // const tokens = await exchangeLinkedInCodeForTokens(code)
-
-  // Beispiel-Redirect nach Erfolg:
-  return c.redirect('socialpro://connected/success?provider=linkedin', 302)
-})
+  // Hier würdest du mit LinkedIn den Code eintauschen…
+  return c.redirect(
+    `socialpro://connected/success?provider=linkedin&code=${encodeURIComponent(code)}`,
+    302
+  );
+});
