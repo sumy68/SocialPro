@@ -24,8 +24,6 @@ app.route('/api/oauth/linkedin', linkedinRouter);
 app.route('/api/oauth/instagram', instagramRouter);
 
 // 🔥 Inline-Test-Routen (müssen nach dem Build im dist/hono.js auftauchen!)
-app.get('/api/oauth/instagram/ping-inline', (c: Context) => c.text('ig inline ok'));
-app.get('/api/oauth/instagram/ping', (c: Context) => c.text('ig inline ok (shadow)'));
 
 app.get('/health', (c: Context) => c.text('ok-ig-inline'));
 
