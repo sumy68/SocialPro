@@ -25,7 +25,7 @@ function ensureEnv() {
   return missing;
 }
 
-const SCOPES = ['r_liteprofile', 'r_emailaddress'].join(' ');
+const SCOPES = ['openid', 'profile', 'email'].join(' ');
 
 linkedinRouter.get('/ping', (c: Context) => c.text('li pong'));
 

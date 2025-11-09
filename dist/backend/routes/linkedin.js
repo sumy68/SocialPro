@@ -22,7 +22,7 @@ function ensureEnv() {
         missing.push('APP_URL');
     return missing;
 }
-const SCOPES = ['r_liteprofile', 'r_emailaddress'].join(' ');
+const SCOPES = ['openid', 'profile', 'email'].join(' ');
 linkedinRouter.get('/ping', (c) => c.text('li pong'));
 // --- START ---
 linkedinRouter.get('/start', (c) => {
