@@ -14,21 +14,18 @@ const OAUTH_STATE = 'sp_ig'; // muss mit getAuthUrl() matchen
 export const instagramRouter = new Hono();
 
 // --- utils ---------------------------------------------------------------
+const wantsJSON = (c: Context) =>
+  (c.req.header('accept') || '').includes('application/json');
 
-function wantsJSON(c: Context) {
-  const accept = c.req.header('accept') || '';
-  return accept.includes('application/json');
-}
-
-function failUrl(error: string) {
+const failUrl = (error: string) => {
   const u = new URL(APP_SCHEME_FAIL);
   u.searchParams.set('provider', 'instagram');
   u.searchParams.set('platform', 'instagram');
   u.searchParams.set('error', error);
   return u.toString();
-}
+};
 
-function successUrl(params: { page_id: string; ig_user_id: string }) {
+const successUrl = (params: { page_id: string; ig_user_id: string }) => {
   const u = new URL(APP_SCHEME_SUCCESS);
   u.searchParams.set('provider', 'instagram');
   u.searchParams.set('platform', 'instagram');
@@ -36,21 +33,14 @@ function successUrl(params: { page_id: string; ig_user_id: string }) {
   u.searchParams.set('page_id', params.page_id || '');
   u.searchParams.set('ig_user_id', params.ig_user_id);
   return u.toString();
-}
+};
 
 // --- health / ping -------------------------------------------------------
-
-instagramRouter.get('/_ping', (c) => c.json({ ok: true }));
-instagramRouter.get('/ping', (c) => c.text('ig pong'));
-instagramRouter.head('/ping', (c) => c.text('')); // for -I checks
+instagramRouter.get('/_ping', (c: Context) => c.json({ ok: true }));
+instagramRouter.get('/ping', (c: Context) => c.text('ig pong'));
 
 // --- start ---------------------------------------------------------------
-
-/**
- * GET /api/oauth/instagram/start
- * → Redirect zu Meta/Facebook Login
- */
-instagramRouter.get('/start', (c) => {
+instagramRouter.get('/start', (c: Context) => {
   try {
     const url = getAuthUrl(); // redirect_uri: APP_URL/api/oauth/instagram/callback & state=sp_ig
     return c.redirect(url, 302);
@@ -61,61 +51,40 @@ instagramRouter.get('/start', (c) => {
 });
 
 // --- callback + exchange -------------------------------------------------
-
-/**
- * Meta Callback (in der Meta-App hinterlegt)
- * GET /api/oauth/instagram/callback?code=...&state=...
- */
-instagramRouter.get('/callback', async (c) => {
+instagramRouter.get('/callback', async (c: Context) => {
   const code = c.req.query('code');
   const state = c.req.query('state');
 
-  if (state && state !== OAUTH_STATE) {
-    return c.redirect(failUrl('bad_state'), 302);
-  }
-  if (!code) {
-    return c.redirect(failUrl('missing_code'), 302);
-  }
+  if (state && state !== OAUTH_STATE) return c.redirect(failUrl('bad_state'), 302);
+  if (!code) return c.redirect(failUrl('missing_code'), 302);
+
   return instagramExchange(c, code);
 });
 
-// HEAD wird von manchen Proxys/Crawlers geschickt – gib einfach 200 zurück
-instagramRouter.head('/callback', (c) => c.text(''));
-
-/**
- * Direkter Exchange-Endpoint (optional)
- * GET /api/oauth/instagram/callback/exchange?code=...
- */
-instagramRouter.get('/callback/exchange', async (c) => {
+instagramRouter.get('/callback/exchange', async (c: Context) => {
   const code = c.req.query('code');
-  if (!code) {
-    return c.redirect(failUrl('missing_code'), 302);
-  }
+  if (!code) return c.redirect(failUrl('missing_code'), 302);
   return instagramExchange(c, code);
 });
 
 // --- core flow -----------------------------------------------------------
-
 async function instagramExchange(c: Context, code: string) {
   try {
     // 1) code → user token
     const token = await exchangeCodeForToken(code);
     const userToken = (token as any).access_token as string;
-    if (!userToken) {
-      throw new Error('no_access_token');
-    }
+    if (!userToken) throw new Error('no_access_token');
 
-    // 2) Facebook Pages holen
+    // 2) Facebook Pages
     const pages: Array<{ id: string; access_token?: string }> = await fetchPages(userToken);
     if (!pages?.length) {
       if (wantsJSON(c)) return c.json({ ok: false, error: 'no_pages' }, 400);
       return c.redirect(failUrl('no_pages'), 302);
     }
 
-    // 3) IG Business Account finden
+    // 3) IG Business Account
     let igId: string | null = null;
     let usedPageId: string | null = null;
-
     for (const p of pages) {
       const maybe = await fetchIgBusinessAccountId(p.id, p.access_token || userToken);
       if (maybe) {
@@ -124,23 +93,15 @@ async function instagramExchange(c: Context, code: string) {
         break;
       }
     }
-
     if (!igId) {
       if (wantsJSON(c)) return c.json({ ok: false, error: 'no_instagram_business_account' }, 400);
       return c.redirect(failUrl('no_instagram_business_account'), 302);
     }
 
-    // 4) Erfolg → Deep Link zurück in die App ODER JSON
-    const sUrl = successUrl({
-      page_id: usedPageId || '',
-      ig_user_id: igId,
-    });
+    // 4) Erfolg → Deep Link oder JSON
+    const sUrl = successUrl({ page_id: usedPageId || '', ig_user_id: igId });
+    if (wantsJSON(c)) return c.json({ ok: true, page_id: usedPageId, ig_user_id: igId });
 
-    if (wantsJSON(c)) {
-      return c.json({ ok: true, page_id: usedPageId, ig_user_id: igId });
-    }
-
-    // Optional: Mini-HTML-Fallback + 302-Redirect (hilft bei Browsern)
     return c.html(
       `<!doctype html>
 <meta http-equiv="refresh" content="0;url=${sUrl}">
