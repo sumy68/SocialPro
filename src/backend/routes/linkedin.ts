@@ -4,9 +4,19 @@ import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 
 export const linkedinRouter = new Hono();
 
-// /start: state setzen
+const LI_COOKIE = 'li_state';
+
 linkedinRouter.get('/start', (c) => {
   const state = crypto.randomUUID().replace(/-/g, '');
+  // In Prod unbedingt secure:true (du bist auf HTTPS → passt)
+  setCookie(c, LI_COOKIE, state, {
+    httpOnly: true,
+    sameSite: 'Lax',
+    secure: true,
+    path: '/',
+    maxAge: 600, // 10 min
+  });
+
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: process.env.LINKEDIN_CLIENT_ID!,
@@ -15,47 +25,27 @@ linkedinRouter.get('/start', (c) => {
     state,
   });
 
-  // Cookie sicher setzen
-  setCookie(c, 'li_state', state, {
-    httpOnly: true,
-    sameSite: 'Lax',
-    secure: true,      // auf Render via HTTPS: true
-    path: '/',         // wichtig, damit es im Callback mitkommt
-    maxAge: 10 * 60,   // 10 min
-  });
-
-  return c.redirect(`https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`);
+  return c.redirect(`https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`, 302);
 });
 
-// /callback: state prüfen
 linkedinRouter.get('/callback', async (c) => {
   const qState = c.req.query('state') ?? '';
-  const cookieState = getCookie(c, 'li_state') ?? '';
+  const cookieState = getCookie(c, LI_COOKIE) ?? '';
 
+  // State MUSS übereinstimmen (und vorhanden sein)
   if (!qState || !cookieState || qState !== cookieState) {
-    // Cookie aufräumen
-    deleteCookie(c, 'li_state', { path: '/' });
-    return c.redirect(
-      'socialpro://connected/failure?provider=linkedin&reason=state_mismatch',
-      302
-    );
+    deleteCookie(c, LI_COOKIE, { path: '/' });
+    return c.redirect('socialpro://connected/failure?provider=linkedin&reason=state_mismatch', 302);
   }
 
-  // Optional: Cookie nach erfolgreicher Prüfung invalidieren
-  deleteCookie(c, 'li_state', { path: '/' });
+  // Einmal-Token → sofort löschen
+  deleteCookie(c, LI_COOKIE, { path: '/' });
 
-  // TODO: echten Token-Exchange machen; bis dahin nur Platzhalter:
   const code = c.req.query('code') ?? '';
   if (!code) {
-    return c.redirect(
-      'socialpro://connected/failure?provider=linkedin&reason=missing_code',
-      302
-    );
+    return c.redirect('socialpro://connected/failure?provider=linkedin&reason=missing_code', 302);
   }
 
-  // Hier würdest du mit LinkedIn den Code eintauschen…
-  return c.redirect(
-    `socialpro://connected/success?provider=linkedin&code=${encodeURIComponent(code)}`,
-    302
-  );
+  // TODO: Token-Exchange hier (axios/fetch)
+  return c.redirect(`socialpro://connected/success?provider=linkedin&code=${encodeURIComponent(code)}`, 302);
 });
