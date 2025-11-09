@@ -1,6 +1,4 @@
 // src/backend/routes/linkedin.ts
-// ESM + Hono v4 (Node 20) — copy/paste ready
-
 import { Hono, type Context } from 'hono';
 import { setCookie, getCookie } from 'hono/cookie';
 import { randomBytes } from 'node:crypto';
@@ -25,6 +23,7 @@ function ensureEnv() {
   return missing;
 }
 
+// ✅ OpenID Scopes (kein r_liteprofile/r_emailaddress)
 const SCOPES = ['openid', 'profile', 'email'].join(' ');
 
 linkedinRouter.get('/ping', (c: Context) => c.text('li pong'));
@@ -36,12 +35,7 @@ linkedinRouter.get('/start', (c: Context) => {
 
   const { CLIENT_ID, REDIRECT_URI } = getCfg();
   const state = randomBytes(16).toString('hex');
-
-  setCookie(c, 'li_state', state, {
-    httpOnly: true,
-    sameSite: 'Lax',
-    path: '/',
-  });
+  setCookie(c, 'li_state', state, { httpOnly: true, sameSite: 'Lax', path: '/' });
 
   const url =
     `https://www.linkedin.com/oauth/v2/authorization` +
@@ -50,11 +44,11 @@ linkedinRouter.get('/start', (c: Context) => {
     `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
     `&scope=${encodeURIComponent(SCOPES)}` +
     `&state=${encodeURIComponent(state)}`;
-
   return c.redirect(url, 302);
 });
 
 // --- CALLBACK ---
+// 🔁 Statt auf /connected/... zu gehen, direkt auf /callback/exchange mit ?code=...
 linkedinRouter.get('/callback', (c: Context) => {
   const { APP_URL } = getCfg();
   const u = new URL(c.req.url);
@@ -62,35 +56,23 @@ linkedinRouter.get('/callback', (c: Context) => {
   const error = u.searchParams.get('error') ?? '';
   const state = u.searchParams.get('state') ?? '';
   const saved = getCookie(c, 'li_state') || '';
-
   if (state && saved && state !== saved) {
     console.warn('[LI CALLBACK] state mismatch', { state, saved });
   }
-
-  const deepSuccess = `socialpro://linkedin/success${
-    code ? `?code=${encodeURIComponent(code)}` : ''
-  }`;
-  const deepFail = `socialpro://linkedin/fail${
-    error ? `?error=${encodeURIComponent(error)}` : ''
-  }`;
-
-  const ua = (c.req.header('user-agent') || '').toLowerCase();
-  const isApp = /iphone|ipad|android|wv|crios|fxios/.test(ua);
-
-  if (isApp) return c.redirect(error ? deepFail : deepSuccess, 302);
-
-  const web = error
-    ? `${APP_URL}/connected/linkedin-fail${
-        error ? `?error=${encodeURIComponent(error)}` : ''
-      }`
-    : `${APP_URL}/connected/linkedin-success${
-        code ? `?code=${encodeURIComponent(code)}` : ''
-      }`;
-
-  return c.redirect(web, 303);
+  if (error) {
+    return c.redirect(`${APP_URL}/connected/linkedin-fail?error=${encodeURIComponent(error)}`, 302);
+  }
+  if (code) {
+    return c.redirect(
+      `${APP_URL}/api/oauth/linkedin/callback/exchange?code=${encodeURIComponent(code)}`,
+      302
+    );
+  }
+  return c.text('Missing code', 400);
 });
 
 // --- EXCHANGE ---
+// ✅ nutzt OIDC userinfo (liefert name, email, picture, sub)
 linkedinRouter.get('/callback/exchange', async (c: Context) => {
   const missing = ensureEnv();
   if (missing.length)
@@ -114,34 +96,22 @@ linkedinRouter.get('/callback/exchange', async (c: Context) => {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body,
     });
-
-    const tokenTxt = await tokenResp.text();
-    if (!tokenResp.ok) {
-      console.error('LI token exchange failed:', tokenResp.status, tokenTxt);
-      return c.json({ ok: false, error: 'exchange_failed' }, 400);
+    const token = await tokenResp.json();
+    const accessToken = (token as any)?.access_token;
+    if (!accessToken) {
+      console.error('No access_token:', token);
+      return c.json({ ok: false, error: 'no_access_token' }, 400);
     }
 
-    const token = JSON.parse(tokenTxt) as { access_token: string; expires_in: number };
-    const accessToken = token.access_token;
-
-    const meResp = await fetch('https://api.linkedin.com/v2/me', {
+    const userinfo = await fetch('https://api.linkedin.com/v2/userinfo', {
       headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    const me = await meResp.json();
-
-    const emailResp = await fetch(
-      'https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))',
-      { headers: { Authorization: `Bearer ${accessToken}` } },
-    );
-    const emailJson: any = await emailResp.json();
-    const email = emailJson?.elements?.[0]?.['handle~']?.emailAddress ?? null;
+    }).then(r => r.json());
 
     const wantsJSON = (c.req.header('accept') || '').includes('application/json');
-    const payload = { ok: true, me, email };
-    if (wantsJSON) return c.json(payload);
+    if (wantsJSON) return c.json({ ok: true, me: userinfo, email: userinfo.email });
 
     const deep = `socialpro://linkedin/success${
-      email ? `?li_email=${encodeURIComponent(email)}` : ''
+      userinfo.email ? `?li_email=${encodeURIComponent(userinfo.email)}` : ''
     }`;
     return c.redirect(deep, 302);
   } catch (e) {
