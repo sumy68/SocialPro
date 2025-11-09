@@ -17,13 +17,14 @@ app.use('*', async (c, next) => {
   }));
 });
 
-console.log('[BOOT] start hono.ts');
+console.log('[BOOT] hono.ts loaded');
+console.log('[BOOT] mounting /api/oauth/linkedin + /api/oauth/instagram');
+
 app.route('/api/oauth/linkedin', linkedinRouter);
 app.route('/api/oauth/instagram', instagramRouter);
 
-// 🔥 INLINE: ping direkt hier (soll NICHT 404 sein)
+// 🔥 Inline-Test-Routen (müssen nach dem Build im dist/hono.js auftauchen!)
 app.get('/api/oauth/instagram/ping-inline', (c: Context) => c.text('ig inline ok'));
-// optional: gleiche URL wie Router, um zu “überschatten”
 app.get('/api/oauth/instagram/ping', (c: Context) => c.text('ig inline ok (shadow)'));
 
 app.get('/health', (c: Context) => c.text('ok-ig-inline'));
