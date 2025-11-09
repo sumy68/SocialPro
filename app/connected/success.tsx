@@ -6,47 +6,56 @@ import * as SplashScreen from "expo-splash-screen";
 
 const APP_URL = process.env.EXPO_PUBLIC_APP_URL ?? "https://socialpro-fnvo.onrender.com";
 
+type LinkedInUser = { sub?: string; name?: string; email?: string; picture?: string } | null;
+
 export default function ConnectedSuccess() {
   const router = useRouter();
   const params = useLocalSearchParams();
 
-  // Unterstützt beide Flows:
-  // 1) Neuer Flow: socialpro://connected/success?code=...
-  // 2) Alter Flow: socialpro://connected/success?page_id=...&ig_user_id=...
-  const initialPageId = useMemo(() => String(params.page_id ?? ""), [params.page_id]);
-  const initialIgUserId = useMemo(() => String(params.ig_user_id ?? ""), [params.ig_user_id]);
+  // ?provider=instagram | linkedin  (fallback: instagram)
+  const provider = useMemo(() => String(params.provider ?? "instagram"), [params.provider]);
   const code = useMemo(() => String(params.code ?? ""), [params.code]);
   const initialError = useMemo(() => String(params.error ?? ""), [params.error]);
 
-  const [pageId, setPageId] = useState(initialPageId);
-  const [igUserId, setIgUserId] = useState(initialIgUserId);
+  // IG result
+  const [pageId, setPageId] = useState<string>("");
+  const [igUserId, setIgUserId] = useState<string>("");
+
+  // LI result
+  const [liUser, setLiUser] = useState<LinkedInUser>(null);
+
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(initialError);
 
-  const ok = !err && !!pageId && !!igUserId;
-
   useEffect(() => {
-    if (Platform.OS !== "web") {
-      SplashScreen.hideAsync().catch(() => {});
-    }
+    if (Platform.OS !== "web") SplashScreen.hideAsync().catch(() => {});
   }, []);
 
-  // Neuer Flow: wenn wir einen ?code haben, aber noch keine IDs, dann Exchange callen.
   useEffect(() => {
     const run = async () => {
-      if (!code || pageId || igUserId) return;
+      if (!code) return;
+      setLoading(true);
+      setErr("");
       try {
-        setLoading(true);
-        const res = await fetch(
-          `${APP_URL}/api/oauth/instagram/callback/exchange?code=${encodeURIComponent(code)}`,
-          { headers: { Accept: "application/json" } }
-        );
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data?.ok) throw new Error(data?.error || "exchange_failed");
-
-        setPageId(String(data.page_id ?? ""));
-        setIgUserId(String(data.ig_user_id ?? ""));
-        setErr("");
+        if (provider === "linkedin") {
+          const res = await fetch(
+            `${APP_URL}/api/oauth/linkedin/callback/exchange?code=${encodeURIComponent(code)}`,
+            { headers: { Accept: "application/json" } }
+          );
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data?.ok) throw new Error(data?.error || "exchange_failed");
+          setLiUser(data?.me ?? null);
+        } else {
+          // instagram (default)
+          const res = await fetch(
+            `${APP_URL}/api/oauth/instagram/callback/exchange?code=${encodeURIComponent(code)}`,
+            { headers: { Accept: "application/json" } }
+          );
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data?.ok) throw new Error(data?.error || "exchange_failed");
+          setPageId(String(data.page_id ?? ""));
+          setIgUserId(String(data.ig_user_id ?? ""));
+        }
       } catch (e: any) {
         setErr(e?.message || "exchange_failed");
       } finally {
@@ -54,25 +63,24 @@ export default function ConnectedSuccess() {
       }
     };
     run();
-  }, [code, pageId, igUserId]);
+  }, [code, provider]);
 
-  const [saving, setSaving] = useState(false);
+  const ok =
+    provider === "linkedin"
+      ? !!liUser?.sub
+      : !!pageId && !!igUserId;
+
   const handleSave = async () => {
     try {
-      setSaving(true);
-      // Optional: serverseitig persistieren
-      // await fetch(`${APP_URL}/api/link/instagram/confirm`, {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ pageId, igUserId }),
-      // });
-
-      Alert.alert("Instagram", "Verbindung gespeichert ✅");
+      // hier könntest du serverseitig speichern, wenn du willst
+      // await fetch(`${APP_URL}/api/link/${provider}/confirm`, {...})
+      Alert.alert(
+        provider === "linkedin" ? "LinkedIn" : "Instagram",
+        "Verbindung gespeichert ✅"
+      );
       router.replace("/(tabs)/(dashboard)");
     } catch (e: any) {
       Alert.alert("Fehler", e?.message ?? "Konnte nicht speichern");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -85,17 +93,21 @@ export default function ConnectedSuccess() {
       {loading ? (
         <ActivityIndicator />
       ) : ok ? (
-        <>
-          <Text style={{ fontSize: 16 }}>Page ID: {pageId}</Text>
-          <Text style={{ fontSize: 16 }}>IG User ID: {igUserId}</Text>
-
-          {saving ? (
-            <ActivityIndicator />
-          ) : (
+        provider === "linkedin" ? (
+          <>
+            <Text style={{ fontSize: 16 }}>Name: {liUser?.name ?? "-"}</Text>
+            <Text style={{ fontSize: 16 }}>E-Mail: {liUser?.email ?? "-"}</Text>
             <Button title="Speichern & weiter" onPress={handleSave} />
-          )}
-          <Button title="Später" onPress={() => router.replace("/(tabs)/(dashboard)")} />
-        </>
+            <Button title="Später" onPress={() => router.replace("/(tabs)/(dashboard)")} />
+          </>
+        ) : (
+          <>
+            <Text style={{ fontSize: 16 }}>Page ID: {pageId}</Text>
+            <Text style={{ fontSize: 16 }}>IG User ID: {igUserId}</Text>
+            <Button title="Speichern & weiter" onPress={handleSave} />
+            <Button title="Später" onPress={() => router.replace("/(tabs)/(dashboard)")} />
+          </>
+        )
       ) : (
         <>
           {!!err && <Text style={{ fontSize: 14, color: "crimson" }}>{decodeURIComponent(err)}</Text>}

@@ -1,5 +1,5 @@
 // src/backend/routes/instagram.ts
-import { Hono } from 'hono'
+import { Hono, type Context } from 'hono'
 import {
   getAuthUrl,
   exchangeCodeForToken,
@@ -13,54 +13,69 @@ const OAUTH_STATE = 'sp_ig' // muss mit getAuthUrl() matchen
 
 export const instagramRouter = new Hono()
 
-// Quick ping zum Live-Check
-instagramRouter.get('/_ping', (c) => c.json({ ok: true }))
+// Live-Check
+instagramRouter.get('/_ping', (c: Context) => c.json({ ok: true }))
 
-// /api/oauth/instagram/start → Facebook Login
-instagramRouter.get('/start', (c) => {
+// /api/oauth/instagram/start → Facebook/Meta Login
+instagramRouter.get('/start', (c: Context) => {
   try {
     const url = getAuthUrl() // redirect_uri = APP_URL/api/oauth/instagram/callback + state=sp_ig
     return c.redirect(url, 302)
   } catch (e) {
     console.error('IG /start err:', e)
-    return c.redirect(`${APP_SCHEME_FAIL}?platform=instagram&error=start_failed`, 302)
+    return c.redirect(
+      `${APP_SCHEME_FAIL}?provider=instagram&platform=instagram&error=start_failed`,
+      302,
+    )
   }
 })
 
-// Meta callback (die URL, die du in der Meta-App hinterlegst)
-instagramRouter.get('/callback', async (c) => {
+// Meta callback (in der Meta-App hinterlegt)
+instagramRouter.get('/callback', async (c: Context) => {
   const code = c.req.query('code')
   const state = c.req.query('state')
 
   if (state && state !== OAUTH_STATE) {
-    return c.redirect(`${APP_SCHEME_FAIL}?platform=instagram&error=bad_state`, 302)
+    return c.redirect(
+      `${APP_SCHEME_FAIL}?provider=instagram&platform=instagram&error=bad_state`,
+      302,
+    )
   }
   if (!code) {
-    return c.redirect(`${APP_SCHEME_FAIL}?platform=instagram&error=missing_code`, 302)
+    return c.redirect(
+      `${APP_SCHEME_FAIL}?provider=instagram&platform=instagram&error=missing_code`,
+      302,
+    )
   }
 
   return instagramExchange(c, code)
 })
 
-// Reiner Exchange-Endpoint (optional direkt aufrufbar)
-instagramRouter.get('/callback/exchange', async (c) => {
+// Direkter Exchange-Endpoint (optional)
+instagramRouter.get('/callback/exchange', async (c: Context) => {
   const code = c.req.query('code')
   if (!code) {
-    return c.redirect(`${APP_SCHEME_FAIL}?platform=instagram&error=missing_code`, 302)
+    return c.redirect(
+      `${APP_SCHEME_FAIL}?provider=instagram&platform=instagram&error=missing_code`,
+      302,
+    )
   }
   return instagramExchange(c, code)
 })
 
-async function instagramExchange(c: any, code: string) {
+async function instagramExchange(c: Context, code: string) {
   try {
     // 1) code → user token
     const token = await exchangeCodeForToken(code)
-    const userToken = token.access_token
+    const userToken = (token as any).access_token as string
 
-    // 2) Seiten holen
+    // 2) Facebook Pages holen
     const pages = await fetchPages(userToken)
     if (!pages.length) {
-      return c.redirect(`${APP_SCHEME_FAIL}?platform=instagram&error=no_pages`, 302)
+      return c.redirect(
+        `${APP_SCHEME_FAIL}?provider=instagram&platform=instagram&error=no_pages`,
+        302,
+      )
     }
 
     // 3) IG Business Account finden
@@ -68,15 +83,22 @@ async function instagramExchange(c: any, code: string) {
     let usedPageId: string | null = null
     for (const p of pages) {
       const maybe = await fetchIgBusinessAccountId(p.id, p.access_token || userToken)
-      if (maybe) { igId = maybe; usedPageId = p.id; break }
+      if (maybe) {
+        igId = maybe
+        usedPageId = p.id
+        break
+      }
     }
     if (!igId) {
-      return c.redirect(`${APP_SCHEME_FAIL}?platform=instagram&error=no_instagram_business_account`, 302)
+      return c.redirect(
+        `${APP_SCHEME_FAIL}?provider=instagram&platform=instagram&error=no_instagram_business_account`,
+        302,
+      )
     }
 
     // 4) Erfolg → Deep Link zurück in die App ODER JSON
     const successUrl =
-      `${APP_SCHEME_SUCCESS}?platform=instagram&status=ok` +
+      `${APP_SCHEME_SUCCESS}?provider=instagram&platform=instagram&status=ok` +
       `&page_id=${encodeURIComponent(usedPageId || '')}` +
       `&ig_user_id=${encodeURIComponent(igId)}`
 
@@ -86,9 +108,12 @@ async function instagramExchange(c: any, code: string) {
     }
     return c.redirect(successUrl, 302)
   } catch (err) {
-    console.error('OAuth error:', err)
+    console.error('IG OAuth exchange error:', err)
     const wantsJSON = (c.req.header('accept') || '').includes('application/json')
     if (wantsJSON) return c.json({ ok: false, error: 'exchange_failed' }, 400)
-    return c.redirect(`${APP_SCHEME_FAIL}?platform=instagram&error=exchange_failed`, 302)
+    return c.redirect(
+      `${APP_SCHEME_FAIL}?provider=instagram&platform=instagram&error=exchange_failed`,
+      302,
+    )
   }
 }

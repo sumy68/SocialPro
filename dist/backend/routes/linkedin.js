@@ -1,6 +1,6 @@
 // src/backend/routes/linkedin.ts
 import { Hono } from 'hono';
-import { setCookie, getCookie } from 'hono/cookie';
+import { setCookie } from 'hono/cookie';
 import { randomBytes } from 'node:crypto';
 export const linkedinRouter = new Hono();
 function getCfg() {
@@ -41,24 +41,17 @@ linkedinRouter.get('/start', (c) => {
     return c.redirect(url, 302);
 });
 // --- CALLBACK ---
-// 🔁 Statt auf /connected/... zu gehen, direkt auf /callback/exchange mit ?code=...
 linkedinRouter.get('/callback', (c) => {
-    const { APP_URL } = getCfg();
     const u = new URL(c.req.url);
     const code = u.searchParams.get('code') ?? '';
     const error = u.searchParams.get('error') ?? '';
-    const state = u.searchParams.get('state') ?? '';
-    const saved = getCookie(c, 'li_state') || '';
-    if (state && saved && state !== saved) {
-        console.warn('[LI CALLBACK] state mismatch', { state, saved });
-    }
-    if (error) {
-        return c.redirect(`${APP_URL}/connected/linkedin-fail?error=${encodeURIComponent(error)}`, 302);
-    }
-    if (code) {
-        return c.redirect(`${APP_URL}/api/oauth/linkedin/callback/exchange?code=${encodeURIComponent(code)}`, 302);
-    }
-    return c.text('Missing code', 400);
+    if (error)
+        return c.text(`LinkedIn error: ${error}`, 400);
+    if (!code)
+        return c.text('Missing code', 400);
+    // 👇 App-Deep-Link (Expo Scheme = socialpro)
+    const deep = `socialpro://connected/success?provider=linkedin&code=${encodeURIComponent(code)}`;
+    return c.redirect(deep, 302);
 });
 // --- EXCHANGE ---
 // ✅ nutzt OIDC userinfo (liefert name, email, picture, sub)
