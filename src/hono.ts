@@ -5,26 +5,28 @@ import { instagramRouter } from './backend/routes/instagram.js';
 
 const app = new Hono();
 
-// logging
+// simple request logger
 app.use('*', async (c, next) => {
   const start = Date.now();
   await next();
   const ms = Date.now() - start;
-  console.log(JSON.stringify({
-    method: c.req.method,
-    path: new URL(c.req.url).pathname,
-    status: c.res.status,
-    ms,
-  }));
+  console.log(
+    JSON.stringify({
+      method: c.req.method,
+      path: new URL(c.req.url).pathname,
+      status: c.res.status,
+      ms,
+    }),
+  );
 });
 
 console.log('[BOOT] using src/hono.ts');
-console.log('[BOOT] mounting /api/oauth/instagram');
+console.log('[BOOT] mounting routers...');
 
 app.route('/api/oauth/linkedin', linkedinRouter);
 app.route('/api/oauth/instagram', instagramRouter);
 
-app.get('/health', (c: Context) => c.text('ok'));
+app.get('/health', (c: Context) => c.text('ok-ig-mount-test'));
 
 export default app;
 export { app };
