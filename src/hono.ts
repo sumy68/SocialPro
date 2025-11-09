@@ -5,19 +5,17 @@ import { instagramRouter } from './backend/routes/instagram.js';
 
 const app = new Hono();
 
-// simple request logger
+// logging
 app.use('*', async (c, next) => {
   const start = Date.now();
   await next();
   const ms = Date.now() - start;
-  console.log(
-    JSON.stringify({
-      method: c.req.method,
-      path: new URL(c.req.url).pathname,
-      status: c.res.status,
-      ms,
-    }),
-  );
+  console.log(JSON.stringify({
+    method: c.req.method,
+    path: new URL(c.req.url).pathname,
+    status: c.res.status,
+    ms,
+  }));
 });
 
 console.log('[BOOT] using src/hono.ts');
@@ -25,6 +23,11 @@ console.log('[BOOT] mounting routers...');
 
 app.route('/api/oauth/linkedin', linkedinRouter);
 app.route('/api/oauth/instagram', instagramRouter);
+
+// ✅ INLINE TEST-ROUTE (bypasst import/exports)
+app.get('/api/oauth/instagram/ping-inline', (c: Context) => c.text('ig inline ok'));
+// optional: gleiche URL wie Router, falls Import klemmt
+app.get('/api/oauth/instagram/ping', (c: Context) => c.text('ig inline ok (shadow)'));
 
 app.get('/health', (c: Context) => c.text('ok-ig-mount-test'));
 
