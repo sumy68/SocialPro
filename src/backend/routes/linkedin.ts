@@ -28,14 +28,14 @@ linkedinRouter.get('/start', (c) => {
 });
 
 // --- CALLBACK -------------------------------------------------
-linkedinRouter.get('/callback', async (c) => {
+linkedinRouter.get('/callback', (c) => {
   const qState = c.req.query('state') ?? '';
   const cookieState = getCookie(c, LI_COOKIE) ?? '';
 
-  // 🧩 Log für Render-Konsole
+  // Sichtbarer Log in Render
   console.log('[LI] callback check', { qState, cookieState, ok: qState === cookieState });
 
-  // 🔒 Harte Prüfung & EARLY RETURN
+  // 🔒 Harte Prüfung
   if (!qState || !cookieState || qState !== cookieState) {
     deleteCookie(c, LI_COOKIE, { path: '/' });
     return c.redirect(
@@ -44,7 +44,7 @@ linkedinRouter.get('/callback', async (c) => {
     );
   }
 
-  // State passt → Cookie löschen
+  // State passt -> Cookie weg
   deleteCookie(c, LI_COOKIE, { path: '/' });
 
   const code = c.req.query('code') ?? '';
@@ -55,10 +55,9 @@ linkedinRouter.get('/callback', async (c) => {
     );
   }
 
-  // Erfolg (später Token-Exchange hier einbauen)
+  // Erfolg (Token-Exchange später)
   return c.redirect(
     `socialpro://connected/success?provider=linkedin&code=${encodeURIComponent(code)}`,
     302
   );
 });
-
