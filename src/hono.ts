@@ -1,31 +1,40 @@
 // src/hono.ts
-import { Hono, type Context } from 'hono';
-import { linkedinRouter } from './backend/routes/linkedin.js';
-import { instagramRouter } from './backend/routes/instagram.js';
+import { Hono, type Context } from 'hono'
+import { linkedinRouter } from './backend/routes/linkedin.js'
+import { instagramRouter } from './backend/routes/instagram.js'
 
-const app = new Hono();
+// 🧠 App-Instance
+const app = new Hono()
 
-// request logger
+// 🪵 Simple request logger
 app.use('*', async (c, next) => {
-  const t0 = Date.now();
-  await next();
-  console.log(JSON.stringify({
-    method: c.req.method,
-    path: new URL(c.req.url).pathname,
-    status: c.res.status,
-    ms: Date.now() - t0,
-  }));
-});
+  const start = Date.now()
+  await next()
+  console.log(
+    JSON.stringify({
+      method: c.req.method,
+      path: new URL(c.req.url).pathname,
+      status: c.res.status,
+      ms: Date.now() - start,
+    }),
+  )
+})
 
-console.log('[BOOT] hono.ts loaded');
-console.log('[BOOT] mounting /api/oauth/linkedin + /api/oauth/instagram');
+// 🏁 Boot logs
+console.log('[BOOT] hono.ts loaded')
+console.log('[BOOT] mounting /api/oauth/linkedin + /api/oauth/instagram')
 
-app.route('/api/oauth/linkedin', linkedinRouter);
-app.route('/api/oauth/instagram', instagramRouter);
+// 🔗 Routers
+app.route('/api/oauth/linkedin', linkedinRouter)
+app.route('/api/oauth/instagram', instagramRouter)
 
-// 🔥 Inline-Test-Routen (müssen nach dem Build im dist/hono.js auftauchen!)
+// 🩺 Health route mit Build-Tag (für Render-Check)
+const BUILD = 'e1b0b4c' // 👉 dein letzter Commit-Hash o.ä.
+app.get('/health', (c: Context) => c.text(`ok build=${BUILD}`))
 
-app.get('/health', (c: Context) => c.text('ok-ig-inline'));
+// 🚨 Inline debug route (optional)
+app.get('/_debug', (c: Context) => c.text('hono_router=LIVE'))
 
-export default app;
-export { app };
+// ✅ Export
+export default app
+export { app }
