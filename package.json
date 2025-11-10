@@ -1,17 +1,18 @@
 {
   "name": "expo-app",
   "type": "module",
-  "main": "expo-router/entry",
   "version": "1.0.0",
   "private": true,
+  "main": "expo-router/entry",
   "engines": {
     "node": "22.x"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.server.json && tsc-alias -p tsconfig.server.json",
+    "build:server": "npx tsc -p tsconfig.server.json && npx tsc-alias -p tsconfig.server.json",
+    "build": "npm run build:server",
     "render-build": "npm run build",
-    "render-start": "node dist/server.js",
-    "start:server": "node dist/server.js",
+    "render-start": "node -r dotenv/config dist/server.js",
+    "start:server": "node -r dotenv/config dist/server.js",
     "start": "expo start -c",
     "start:localhost": "expo start --localhost --port 8081 -c",
     "start:lan": "expo start --lan -c",
@@ -100,3 +101,4 @@
     "jest-worker": "27.5.1"
   }
 }
+ 
