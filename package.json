@@ -1,6 +1,5 @@
 {
   "name": "expo-app",
-  "type": "module",
   "version": "1.0.0",
   "private": true,
   "main": "expo-router/entry",
