@@ -1,13 +1,13 @@
 import { Stack } from 'expo-router';
 
-export default function DashboardLayout() {
+export default function CreateLayout() {
   return (
     <Stack
       screenOptions={{
         headerShown: true,
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'Dashboard' }} />
+      <Stack.Screen name="index" options={{ title: 'Erstellen' }} />
     </Stack>
   );
 }

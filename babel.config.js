@@ -3,11 +3,21 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      ['module-resolver', {
-        root: ['.'],
-        alias: { '@': './src' },
-        extensions: ['.ts', '.tsx', '.js', '.jsx', '.json']
-      }],
+      // für expo-router (muss zuerst kommen)
+      'expo-router/babel',
+
+      // für saubere Alias-Auflösung
+      [
+        'module-resolver',
+        {
+          root: ['.'], // Projektroot
+          alias: {
+            '@': '.',        // @ -> Projektroot (z. B. constants/, hooks/, utils/)
+            '@app': './app', // optional, falls du app-spezifische Imports willst
+          },
+          extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
+        },
+      ],
     ],
   };
 };

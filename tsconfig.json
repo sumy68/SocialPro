@@ -1,24 +1,17 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "module": "commonjs",
     "target": "ES2020",
-    "module": "esnext",
-    "jsx": "react-jsx",
-    "lib": ["ES2020"],
-    "allowJs": true,
-    "skipLibCheck": true,
+    "moduleResolution": "node",
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "moduleResolution": "bundler",
-    "types": ["expo", "react", "react-native"],
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"],
-      "@/contexts/*": ["contexts/*"],
-      "@/hooks/*": ["hooks/*"]
-    }
+    "skipLibCheck": true,
+    "types": ["node"]
   },
-  "include": ["**/*.ts", "**/*.tsx", "expo-env.d.ts", ".expo/types/**/*.ts"],
-  "exclude": ["node_modules", "dist", "ios", "android"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/app/**", "src/api/**", "**/*.test.ts", "**/*.spec.ts"]
 }
