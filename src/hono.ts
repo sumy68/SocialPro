@@ -23,14 +23,25 @@ app.use(
 // ⏱️ Server-Timing (nice to have für Debug)
 app.use('*', timing())
 
-// 🪵 Simple request logger
+// 🪵 Simple request logger (mit Query + Code-Maskierung)
 app.use('*', async (c, next) => {
   const start = Date.now()
   await next()
+  const u = new URL(c.req.url)
+  const qEntries = Array.from(u.searchParams.entries())
+  const q: Record<string, string> = {}
+  for (const [k, v] of qEntries) q[k] = v
+  if (q.code) {
+    // maskiere sensiblen Code: ersten 6 Zeichen + Länge anzeigen
+    const len = q.code.length
+    const head = q.code.slice(0, 6)
+    q.code = `${head}...(${len})`
+  }
   console.log(
     JSON.stringify({
       method: c.req.method,
-      path: new URL(c.req.url).pathname,
+      path: u.pathname,
+      query: q,
       status: c.res.status,
       ms: Date.now() - start,
     }),
