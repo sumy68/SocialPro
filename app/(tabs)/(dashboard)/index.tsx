@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { Stack, useRouter } from 'expo-router';
 import { BarChart3, Rocket, Users, Heart, MessageCircle, TrendingUp, ChevronRight, Bell, Clock, Lightbulb } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
-import { platformPerformance } from '@/mocks/analytics';
+import { platformPerformance } from '@/hooks/useAnalytics';
 import React, { useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '@/contexts/AppContext';
