@@ -10,8 +10,19 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["src/app/**", "src/api/**", "**/*.test.ts", "**/*.spec.ts"]
+  "include": [
+    "src/**/*.ts",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ],
+  "exclude": [
+    "src/app/**",
+    "src/api/**",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
 }

@@ -12,7 +12,7 @@ PODS:
   - EXJSONUtils (0.15.0)
   - EXManifests (1.0.8):
     - ExpoModulesCore
-  - Expo (54.0.20):
+  - Expo (54.0.23):
     - ExpoModulesCore
     - hermes-engine
     - RCTRequired
@@ -220,7 +220,7 @@ PODS:
     - ExpoModulesCore
   - ExpoHaptics (15.0.7):
     - ExpoModulesCore
-  - ExpoHead (6.0.13):
+  - ExpoHead (6.0.14):
     - ExpoModulesCore
     - RNScreens
   - ExpoImage (3.0.10):
@@ -240,7 +240,7 @@ PODS:
     - ExpoModulesCore
   - ExpoLocation (19.0.7):
     - ExpoModulesCore
-  - ExpoModulesCore (3.0.22):
+  - ExpoModulesCore (3.0.25):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -271,7 +271,7 @@ PODS:
     - ExpoModulesCore
   - ExpoSystemUI (6.0.8):
     - ExpoModulesCore
-  - ExpoWebBrowser (15.0.8):
+  - ExpoWebBrowser (15.0.9):
     - ExpoModulesCore
   - EXUpdatesInterface (2.0.0):
     - ExpoModulesCore
@@ -2651,7 +2651,7 @@ SPEC CHECKSUMS:
   EXImageLoader: 189e3476581efe3ad4d1d3fb4735b7179eb26f05
   EXJSONUtils: 1d3e4590438c3ee593684186007028a14b3686cd
   EXManifests: 224345a575fca389073c416297b6348163f28d1a
-  Expo: c524bec66bed697b2140037e2ba110b3a8281b78
+  Expo: fb09185d798c2876a4c5ca89a5c6b8b72b6dbecf
   expo-dev-client: b6e7b4f4063ae44b5e68cc6a8bcc0c79c3037c1a
   expo-dev-launcher: c8813e0064e8768d676ee490c0f7ef1784d70b98
   expo-dev-menu: 0a1194185c9eec1da0e507b734180775363be442
@@ -2662,19 +2662,19 @@ SPEC CHECKSUMS:
   ExpoFileSystem: b79eadbda7b7f285f378f95f959cc9313a1c9c61
   ExpoFont: cf9d90ec1d3b97c4f513211905724c8171f82961
   ExpoHaptics: 807476b0c39e9d82b7270349d6487928ce32df84
-  ExpoHead: 66d25bb51bcd6d62acc0bf5f15e8d156abd3e936
+  ExpoHead: e317214fa14edeaf17748d39ec9e550a3d1194fb
   ExpoImage: 9c3428921c536ab29e5c6721d001ad5c1f469566
   ExpoImagePicker: d251aab45a1b1857e4156fed88511b278b4eee1c
   ExpoKeepAwake: 1a2e820692e933c94a565ec3fbbe38ac31658ffe
   ExpoLinearGradient: a464898cb95153125e3b81894fd479bcb1c7dd27
   ExpoLinking: f051f28e50ea9269ff539317c166adec81d9342d
   ExpoLocation: 93d7faa0c2adbd5a04686af0c1a61bc6ed3ee2f7
-  ExpoModulesCore: d128da9ae4ec1e5a26eca91f1b7cce9a92be3892
+  ExpoModulesCore: aa1a8e103d41de84baa5d7c6b98314e2230f1eef
   ExpoSplashScreen: cbb839de72110dea1851dd3e85080b7923af2540
   ExpoStoreReview: 15f19e0d6cb6e00330ba1b356485bf47ef19c39a
   ExpoSymbols: 1ae04ce686de719b9720453b988d8bc5bf776c68
   ExpoSystemUI: 2761aa6875849af83286364811d46e8ed8ea64c7
-  ExpoWebBrowser: d04a0d6247a0bea4519fbc2ea816610019ad83e0
+  ExpoWebBrowser: b973e1351fdcf5fec0c400997b1851f5a8219ec3
   EXUpdatesInterface: 5adf50cb41e079c861da6d9b4b954c3db9a50734
   FBLazyVector: e95a291ad2dadb88e42b06e0c5fb8262de53ec12
   hermes-engine: 9f4dfe93326146a1c99eb535b1cb0b857a3cd172

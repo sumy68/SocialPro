@@ -1,18 +1,21 @@
 import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert, Image, Platform as RNPlatform, ActivityIndicator, Modal } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
-import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { ImageIcon, Upload, Wand2, Link2, X, Calendar, Clock, Send } from 'lucide-react-native';
 
 import { useApp } from '@/contexts/AppContext';
 import { Platform } from '@/constants/types';
+import { Stack } from 'expo-router';
 import { generateText } from '@/lib/toolkit';
 import { usePublishPost } from '@/hooks/usePublishPost';
 
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-export default function CreateScreen() {
+// 👇 einzig neu:
+import { LocalTRPCProvider } from './trpc-local';
+
+function CreateScreenInner() {
   const { addPost, connectedPlatforms } = useApp();
   const { publishToMultiplePlatforms, isPublishing } = usePublishPost();
 
@@ -624,3 +627,11 @@ const styles = StyleSheet.create({
   aiFallbackInfo: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8, padding: 12, marginBottom: 12 },
   aiFallbackInfoText: { fontSize: 13, color: '#FFF', textAlign: 'center', lineHeight: 18 },
 });
+
+export default function CreateScreen() {
+  return (
+    <LocalTRPCProvider>
+      <CreateScreenInner />
+    </LocalTRPCProvider>
+  );
+}
