@@ -10,13 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter, Stack } from "expo-router";
-import {
-  Linkedin,
-  Instagram,
-  Music2,
-  Youtube,
-  CheckCircle,
-} from "lucide-react-native";
+import { Linkedin, Instagram, Music2, CheckCircle } from "lucide-react-native";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Platform } from "@/constants/types";
 import { useApp } from "@/contexts/AppContext";
@@ -29,22 +23,23 @@ import Constants from "expo-constants";
 WebBrowser.maybeCompleteAuthSession();
 
 const { EXPO_PUBLIC_APP_URL, EXPO_PUBLIC_SCHEME } =
-  Constants.expoConfig?.extra ?? {};
-const APP_URL = (EXPO_PUBLIC_APP_URL as string) || "http://localhost:10000";
+  (Constants.expoConfig?.extra as any) ?? {};
+const APP_URL: string = EXPO_PUBLIC_APP_URL || "http://localhost:10000";
 const API_BASE = `${APP_URL}/api`;
-const DEEP_LINK_SCHEME = (EXPO_PUBLIC_SCHEME as string) || "socialpro";
+const DEEP_LINK_SCHEME: string = EXPO_PUBLIC_SCHEME || "socialpro";
 const OAUTH_STATE = "test-user-123";
 
+// Einheitlicher Success-Deep-Link (muss zu deinem Backend-Redirect passen)
 const REDIRECT_URI = AuthSession.makeRedirectUri({
   scheme: DEEP_LINK_SCHEME,
   path: "connected/success",
 });
-console.log("IG Redirect URI 👉", REDIRECT_URI);
+console.log("OAuth Redirect URI 👉", REDIRECT_URI);
 
-// ✅ intent:// Fix + Parsing
+// intent:// Fix + robustes Parsing
 const parseQuery = (url: string) => {
   try {
-    const safe = url.replace(/^intent:\/\//, "https://");
+    const safe = url.replace(/^intent:\/\//, "https://").replace("#", "?");
     const u = new URL(safe);
     return {
       path: u.pathname,
@@ -54,6 +49,7 @@ const parseQuery = (url: string) => {
       status: u.searchParams.get("status") ?? undefined,
       platform: u.searchParams.get("platform") ?? undefined,
       code: u.searchParams.get("code") ?? undefined,
+      auth_code: u.searchParams.get("auth_code") ?? undefined,
     };
   } catch {
     return {};
@@ -63,11 +59,29 @@ const parseQuery = (url: string) => {
 export default function ConnectPlatformsScreen() {
   const router = useRouter();
   const t = useTranslation();
-  const { connectedPlatforms, connectPlatform, disconnectPlatform } = useApp();
+  const { connectedPlatforms, connectPlatform, disconnectPlatform, currentUser, authToken } = useApp();
   const [connecting, setConnecting] = useState<Platform | null>(null);
   const [igConnected, setIgConnected] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
-  // ✅ Deep-Link abfangen & speichern
+  // 🔒 Login-Guard: User muss eingeloggt sein
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      // Prefer Context, fallback auf gespeicherten Token
+      const stored = await AsyncStorage.getItem("auth_token");
+      const ok = !!(currentUser || authToken || stored);
+      if (!mounted) return;
+      setIsLoggedIn(ok);
+      if (!ok) {
+        Alert.alert("Login erforderlich", "Bitte zuerst anmelden.");
+        router.replace("/login" as any);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [currentUser, authToken, router]);
+
+  // ✅ Deep-Link abfangen & speichern (Instagram)
   useEffect(() => {
     const handleUrl = async (url: string) => {
       const q = parseQuery(url);
@@ -75,11 +89,7 @@ export default function ConnectPlatformsScreen() {
         if (q.status === "ok") {
           await AsyncStorage.setItem("ig_connected", "1");
           setIgConnected(true);
-          await connectPlatform(
-            "instagram",
-            "Instagram Business",
-            q.ig_user_id ?? ""
-          );
+          await connectPlatform("instagram", "Instagram Business", q.ig_user_id ?? "");
           Alert.alert("Instagram", "Erfolgreich verbunden ✅");
         } else {
           await AsyncStorage.removeItem("ig_connected");
@@ -94,49 +104,46 @@ export default function ConnectPlatformsScreen() {
     return () => sub.remove();
   }, [connectPlatform]);
 
-  // ✅ gespeicherten Zustand laden
+  // ✅ gespeicherten IG-Zustand laden
   useEffect(() => {
-    AsyncStorage.getItem("ig_connected").then((v) =>
-      setIgConnected(v === "1")
-    );
+    AsyncStorage.getItem("ig_connected").then((v) => setIgConnected(v === "1"));
   }, []);
 
   const startConnect = async (platform: Platform) => {
     try {
+      if (!isLoggedIn) {
+        Alert.alert("Login erforderlich", "Bitte zuerst anmelden.");
+        router.replace("/login" as any);
+        return;
+      }
+
       setConnecting(platform);
 
       if (platform === "linkedin") {
         const START_URL = `${APP_URL}/api/oauth/linkedin/start`;
-        const redirectUri = AuthSession.makeRedirectUri({
-          scheme: DEEP_LINK_SCHEME,
-          path: "linkedin/success",
-        });
 
-        // ✅ FIX: WebBrowser.openAuthSessionAsync statt AuthSession.openAuthSessionAsync
-        const res = await WebBrowser.openAuthSessionAsync(
-          START_URL,
-          redirectUri
-        );
+        // Deep link muss mit Backend-Redirect matchen: socialpro://connected/success?provider=linkedin&code=...
+        const res = await WebBrowser.openAuthSessionAsync(START_URL, REDIRECT_URI);
 
         if (res.type !== "success" || !res.url) {
           throw new Error("Login abgebrochen");
         }
 
-        const url = new URL(res.url);
-        const code = url.searchParams.get("code");
-        const error = url.searchParams.get("error");
-        if (error) throw new Error(`LinkedIn error: ${error}`);
+        console.log("[LinkedIn] Deep link URL:", res.url);
+        const q = parseQuery(res.url);
+        const code = q.code || q.auth_code;
+        if (q.error) throw new Error(`LinkedIn error: ${q.error}`);
         if (!code) throw new Error("Kein Code erhalten");
 
+        // Code beim Backend eintauschen (Stub/real je nach Umsetzung)
         const ex = await fetch(
-          `${APP_URL}/api/oauth/linkedin/callback/exchange?code=${encodeURIComponent(
-            code
-          )}`,
-          { headers: { Accept: "application/json" } }
+          `${APP_URL}/api/oauth/linkedin/callback/exchange?code=${encodeURIComponent(code)}`,
+          { method: "POST", headers: { Accept: "application/json" } }
         );
-        const data = await ex.json();
-        if (!ex.ok || !data?.ok)
+        const data = await ex.json().catch(() => ({}));
+        if (!ex.ok || !data?.ok) {
           throw new Error(`Exchange failed: ${data?.error || ex.status}`);
+        }
 
         await connectPlatform("linkedin", "LinkedIn", data?.email ?? "");
         Alert.alert("LinkedIn", "Erfolgreich verbunden ✅");
@@ -145,23 +152,10 @@ export default function ConnectPlatformsScreen() {
 
       if (platform === "tiktok") {
         const redirectUri = encodeURIComponent(`${API_BASE}/oauth/tiktok/callback`);
-        const scope = encodeURIComponent(
-          "user.info.basic video.list video.upload"
-        );
+        const scope = encodeURIComponent("user.info.basic video.list video.upload");
         const state = encodeURIComponent(OAUTH_STATE);
         return await WebBrowser.openBrowserAsync(
           `https://www.tiktok.com/v2/auth/authorize/?client_key=DEIN_TIKTOK_CLIENT_KEY&response_type=code&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`
-        );
-      }
-
-      if (platform === "youtube") {
-        const redirectUri = encodeURIComponent(`${API_BASE}/oauth/youtube/callback`);
-        const scope = encodeURIComponent(
-          "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly"
-        );
-        const state = encodeURIComponent(OAUTH_STATE);
-        return await WebBrowser.openBrowserAsync(
-          `https://accounts.google.com/o/oauth2/v2/auth?client_id=DEIN_YT_CLIENT_ID&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&include_granted_scopes=true&state=${state}`
         );
       }
 
@@ -169,10 +163,7 @@ export default function ConnectPlatformsScreen() {
         const startUrl = `${APP_URL}/api/oauth/instagram/start?redirect_uri=${encodeURIComponent(
           REDIRECT_URI
         )}`;
-        const result = await WebBrowser.openAuthSessionAsync(
-          startUrl,
-          REDIRECT_URI
-        );
+        const result = await WebBrowser.openAuthSessionAsync(startUrl, REDIRECT_URI);
 
         if (result.type === "success" && result.url) {
           const q = parseQuery(result.url);
@@ -183,15 +174,8 @@ export default function ConnectPlatformsScreen() {
           if (q.page_id && q.ig_user_id) {
             await AsyncStorage.setItem("ig_connected", "1");
             setIgConnected(true);
-            await connectPlatform(
-              "instagram",
-              "Instagram Business",
-              q.ig_user_id ?? ""
-            );
-            Alert.alert(
-              "Instagram",
-              `Verbunden ✅\nPage: ${q.page_id}\nIG: ${q.ig_user_id}`
-            );
+            await connectPlatform("instagram", "Instagram Business", q.ig_user_id ?? "");
+            Alert.alert("Instagram", `Verbunden ✅\nPage: ${q.page_id}\nIG: ${q.ig_user_id}`);
             return;
           }
         }
@@ -201,10 +185,7 @@ export default function ConnectPlatformsScreen() {
           return;
         }
 
-        Alert.alert(
-          "Instagram",
-          "Unbekanntes Ergebnis. Bitte erneut versuchen."
-        );
+        Alert.alert("Instagram", "Unbekanntes Ergebnis. Bitte erneut versuchen.");
         return;
       }
 
@@ -276,16 +257,6 @@ export default function ConnectPlatformsScreen() {
             onConnect={() => startConnect("tiktok")}
             onDisconnect={() => handleDisconnect("tiktok")}
             isConnecting={connecting === "tiktok"}
-          />
-
-          <PlatformCard
-            icon={<Youtube size={32} color="#FF0000" />}
-            name={t.platforms.youtube}
-            color="#FF0000"
-            status={connectedPlatforms.find((p) => p.platform === "youtube")}
-            onConnect={() => startConnect("youtube")}
-            onDisconnect={() => handleDisconnect("youtube")}
-            isConnecting={connecting === "youtube"}
           />
         </View>
 
