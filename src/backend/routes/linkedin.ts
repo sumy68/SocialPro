@@ -17,10 +17,7 @@ linkedin.get("/start", (c) => {
   const redirectUri = `${appUrl}/api/oauth/linkedin/callback`;
   const scopes = [
     "r_liteprofile",
-    "r_emailaddress",
-    "w_member_social",
-    "r_organization_admin",
-    "r_organization_social",
+    "r_emailaddress", 
   ];
   const state = "socialpro-state-123";
 
@@ -35,6 +32,8 @@ linkedin.get("/start", (c) => {
   console.log("[LinkedIn] Using scopes:", scopes.join(", "));
   return c.redirect(url, 302);
 });
+
+
 
 // === 2️⃣ CALLBACK – Handle LinkedIn redirect ===
 linkedin.get("/callback", (c) => {
