@@ -452,7 +452,7 @@ function PlatformCard({ platform, language }: { platform: typeof platformPerform
           <View style={styles.platformInfo}>
             <Text style={styles.platformName}>{platformName}</Text>
             <Text style={styles.platformFollowers}>
-              {platform.followers.toLocaleString()} {language === 'de' ? 'Follower' : 'Followers'}
+             {(Number((platform as any).followers ?? 0)).toLocaleString()} {language === 'de' ? 'Follower' : 'Followers'}
             </Text>
           </View>
         </View>
@@ -481,7 +481,6 @@ function getPlatformName(platform: string): string {
     case 'instagram': return 'Instagram';
     case 'tiktok': return 'TikTok';
     case 'linkedin': return 'LinkedIn';
-    case 'youtube': return 'YouTube';
     default: return platform;
   }
 }

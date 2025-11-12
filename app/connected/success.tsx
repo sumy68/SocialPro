@@ -1,12 +1,24 @@
 // app/connected/success.tsx
 import { View, Text, Button, ActivityIndicator, Alert, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as SplashScreen from "expo-splash-screen";
 
 const APP_URL = process.env.EXPO_PUBLIC_APP_URL ?? "https://socialpro-fnvo.onrender.com";
 
 type LinkedInUser = { sub?: string; name?: string; email?: string; picture?: string } | null;
+
+// simple fetch timeout helper (7s)
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, ms = 7000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const res = await fetch(input, { ...init, signal: ctrl.signal });
+    return res;
+  } finally {
+    clearTimeout(t);
+  }
+}
 
 export default function ConnectedSuccess() {
   const router = useRouter();
@@ -27,62 +39,81 @@ export default function ConnectedSuccess() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(initialError);
 
+  // run-once guard (verhindert doppelten Exchange)
+  const didRunRef = useRef(false);
+
   useEffect(() => {
     if (Platform.OS !== "web") SplashScreen.hideAsync().catch(() => {});
   }, []);
 
   useEffect(() => {
     const run = async () => {
+      // nur 1x pro Code/Provider
+      if (didRunRef.current) return;
       if (!code) return;
+      didRunRef.current = true;
+
       setLoading(true);
       setErr("");
+
       try {
         if (provider === "linkedin") {
-          const res = await fetch(
-            `${APP_URL}/api/oauth/linkedin/callback/exchange?code=${encodeURIComponent(code)}`,
-            { headers: { Accept: "application/json" } }
-          );
+          const url = `${APP_URL}/api/oauth/linkedin/callback/exchange?code=${encodeURIComponent(code)}`;
+
+          const res = await fetchWithTimeout(url, { method: "GET", headers: { Accept: "application/json" } }, 7000);
           const data = await res.json().catch(() => ({}));
-          if (!res.ok || !data?.ok) throw new Error(data?.error || "exchange_failed");
+
+          if (!res.ok || !data?.ok) {
+            throw new Error(data?.error || `exchange_failed (${res.status})`);
+          }
+
           setLiUser(data?.me ?? null);
         } else {
           // instagram (default)
-          const res = await fetch(
-            `${APP_URL}/api/oauth/instagram/callback/exchange?code=${encodeURIComponent(code)}`,
-            { headers: { Accept: "application/json" } }
-          );
+          const url = `${APP_URL}/api/oauth/instagram/callback/exchange?code=${encodeURIComponent(code)}`;
+
+          const res = await fetchWithTimeout(url, { method: "GET", headers: { Accept: "application/json" } }, 7000);
           const data = await res.json().catch(() => ({}));
-          if (!res.ok || !data?.ok) throw new Error(data?.error || "exchange_failed");
+
+          if (!res.ok || !data?.ok) {
+            throw new Error(data?.error || `exchange_failed (${res.status})`);
+          }
+
           setPageId(String(data.page_id ?? ""));
           setIgUserId(String(data.ig_user_id ?? ""));
         }
       } catch (e: any) {
-        setErr(e?.message || "exchange_failed");
+        // nice error for abort/network
+        const msg =
+          e?.name === "AbortError"
+            ? "Zeitüberschreitung beim Verbinden. Bitte erneut versuchen."
+            : e?.message || "exchange_failed";
+        setErr(msg);
       } finally {
         setLoading(false);
       }
     };
+
     run();
   }, [code, provider]);
 
   const ok =
     provider === "linkedin"
-      ? !!liUser?.sub
+      ? !!liUser?.sub // OIDC liefert sub
       : !!pageId && !!igUserId;
 
   const handleSave = async () => {
     try {
-      // hier könntest du serverseitig speichern, wenn du willst
-      // await fetch(`${APP_URL}/api/link/${provider}/confirm`, {...})
-      Alert.alert(
-        provider === "linkedin" ? "LinkedIn" : "Instagram",
-        "Verbindung gespeichert ✅"
-      );
+      // TODO: Token/Profil speichern (z.B. AsyncStorage / Context / Server)
+      // await saveLinkedInToken(json.access_token, json.me);
+      Alert.alert(provider === "linkedin" ? "LinkedIn" : "Instagram", "Verbindung gespeichert ✅");
       router.replace("/(tabs)/(dashboard)");
     } catch (e: any) {
       Alert.alert("Fehler", e?.message ?? "Konnte nicht speichern");
     }
   };
+
+  const showErr = !loading && (!ok || !!err);
 
   return (
     <View style={{ flex: 1, justifyContent: "center", padding: 20, gap: 12 }}>
@@ -110,7 +141,11 @@ export default function ConnectedSuccess() {
         )
       ) : (
         <>
-          {!!err && <Text style={{ fontSize: 14, color: "crimson" }}>{decodeURIComponent(err)}</Text>}
+          {showErr && (
+            <Text style={{ fontSize: 14, color: "crimson" }}>
+              {err ? decodeURIComponent(err) : "Unbekannter Fehler beim Verbinden"}
+            </Text>
+          )}
           <Button title="Zurück" onPress={() => router.replace("/onboarding/connect-platforms")} />
         </>
       )}

@@ -1,4 +1,4 @@
-import { ExpoRequest, ExpoResponse } from 'expo-router/server';
+import type { ExpoRequest, ExpoResponse } from "expo-router/server";
 
 async function handleRequest(request: Request) {
   const url = new URL(request.url);

@@ -1,3 +1,4 @@
+// app/(tabs)/(create)/trpc-local.tsx
 import React, { useState } from "react";
 import { createTRPCReact, httpBatchLink } from "@trpc/react-query";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -27,4 +28,10 @@ export function LocalTRPCProvider({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </localTrpc.Provider>
   );
+}
+
+// expo-router wants a default export since this file sits under app/
+// keep it as a no-op route component
+export default function TrpcLocalRoute() {
+  return null;
 }

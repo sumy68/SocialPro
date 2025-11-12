@@ -147,7 +147,7 @@ function getPlatformIcon(platform: Platform) {
       return <Instagram size={size} color="#E1306C" />;
     case 'linkedin':
       return <Linkedin size={size} color="#0A66C2" />;
-    case 'youtube':
+    case 'youtube': break;
       return <Youtube size={size} color="#FF0000" />;
     case 'tiktok':
       return <Bike size={size} color="#000000" />;
@@ -162,7 +162,7 @@ function getPlatformColor(platform: string): string {
       return '#E1306C';
     case 'linkedin':
       return '#0A66C2';
-    case 'youtube':
+    case 'youtube': break;
       return '#FF0000';
     case 'facebook':
       return '#1877F2';

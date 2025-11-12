@@ -9,7 +9,7 @@ export async function startLinkedInLogin() {
   const redirectUri = AuthSession.makeRedirectUri({ scheme: 'socialpro' });
 
   // 1) Browser öffnen → LinkedIn Login → Redirect zu socialpro://linkedin/success?code=...
-  const res = await AuthSession.openAuthSessionAsync(START_URL, redirectUri);
+  const res = await AuthSession.startAsync(START_URL, redirectUri);
 
   if (res.type !== 'success' || !res.url) {
     throw new Error('Login abgebrochen');

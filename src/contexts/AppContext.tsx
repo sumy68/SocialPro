@@ -13,7 +13,7 @@ const STORAGE_KEYS = {
   POSTS: '@socialpro:posts',
 } as const;
 
-const ALL_PLATFORMS: Platform[] = ['linkedin', 'instagram', 'tiktok', 'youtube'];
+const ALL_PLATFORMS: Platform[] = ['linkedin', 'instagram', 'tiktok'];
 
 /** stellt sicher, dass alle Plattform-Einträge existieren */
 function ensureAllPlatforms(list: ConnectedPlatform[] | null | undefined): ConnectedPlatform[] {

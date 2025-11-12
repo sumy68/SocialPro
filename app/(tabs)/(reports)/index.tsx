@@ -39,7 +39,7 @@ export default function ReportsScreen() {
   }, [postedPosts]);
   
   const platformPerformance = useMemo(() => {
-    const platforms: Platform[] = ['instagram', 'linkedin', 'tiktok', 'youtube'];
+    const platforms: Platform[] = ['instagram', 'linkedin', 'tiktok'];
     
     return platforms.map(platform => {
       const platformPosts = postedPosts.filter(p => p.platforms.includes(platform));
@@ -283,7 +283,6 @@ function getPlatformColor(platform: Platform | string): string {
       return '#E1306C';
     case 'linkedin':
       return '#0A66C2';
-    case 'youtube':
       return '#FF0000';
     case 'tiktok':
       return '#000000';

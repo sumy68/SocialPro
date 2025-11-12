@@ -22,7 +22,6 @@ export const [PlatformConnectionProvider, usePlatformConnection] = createContext
     instagram: { platform: 'instagram', connected: false },
     linkedin: { platform: 'linkedin', connected: false },
     tiktok: { platform: 'tiktok', connected: false },
-    youtube: { platform: 'youtube', connected: false },
   });
   const [checking, setChecking] = useState<boolean>(false);
   const mounted = useRef<boolean>(true);
@@ -53,7 +52,7 @@ export const [PlatformConnectionProvider, usePlatformConnection] = createContext
         return;
       }
 
-      if (isDemoMode()) {
+      if (isDemoMode) {
         const platformData = connectedPlatforms.find(p => p.platform === platform);
         if (!mounted.current) return;
         setStatusMap(prev => ({
@@ -157,7 +156,6 @@ export const [PlatformConnectionProvider, usePlatformConnection] = createContext
         checkPlatformStatus('instagram'),
         checkPlatformStatus('linkedin'),
         checkPlatformStatus('tiktok'),
-        checkPlatformStatus('youtube'),
       ]);
     } catch (error) {
       console.error('[PlatformConnection] Error checking all platforms:', error);
@@ -170,7 +168,7 @@ export const [PlatformConnectionProvider, usePlatformConnection] = createContext
     console.log('[PlatformConnection] Refreshing token for:', platform);
     
     try {
-      if (isDemoMode()) {
+      if (isDemoMode) {
         await checkPlatformStatus(platform);
         return { success: true };
       }
@@ -220,7 +218,7 @@ export const [PlatformConnectionProvider, usePlatformConnection] = createContext
       }
     }
     
-    if (isDemoMode()) {
+    if (isDemoMode) {
       const local = connectedPlatforms.find(p => p.platform === platform);
       if (!local?.connected) throw new Error(`${platform} is not connected`);
       return {

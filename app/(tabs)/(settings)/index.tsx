@@ -1,3 +1,4 @@
+// app/(tabs)/(settings)/index.tsx
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { User, Link2, Globe, CreditCard, FileText, HelpCircle, LogOut, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react-native';
@@ -6,6 +7,7 @@ import { useApp } from '@/contexts/AppContext';
 import { usePlatformConnection } from '@/contexts/PlatformConnectionContext';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useEffect } from "react";
+import type { Platform } from '@/constants/types';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -42,7 +44,7 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleRefreshPlatform = async (platform: 'instagram' | 'linkedin' | 'tiktok' | 'youtube') => {
+  const handleRefreshPlatform = async (platform: Platform) => {
     try {
       const result = await refreshPlatformToken(platform);
       if (result.success) {
@@ -120,7 +122,8 @@ export default function SettingsScreen() {
                   ))}
                 </View>
               )}
-              <Text style={styles.settingValue}>{connectedCount}/4</Text>
+              {/* YouTube ist raus → max 3 */}
+              <Text style={styles.settingValue}>{connectedCount}/3</Text>
             </View>
           </TouchableOpacity>
 

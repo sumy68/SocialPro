@@ -554,7 +554,7 @@ function getPlatformColor(platform: Platform): string {
       return '#0A66C2';
     case 'tiktok':
       return '#000000';
-    case 'youtube':
+    case 'youtube': break;
       return '#FF0000';
     default:
       return '#666';

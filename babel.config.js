@@ -1,23 +1,21 @@
+// babel.config.js — REPLACE
 module.exports = function (api) {
   api.cache(true);
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      // für expo-router (muss zuerst kommen)
-      'expo-router/babel',
-
-      // für saubere Alias-Auflösung
       [
         'module-resolver',
         {
-          root: ['.'], // Projektroot
+          root: ['.'],
           alias: {
-            '@': '.',        // @ -> Projektroot (z. B. constants/, hooks/, utils/)
-            '@app': './app', // optional, falls du app-spezifische Imports willst
+            '^@/(.+)$': './src/\\1',
+            '@app': './app'
           },
-          extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
-        },
+          extensions: ['.ts', '.tsx', '.js', '.jsx', '.json']
+        }
       ],
-    ],
+      'react-native-reanimated/plugin' // always last
+    ]
   };
 };

@@ -175,7 +175,7 @@ export default function ConnectPlatformsScreen() {
   };
 
   const handleDisconnect = async (platform: Platform) => {
-    Alert.alert("Disconnect Platform", `Disconnect ${t.platforms[platform]}?`, [
+    Alert.alert("Disconnect Platform", `Disconnect ${({instagram:'Instagram',linkedin:'LinkedIn',tiktok:'TikTok'} as const)[platform]}?`, [
       { text: "Cancel", style: "cancel" },
       {
         text: "Disconnect",
@@ -186,7 +186,7 @@ export default function ConnectPlatformsScreen() {
             await AsyncStorage.removeItem("ig_connected");
             setIgConnected(false);
           }
-          Alert.alert("Done", `${t.platforms[platform]} disconnected`);
+          Alert.alert("Done", `${({instagram:'Instagram',linkedin:'LinkedIn',tiktok:'TikTok'} as const)[platform]} disconnected`);
         },
       },
     ]);
@@ -195,13 +195,13 @@ export default function ConnectPlatformsScreen() {
   return (
     <>
       <Stack.Screen
-        options={{ title: t.onboarding.platforms.title, headerBackTitle: t.back }}
+        options={{ title: (t?.onboarding?.platforms?.title ?? 'Plattformen verbinden'), headerBackTitle: 'Zurück' }}
       />
 
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
         <View style={styles.header}>
-          <Text style={styles.title}>{t.onboarding.platforms.title}</Text>
-          <Text style={styles.subtitle}>{t.onboarding.platforms.subtitle}</Text>
+          <Text style={styles.title}>{(t?.onboarding?.platforms?.title ?? 'Plattformen verbinden')}</Text>
+          <Text style={styles.subtitle}>{(t?.onboarding?.platforms?.subtitle ?? 'Verbinde Instagram, LinkedIn oder TikTok')}</Text>
         </View>
 
         <View style={styles.platforms}>

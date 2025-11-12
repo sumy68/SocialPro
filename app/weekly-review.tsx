@@ -244,7 +244,6 @@ export default function WeeklyReviewScreen() {
       case 'instagram': return '#E1306C';
       case 'tiktok': return '#000000';
       case 'linkedin': return '#0A66C2';
-      case 'youtube': return '#FF0000';
       default: return '#5B72ED';
     }
   };
