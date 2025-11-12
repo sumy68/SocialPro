@@ -59,27 +59,9 @@ const parseQuery = (url: string) => {
 export default function ConnectPlatformsScreen() {
   const router = useRouter();
   const t = useTranslation();
-  const { connectedPlatforms, connectPlatform, disconnectPlatform, currentUser, authToken } = useApp();
+  const { connectedPlatforms, connectPlatform, disconnectPlatform } = useApp();
   const [connecting, setConnecting] = useState<Platform | null>(null);
   const [igConnected, setIgConnected] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-
-  // 🔒 Login-Guard: User muss eingeloggt sein
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      // Prefer Context, fallback auf gespeicherten Token
-      const stored = await AsyncStorage.getItem("auth_token");
-      const ok = !!(currentUser || authToken || stored);
-      if (!mounted) return;
-      setIsLoggedIn(ok);
-      if (!ok) {
-        Alert.alert("Login erforderlich", "Bitte zuerst anmelden.");
-        router.replace("/login" as any);
-      }
-    })();
-    return () => { mounted = false; };
-  }, [currentUser, authToken, router]);
 
   // ✅ Deep-Link abfangen & speichern (Instagram)
   useEffect(() => {
@@ -111,12 +93,6 @@ export default function ConnectPlatformsScreen() {
 
   const startConnect = async (platform: Platform) => {
     try {
-      if (!isLoggedIn) {
-        Alert.alert("Login erforderlich", "Bitte zuerst anmelden.");
-        router.replace("/login" as any);
-        return;
-      }
-
       setConnecting(platform);
 
       if (platform === "linkedin") {
