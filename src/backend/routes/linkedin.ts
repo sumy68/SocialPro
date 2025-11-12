@@ -12,13 +12,13 @@ const failureDeep = `${scheme}://connected/failure?provider=linkedin`;
 
 export const linkedin = new Hono();
 
-// === 1️⃣ START – Redirect user to LinkedIn login ===
+// === 1️⃣ START – Redirect user to LinkedIn login (OIDC) ===
 linkedin.get("/start", (c) => {
   const redirectUri = `${appUrl}/api/oauth/linkedin/callback`;
-  const scopes = [
-    "r_liteprofile",
-    "r_emailaddress", 
-  ];
+
+  // OIDC-basiert → vermeidet r_emailaddress-Probleme
+  // w_member_social drin lassen, falls du später posten willst.
+  const scopes = ["openid", "profile", "email", "w_member_social"];
   const state = "socialpro-state-123";
 
   const url =
@@ -28,12 +28,9 @@ linkedin.get("/start", (c) => {
     `&state=${state}` +
     `&scope=${encodeURIComponent(scopes.join(" "))}`;
 
-  console.log("[LinkedIn] Redirect →", url);
-  console.log("[LinkedIn] Using scopes:", scopes.join(", "));
+  console.log("[LinkedIn] Using scopes (OIDC):", scopes.join(", "));
   return c.redirect(url, 302);
 });
-
-
 
 // === 2️⃣ CALLBACK – Handle LinkedIn redirect ===
 linkedin.get("/callback", (c) => {
@@ -93,7 +90,6 @@ linkedin.post("/callback/exchange", async (c) => {
     });
 
     const token = await tokenRes.json().catch(() => ({}));
-
     if (!token?.access_token) {
       console.error("[LinkedIn EXCHANGE] Token Error:", token);
       return c.json({ ok: false, error: "token_failed" }, 400);
@@ -101,24 +97,26 @@ linkedin.post("/callback/exchange", async (c) => {
 
     const accessToken = token.access_token;
 
-    // 👤 Fetch user info
+    // 👤 OIDC userinfo (liefert name, sub, ggf. email)
     const meRes = await fetch("https://api.linkedin.com/v2/userinfo", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     const me = await meRes.json().catch(() => ({}));
+    let email = me?.email ?? null;
 
-    // 📧 Fetch email
-    const emailRes = await fetch(
-      "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    const emailJson = await emailRes.json().catch(() => ({}));
-    const email =
-      emailJson?.elements?.[0]?.["handle~"]?.emailAddress ??
-      me?.email ??
-      null;
+    // 📧 Fallback auf klassisches Email-Endpoint, falls OIDC-Claim fehlt
+    if (!email) {
+      try {
+        const emailRes = await fetch(
+          "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        const emailJson = await emailRes.json().catch(() => ({}));
+        email = emailJson?.elements?.[0]?.["handle~"]?.emailAddress ?? null;
+      } catch {}
+    }
 
-    // 🧩 Optional: organizations info
+    // 🧩 Optional: organizations info (nur wenn später benötigt)
     const orgsRes = await fetch(
       "https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&state=APPROVED",
       { headers: { Authorization: `Bearer ${accessToken}` } }
@@ -164,10 +162,7 @@ linkedin.post("/post", async (c) => {
 
   if (mediaUrl) {
     postBody.specificContent["com.linkedin.ugc.ShareContent"].media = [
-      {
-        status: "READY",
-        originalUrl: mediaUrl,
-      },
+      { status: "READY", originalUrl: mediaUrl },
     ];
   }
 
@@ -194,7 +189,6 @@ linkedin.post("/post", async (c) => {
 linkedin.post("/stats", async (c) => {
   try {
     const { accessToken, postUrn } = await c.req.json();
-
     if (!accessToken || !postUrn) {
       return c.json({ ok: false, error: "missing_fields" }, 400);
     }
@@ -209,7 +203,6 @@ linkedin.post("/stats", async (c) => {
     });
 
     const json = await res.json().catch(() => ({}));
-
     if (!res.ok) {
       console.error("[LinkedIn STATS] Fail:", json);
       return c.json({ ok: false, error: json.message || "stats_failed" }, 400);
