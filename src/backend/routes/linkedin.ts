@@ -1,9 +1,15 @@
 // src/backend/routes/linkedin.ts
 import { Hono } from "hono";
 
+// timeout helper (verhindert endloses Hängen)
+const fetchWithTimeout = (url: string, opts: any = {}, ms = 7000) => {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(id));
+};
+
 const scheme = process.env.EXPO_PUBLIC_SCHEME || "socialpro";
-const appUrl =
-  process.env.PUBLIC_BASE_URL || "https://socialpro-fnvo.onrender.com";
+const appUrl = process.env.PUBLIC_BASE_URL || "https://socialpro-fnvo.onrender.com";
 const clientId = process.env.LI_CLIENT_ID!;
 const clientSecret = process.env.LI_CLIENT_SECRET!;
 
@@ -32,29 +38,15 @@ linkedin.get("/start", (c) => {
 // === 2️⃣ CALLBACK – Handle LinkedIn redirect ===
 linkedin.get("/callback", (c) => {
   const url = new URL(c.req.url);
-  const code =
-    url.searchParams.get("code") ||
-    url.searchParams.get("auth_code") ||
-    url.searchParams.get("authorization_code");
-  const error =
-    url.searchParams.get("error") ||
-    url.searchParams.get("error_description") ||
-    undefined;
+  const code = url.searchParams.get("code");
+  const error = url.searchParams.get("error");
 
   console.log("[LinkedIn CALLBACK] Params:", Object.fromEntries(url.searchParams));
 
-  if (error) {
-    console.error("[LinkedIn CALLBACK] Error:", error);
-    return c.redirect(
-      `${failureDeep}&reason=${encodeURIComponent(error)}`,
-      302
-    );
-  }
-
-  if (!code) {
-    console.error("[LinkedIn CALLBACK] Missing code!");
+  if (error)
+    return c.redirect(`${failureDeep}&reason=${encodeURIComponent(error)}`, 302);
+  if (!code)
     return c.redirect(`${failureDeep}&reason=missing_code`, 302);
-  }
 
   const deepLink = `${successDeep}&code=${encodeURIComponent(code)}`;
   console.log("[LinkedIn CALLBACK] DeepLink →", deepLink);
@@ -65,14 +57,16 @@ linkedin.get("/callback", (c) => {
 linkedin.post("/callback/exchange", async (c) => {
   try {
     const u = new URL(c.req.url);
-    let code =
-      u.searchParams.get("code") ||
-      (await c.req.json().catch(() => null))?.code;
+    const body = await c.req.json().catch(() => ({}));
+    const code = u.searchParams.get("code") || body.code;
+
     if (!code) return c.json({ ok: false, error: "missing_code" }, 400);
+    if (code === "TEST" || code === "MOCK")
+      return c.json({ ok: false, error: "token_failed_mock" }, 400);
 
     const redirectUri = `${appUrl}/api/oauth/linkedin/callback`;
 
-    const tokenRes = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
+    const tokenRes = await fetchWithTimeout("https://www.linkedin.com/oauth/v2/accessToken", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
@@ -82,37 +76,30 @@ linkedin.post("/callback/exchange", async (c) => {
         client_id: clientId,
         client_secret: clientSecret,
       }),
-    });
+    }, 7000);
 
     const token = await tokenRes.json().catch(() => ({}));
-    if (!token?.access_token) {
-      console.error("[LinkedIn EXCHANGE POST] Token Error:", token);
+    if (!token?.access_token)
       return c.json({ ok: false, error: "token_failed" }, 400);
-    }
 
     const accessToken = token.access_token;
 
-    // OIDC userinfo
-    const meRes = await fetch("https://api.linkedin.com/v2/userinfo", {
+    const meRes = await fetchWithTimeout("https://api.linkedin.com/v2/userinfo", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     const me = await meRes.json().catch(() => ({}));
-    let email = me?.email ?? null;
 
-    // Fallback E-Mail
+    let email = me?.email ?? null;
     if (!email) {
-      try {
-        const emailRes = await fetch(
-          "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-        const emailJson = await emailRes.json().catch(() => ({}));
-        email = emailJson?.elements?.[0]?.["handle~"]?.emailAddress ?? null;
-      } catch {}
+      const emailRes = await fetchWithTimeout(
+        "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      const emailJson = await emailRes.json().catch(() => ({}));
+      email = emailJson?.elements?.[0]?.["handle~"]?.emailAddress ?? null;
     }
 
-    // Optional: Orgs
-    const orgsRes = await fetch(
+    const orgsRes = await fetchWithTimeout(
       "https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&state=APPROVED",
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
@@ -121,14 +108,7 @@ linkedin.post("/callback/exchange", async (c) => {
     return c.json({
       ok: true,
       access_token: accessToken,
-      me: {
-        sub: me.sub,
-        name: me.name,
-        email,
-        picture: me.picture,
-        linkedInId: me.sub,
-        organizations: orgs?.elements ?? [],
-      },
+      me: { sub: me.sub, name: me.name, email, picture: me.picture, organizations: orgs?.elements ?? [] },
     });
   } catch (err) {
     console.error("[LinkedIn EXCHANGE POST] Error:", err);
@@ -141,11 +121,14 @@ linkedin.get("/callback/exchange", async (c) => {
   try {
     const u = new URL(c.req.url);
     const code = u.searchParams.get("code");
+
     if (!code) return c.json({ ok: false, error: "missing_code" }, 400);
+    if (code === "TEST" || code === "MOCK")
+      return c.json({ ok: false, error: "token_failed_mock" }, 400);
 
     const redirectUri = `${appUrl}/api/oauth/linkedin/callback`;
 
-    const tokenRes = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
+    const tokenRes = await fetchWithTimeout("https://www.linkedin.com/oauth/v2/accessToken", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
@@ -155,128 +138,36 @@ linkedin.get("/callback/exchange", async (c) => {
         client_id: clientId,
         client_secret: clientSecret,
       }),
-    });
+    }, 7000);
+
     const token = await tokenRes.json().catch(() => ({}));
-    if (!token?.access_token) {
-      console.error("[LinkedIn EXCHANGE GET] Token Error:", token);
+    if (!token?.access_token)
       return c.json({ ok: false, error: "token_failed" }, 400);
-    }
+
     const accessToken = token.access_token;
 
-    const meRes = await fetch("https://api.linkedin.com/v2/userinfo", {
+    const meRes = await fetchWithTimeout("https://api.linkedin.com/v2/userinfo", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     const me = await meRes.json().catch(() => ({}));
-    let email = me?.email ?? null;
 
+    let email = me?.email ?? null;
     if (!email) {
-      try {
-        const emailRes = await fetch(
-          "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-        const emailJson = await emailRes.json().catch(() => ({}));
-        email = emailJson?.elements?.[0]?.["handle~"]?.emailAddress ?? null;
-      } catch {}
+      const emailRes = await fetchWithTimeout(
+        "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      const emailJson = await emailRes.json().catch(() => ({}));
+      email = emailJson?.elements?.[0]?.["handle~"]?.emailAddress ?? null;
     }
 
     return c.json({
       ok: true,
       access_token: accessToken,
-      me: {
-        sub: me.sub,
-        name: me.name,
-        email,
-        picture: me.picture,
-      },
+      me: { sub: me.sub, name: me.name, email, picture: me.picture },
     });
   } catch (err) {
     console.error("[LinkedIn EXCHANGE GET] Error:", err);
     return c.json({ ok: false, error: "exchange_failed" }, 500);
-  }
-});
-
-// === 4️⃣ POST helper endpoint ===
-linkedin.post("/post", async (c) => {
-  const body = await c.req.json();
-  const { accessToken, authorUrn, text, mediaUrl } = body;
-  if (!accessToken || !authorUrn || !text)
-    return c.json({ ok: false, error: "missing_fields" }, 400);
-
-  const postBody: any = {
-    author: authorUrn,
-    lifecycleState: "PUBLISHED",
-    specificContent: {
-      "com.linkedin.ugc.ShareContent": {
-        shareCommentary: { text },
-        shareMediaCategory: mediaUrl ? "IMAGE" : "NONE",
-      },
-    },
-    visibility: { "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC" },
-  };
-
-  if (mediaUrl) {
-    postBody.specificContent["com.linkedin.ugc.ShareContent"].media = [
-      { status: "READY", originalUrl: mediaUrl },
-    ];
-  }
-
-  const res = await fetch("https://api.linkedin.com/v2/ugcPosts", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "X-Restli-Protocol-Version": "2.0.0",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(postBody),
-  });
-
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    console.error("[LinkedIn POST] Fail:", json);
-    return c.json({ ok: false, error: json.message || "post_failed" }, 400);
-  }
-
-  return c.json({ ok: true, post: json });
-});
-
-// === 5️⃣ POST-Stats ===
-linkedin.post("/stats", async (c) => {
-  try {
-    const { accessToken, postUrn } = await c.req.json();
-    if (!accessToken || !postUrn) {
-      return c.json({ ok: false, error: "missing_fields" }, 400);
-    }
-
-    const statsUrl = `https://api.linkedin.com/v2/ugcPosts/${encodeURIComponent(postUrn)}/statistics`;
-    const res = await fetch(statsUrl, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "X-Restli-Protocol-Version": "2.0.0",
-      },
-    });
-
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      console.error("[LinkedIn STATS] Fail:", json);
-      return c.json({ ok: false, error: json.message || "stats_failed" }, 400);
-    }
-
-    const s =
-      json?.elements?.[0]?.totalShareStatistics || json?.totalShareStatistics || {};
-    return c.json({
-      ok: true,
-      stats: {
-        impressions: s.impressionCount ?? 0,
-        likes: s.likeCount ?? 0,
-        comments: s.commentCount ?? 0,
-        shares: s.shareCount ?? 0,
-        raw: json,
-      },
-    });
-  } catch (e) {
-    console.error("[LinkedIn STATS] Error:", e);
-    return c.json({ ok: false, error: "internal_error" }, 500);
   }
 });
