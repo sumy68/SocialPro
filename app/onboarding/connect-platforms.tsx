@@ -14,6 +14,7 @@ import { Linkedin, Instagram, Music2, CheckCircle } from "lucide-react-native";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Platform } from "@/constants/types";
 import { useApp } from "@/contexts/AppContext";
+import { startTikTokLogin } from "@/utils/tiktokOAuth";
 import * as WebBrowser from "expo-web-browser";
 import * as AuthSession from "expo-auth-session";
 import * as Linking from "expo-linking";
@@ -127,13 +128,22 @@ export default function ConnectPlatformsScreen() {
       }
 
       if (platform === "tiktok") {
-        const redirectUri = encodeURIComponent(`${API_BASE}/oauth/tiktok/callback`);
-        const scope = encodeURIComponent("user.info.basic video.list video.upload");
-        const state = encodeURIComponent(OAUTH_STATE);
-        return await WebBrowser.openBrowserAsync(
-          `https://www.tiktok.com/v2/auth/authorize/?client_key=DEIN_TIKTOK_CLIENT_KEY&response_type=code&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`
-        );
+        const res = await startTikTokLogin();
+
+        // optional Logging
+        console.log("[TikTok] AuthSession result:", res);
+
+        // eigentliche Logik passiert über den Deep Link:
+        // socialpro://connected/success?provider=tiktok
+        // => dein connected/success Screen kümmert sich dann um den Rest
+
+        if (res.type === "cancel") {
+          Alert.alert("TikTok", "Abgebrochen");
+        }
+
+        return;
       }
+
 
       if (platform === "instagram") {
         const startUrl = `${APP_URL}/api/oauth/instagram/start?redirect_uri=${encodeURIComponent(

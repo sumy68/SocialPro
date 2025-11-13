@@ -5,7 +5,8 @@ import { timing } from "hono/timing";
 
 // ✅ richtige Imports
 import { linkedin } from "./backend/routes/linkedin.js";
-import { instagramRouter } from "./backend/routes/instagram.js"; // wichtig: instagramRouter!
+import { instagramRouter } from "./backend/routes/instagram.js";
+import { tiktokRouter } from "./backend/routes/tiktok.js"; // 👈 TikTok hinzugefügt
 import { trpcServer } from "@hono/trpc-server";
 import { appRouter } from "./backend/trpc/router.js";
 
@@ -16,7 +17,7 @@ const app = new Hono();
 app.use(
   "*",
   cors({
-    origin: "*", // später gern einschränken
+    origin: "*",
     allowHeaders: ["Content-Type", "Authorization"],
     allowMethods: ["GET", "POST", "OPTIONS"],
     exposeHeaders: ["Content-Length"],
@@ -33,7 +34,8 @@ app.use("*", async (c, next) => {
   await next();
   const u = new URL(c.req.url);
   const q: Record<string, string> = {};
-  for (const [k, v] of u.searchParams.entries()) q[k] = k === "code" ? `${v.slice(0, 6)}...(${v.length})` : v;
+  for (const [k, v] of u.searchParams.entries())
+    q[k] = k === "code" ? `${v.slice(0, 6)}...(${v.length})` : v;
   console.log(
     JSON.stringify({
       method: c.req.method,
@@ -49,13 +51,14 @@ app.use("*", async (c, next) => {
 const BUILD = process.env.BUILD_TAG || "local-dev";
 console.log("[BOOT] hono.ts loaded");
 console.log("[BOOT] BUILD =", BUILD);
-console.log("[BOOT] mounting /api/oauth/linkedin + /api/oauth/instagram + /api/trpc");
+console.log("[BOOT] mounting /api/oauth/linkedin + /api/oauth/instagram + /api/oauth/tiktok + /api/trpc");
 
 // 🔗 Router Mounts
 app.route("/api/oauth/linkedin", linkedin);
 app.route("/api/oauth/instagram", instagramRouter);
+app.route("/api/oauth/tiktok", tiktokRouter); // 👈 TikTok Router hier eingebunden
 
-// 🔌 tRPC Mount (minimal)
+// 🔌 tRPC Mount
 app.use("/api/trpc/*", trpcServer({ router: appRouter }));
 
 // 🩺 Health route
@@ -71,12 +74,12 @@ app.get("/status", (c: Context) =>
       publicBaseUrl: process.env.PUBLIC_BASE_URL || null,
       port: process.env.PORT || null,
     },
-    routers: ["linkedin", "instagram", "trpc"],
+    routers: ["linkedin", "instagram", "tiktok", "trpc"],
     now: new Date().toISOString(),
   })
 );
 
-// 🚨 Debug route
+// 🚨 Debug
 app.get("/_debug", (c: Context) => c.text("hono_router=LIVE"));
 
 // ❗ NotFound & Error Handling
@@ -86,6 +89,6 @@ app.onError((err, c) => {
   return c.json({ ok: false, error: "internal_error" }, 500);
 });
 
-// ✅ Export
+// Export
 export default app;
 export { app };

@@ -1,4 +1,3 @@
-// app/connected/success.tsx
 import { View, Text, Button, ActivityIndicator, Alert, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -24,8 +23,11 @@ export default function ConnectedSuccess() {
   const router = useRouter();
   const params = useLocalSearchParams();
 
-  // ?provider=instagram | linkedin  (fallback: instagram)
-  const provider = useMemo(() => String(params.provider ?? "instagram"), [params.provider]);
+  // provider: instagram | linkedin | tiktok
+  const provider = useMemo(
+    () => String(params.provider ?? "instagram").toLowerCase(),
+    [params.provider]
+  );
   const code = useMemo(() => String(params.code ?? ""), [params.code]);
   const initialError = useMemo(() => String(params.error ?? ""), [params.error]);
 
@@ -48,19 +50,35 @@ export default function ConnectedSuccess() {
 
   useEffect(() => {
     const run = async () => {
-      // nur 1x pro Code/Provider
       if (didRunRef.current) return;
-      if (!code) return;
       didRunRef.current = true;
+
+      // Startzustand
+      setErr(initialError || "");
+
+      // 🔹 TikTok: kein Code, kein Exchange, Backend hat schon alles erledigt
+      if (provider === "tiktok") {
+        // wenn hier später noch was gespeichert werden soll → könntest du tRPC o.Ä. callen
+        return;
+      }
+
+      // LinkedIn & Instagram brauchen code (Exchange)
+      if (!code) return;
 
       setLoading(true);
       setErr("");
 
       try {
         if (provider === "linkedin") {
-          const url = `${APP_URL}/api/oauth/linkedin/callback/exchange?code=${encodeURIComponent(code)}`;
+          const url = `${APP_URL}/api/oauth/linkedin/callback/exchange?code=${encodeURIComponent(
+            code
+          )}`;
 
-          const res = await fetchWithTimeout(url, { method: "GET", headers: { Accept: "application/json" } }, 7000);
+          const res = await fetchWithTimeout(
+            url,
+            { method: "GET", headers: { Accept: "application/json" } },
+            7000
+          );
           const data = await res.json().catch(() => ({}));
 
           if (!res.ok || !data?.ok) {
@@ -70,9 +88,15 @@ export default function ConnectedSuccess() {
           setLiUser(data?.me ?? null);
         } else {
           // instagram (default)
-          const url = `${APP_URL}/api/oauth/instagram/callback/exchange?code=${encodeURIComponent(code)}`;
+          const url = `${APP_URL}/api/oauth/instagram/callback/exchange?code=${encodeURIComponent(
+            code
+          )}`;
 
-          const res = await fetchWithTimeout(url, { method: "GET", headers: { Accept: "application/json" } }, 7000);
+          const res = await fetchWithTimeout(
+            url,
+            { method: "GET", headers: { Accept: "application/json" } },
+            7000
+          );
           const data = await res.json().catch(() => ({}));
 
           if (!res.ok || !data?.ok) {
@@ -83,7 +107,6 @@ export default function ConnectedSuccess() {
           setIgUserId(String(data.ig_user_id ?? ""));
         }
       } catch (e: any) {
-        // nice error for abort/network
         const msg =
           e?.name === "AbortError"
             ? "Zeitüberschreitung beim Verbinden. Bitte erneut versuchen."
@@ -95,18 +118,26 @@ export default function ConnectedSuccess() {
     };
 
     run();
-  }, [code, provider]);
+  }, [code, provider, initialError]);
 
   const ok =
     provider === "linkedin"
-      ? !!liUser?.sub // OIDC liefert sub
-      : !!pageId && !!igUserId;
+      ? !!liUser?.sub
+      : provider === "tiktok"
+      ? !err // TikTok: ok, solange kein Fehlerparam
+      : !!pageId && !!igUserId; // Instagram
 
   const handleSave = async () => {
     try {
       // TODO: Token/Profil speichern (z.B. AsyncStorage / Context / Server)
-      // await saveLinkedInToken(json.access_token, json.me);
-      Alert.alert(provider === "linkedin" ? "LinkedIn" : "Instagram", "Verbindung gespeichert ✅");
+      Alert.alert(
+        provider === "linkedin"
+          ? "LinkedIn"
+          : provider === "tiktok"
+          ? "TikTok"
+          : "Instagram",
+        "Verbindung gespeichert ✅"
+      );
       router.replace("/(tabs)/(dashboard)");
     } catch (e: any) {
       Alert.alert("Fehler", e?.message ?? "Konnte nicht speichern");
@@ -129,14 +160,29 @@ export default function ConnectedSuccess() {
             <Text style={{ fontSize: 16 }}>Name: {liUser?.name ?? "-"}</Text>
             <Text style={{ fontSize: 16 }}>E-Mail: {liUser?.email ?? "-"}</Text>
             <Button title="Speichern & weiter" onPress={handleSave} />
-            <Button title="Später" onPress={() => router.replace("/(tabs)/(dashboard)")} />
+            <Button
+              title="Später"
+              onPress={() => router.replace("/(tabs)/(dashboard)")}
+            />
+          </>
+        ) : provider === "tiktok" ? (
+          <>
+            <Text style={{ fontSize: 16 }}>TikTok erfolgreich verbunden 🎉</Text>
+            <Button title="Speichern & weiter" onPress={handleSave} />
+            <Button
+              title="Später"
+              onPress={() => router.replace("/(tabs)/(dashboard)")}
+            />
           </>
         ) : (
           <>
             <Text style={{ fontSize: 16 }}>Page ID: {pageId}</Text>
             <Text style={{ fontSize: 16 }}>IG User ID: {igUserId}</Text>
             <Button title="Speichern & weiter" onPress={handleSave} />
-            <Button title="Später" onPress={() => router.replace("/(tabs)/(dashboard)")} />
+            <Button
+              title="Später"
+              onPress={() => router.replace("/(tabs)/(dashboard)")}
+            />
           </>
         )
       ) : (
@@ -146,7 +192,10 @@ export default function ConnectedSuccess() {
               {err ? decodeURIComponent(err) : "Unbekannter Fehler beim Verbinden"}
             </Text>
           )}
-          <Button title="Zurück" onPress={() => router.replace("/onboarding/connect-platforms")} />
+          <Button
+            title="Zurück"
+            onPress={() => router.replace("/onboarding/connect-platforms")}
+          />
         </>
       )}
     </View>

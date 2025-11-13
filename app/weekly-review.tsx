@@ -7,20 +7,19 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
-
   Dimensions,
   Platform
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Eye, 
-  Heart, 
-  MessageCircle, 
-  Share2, 
+import {
+  TrendingUp,
+  TrendingDown,
+  Eye,
+  Heart,
+  MessageCircle,
+  Share2,
   Calendar,
   BarChart3,
   Lightbulb,
@@ -30,6 +29,7 @@ import {
 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { Colors } from '@/constants/colors';
+import { useWeeklyData } from '@/hooks/useWeeklyData';
 
 const { width } = Dimensions.get('window');
 
@@ -44,7 +44,7 @@ interface StatCardProps {
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, change, changePercent, icon, color }) => {
   const isPositive = change >= 0;
-  
+
   return (
     <View style={styles.statCard}>
       <View style={[styles.statIcon, { backgroundColor: color + '20' }]}>
@@ -85,26 +85,18 @@ interface PostCardProps {
 
 const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const formatNumber = (num: number): string => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-    }
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
     return num.toString();
   };
-  
+
   const formatDate = (date: Date): string => {
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) {
-      return 'vor 1 Tag';
-    } else {
-      return `vor ${diffDays} Tagen`;
-    }
+    return diffDays === 1 ? 'vor 1 Tag' : `vor ${diffDays} Tagen`;
   };
-  
+
   return (
     <View style={styles.postCard}>
       {post.thumbnail && (
@@ -117,7 +109,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
         </View>
         <Text style={styles.postText} numberOfLines={2}>{post.content}</Text>
         <Text style={styles.postDate}>{formatDate(post.publishedAt)}</Text>
-        
+
         <View style={styles.postStats}>
           <View style={styles.postStat}>
             <Eye size={14} color="#6B7280" />
@@ -164,7 +156,7 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight }) => {
         return <Activity size={16} color={insight.color} />;
     }
   };
-  
+
   return (
     <View style={styles.insightCard}>
       <View style={styles.insightHeader}>
@@ -208,7 +200,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ recommendation,
         return '#6B7280';
     }
   };
-  
+
   return (
     <View style={styles.recommendationCard}>
       <View style={styles.recommendationHeader}>
@@ -223,7 +215,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ recommendation,
       </View>
       <Text style={styles.recommendationTitle}>{recommendation.title}</Text>
       <Text style={styles.recommendationDescription}>{recommendation.description}</Text>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.actionButton, { backgroundColor: recommendation.color }]}
         onPress={onActionPress}
       >
@@ -236,243 +228,67 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ recommendation,
 export default function WeeklyReviewScreen() {
   const { connectedPlatforms, posts, language } = useApp();
   const insets = useSafeAreaInsets();
-  const [isLoading] = useState(false);
-  
-  const getPlatformColor = (platformName: string): string => {
-    const normalizedPlatform = platformName.toLowerCase();
-    switch (normalizedPlatform) {
-      case 'instagram': return '#E1306C';
-      case 'tiktok': return '#000000';
-      case 'linkedin': return '#0A66C2';
-      default: return '#5B72ED';
-    }
-  };
 
-  const weeklyData = useMemo(() => {
-    const now = new Date();
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - 7);
-    const weekEnd = now;
-    const previousWeekStart = new Date(weekStart);
-    previousWeekStart.setDate(weekStart.getDate() - 7);
+  const { data: mockData, isLoading } = useWeeklyData({ connectedPlatforms, posts, language });
 
-    const postsThisWeek = posts.filter(post => {
-      const postDate = new Date(post.scheduledDate);
-      return postDate >= weekStart && postDate <= weekEnd;
-    });
-
-    const postsLastWeek = posts.filter(post => {
-      const postDate = new Date(post.scheduledDate);
-      return postDate >= previousWeekStart && postDate < weekStart;
-    });
-
-    const totalReachThisWeek = postsThisWeek.length * 2800 + Math.floor(Math.random() * 5000);
-    const totalReachLastWeek = postsLastWeek.length * 2500 + Math.floor(Math.random() * 4000);
-    const reachChange = totalReachThisWeek - totalReachLastWeek;
-    const reachChangePercent = totalReachLastWeek > 0 
-      ? (reachChange / totalReachLastWeek) * 100 
-      : 0;
-
-    const totalEngagementThisWeek = postsThisWeek.length * 180 + Math.floor(Math.random() * 300);
-    const totalEngagementLastWeek = postsLastWeek.length * 160 + Math.floor(Math.random() * 250);
-    const engagementChange = totalEngagementThisWeek - totalEngagementLastWeek;
-    const engagementChangePercent = totalEngagementLastWeek > 0 
-      ? (engagementChange / totalEngagementLastWeek) * 100 
-      : 0;
-
-    const newFollowers = connectedPlatforms.filter(p => p.connected).length * 47 + Math.floor(Math.random() * 50);
-    const newFollowersLastWeek = connectedPlatforms.filter(p => p.connected).length * 40 + Math.floor(Math.random() * 40);
-    const followersChange = newFollowers - newFollowersLastWeek;
-    const followersChangePercent = newFollowersLastWeek > 0 
-      ? (followersChange / newFollowersLastWeek) * 100 
-      : 0;
-
-    const postsChange = postsThisWeek.length - postsLastWeek.length;
-    const postsChangePercent = postsLastWeek.length > 0 
-      ? (postsChange / postsLastWeek.length) * 100 
-      : 0;
-
-    const topPerformingPosts: TopPost[] = postsThisWeek.slice(0, 3).map((post, index) => {
-      const primaryPlatform = post.platforms[0] || 'instagram';
-      return {
-        id: post.id,
-        platform: primaryPlatform.charAt(0).toUpperCase() + primaryPlatform.slice(1),
-        content: post.caption,
-        thumbnail: post.mediaUrls?.[0] || `https://images.unsplash.com/photo-${1522543558187 + index}?w=400&h=400&fit=crop`,
-        publishedAt: new Date(post.scheduledDate),
-        reach: 15000 + Math.floor(Math.random() * 20000),
-        likes: 300 + Math.floor(Math.random() * 400),
-        comments: 50 + Math.floor(Math.random() * 150),
-        shares: 20 + Math.floor(Math.random() * 80)
-      };
-    });
-
-    const platformPerformance = connectedPlatforms
-      .filter(p => p.connected)
-      .map(platform => {
-        const platformPosts = postsThisWeek.filter(p => 
-          p.platforms.some(pl => pl.toLowerCase() === platform.platform.toLowerCase())
-        );
-        const reach = platformPosts.length * 12000 + Math.floor(Math.random() * 15000);
-        const engagement = platformPosts.length * 680 + Math.floor(Math.random() * 800);
-        const engagementRate = reach > 0 ? ((engagement / reach) * 100).toFixed(1) : '0.0';
-        
-        return {
-          platform: platform.platform.charAt(0).toUpperCase() + platform.platform.slice(1),
-          reach,
-          engagement,
-          averageEngagementRate: parseFloat(engagementRate),
-          color: getPlatformColor(platform.platform)
-        };
-      });
-
-    const insights: Insight[] = [
-      {
-        title: language === 'de' ? 'Beste Performance am Nachmittag' : 'Best Performance in Afternoon',
-        description: language === 'de' 
-          ? 'Posts zwischen 14-16 Uhr erreichen 34% mehr Engagement'
-          : 'Posts between 2-4 PM get 34% more engagement',
-        value: '+34%',
-        trend: 'up' as const,
-        color: '#10B981'
-      },
-      {
-        title: language === 'de' ? 'Video-Content übertrifft Bilder' : 'Video Content Outperforms Images',
-        description: language === 'de'
-          ? 'Videos erhalten durchschnittlich 2.5x mehr Interaktionen'
-          : 'Videos get 2.5x more interactions on average',
-        value: '2.5x',
-        trend: 'up' as const,
-        color: '#3B82F6'
-      },
-      {
-        title: language === 'de' ? 'Hashtag-Performance steigt' : 'Hashtag Performance Rising',
-        description: language === 'de'
-          ? 'Posts mit 5-8 Hashtags performen am besten'
-          : 'Posts with 5-8 hashtags perform best',
-        value: '5-8',
-        trend: 'neutral' as const,
-        color: '#8B5CF6'
-      }
-    ];
-
-    const recommendations: Recommendation[] = [
-      {
-        title: language === 'de' ? 'Mehr Video-Content erstellen' : 'Create More Video Content',
-        description: language === 'de'
-          ? 'Videos erzielen deutlich bessere Ergebnisse. Planen Sie 3-4 Videos pro Woche ein.'
-          : 'Videos achieve significantly better results. Plan 3-4 videos per week.',
-        action: language === 'de' ? 'Video planen' : 'Plan Video',
-        priority: 'high' as const,
-        color: '#EF4444'
-      },
-      {
-        title: language === 'de' ? 'Optimale Posting-Zeiten nutzen' : 'Use Optimal Posting Times',
-        description: language === 'de'
-          ? 'Verschieben Sie mehr Posts in die Nachmittagsstunden für bessere Reichweite.'
-          : 'Move more posts to afternoon hours for better reach.',
-        action: language === 'de' ? 'Zeitplan anpassen' : 'Adjust Schedule',
-        priority: 'medium' as const,
-        color: '#F59E0B'
-      },
-      {
-        title: language === 'de' ? 'Mehr Interaktion mit Followern' : 'More Interaction with Followers',
-        description: language === 'de'
-          ? 'Beantworten Sie Kommentare innerhalb der ersten Stunde für höhere Sichtbarkeit.'
-          : 'Reply to comments within the first hour for higher visibility.',
-        action: language === 'de' ? 'Erinnerung setzen' : 'Set Reminder',
-        priority: 'low' as const,
-        color: '#10B981'
-      }
-    ];
-
-    return {
-      weekStart,
-      weekEnd,
-      totalReach: totalReachThisWeek,
-      totalEngagement: totalEngagementThisWeek,
-      newFollowers,
-      postsPublished: postsThisWeek.length,
-      comparisonToPreviousWeek: {
-        reach: { change: reachChange, changePercent: reachChangePercent },
-        engagement: { change: engagementChange, changePercent: engagementChangePercent },
-        followers: { change: followersChange, changePercent: followersChangePercent },
-        posts: { change: postsChange, changePercent: postsChangePercent }
-      },
-      topPerformingPosts,
-      platformPerformance,
-      insights,
-      recommendations
-    };
-  }, [connectedPlatforms, posts, language]);
-
-  const mockData = weeklyData;
-  
   const formatDateRange = (start: Date, end: Date): string => {
-    const formatDate = (date: Date) => {
-      return date.toLocaleDateString('de-DE', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
-    };
-    
+    const formatDate = (date: Date) =>
+      date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
     return `Woche vom ${formatDate(start)} - ${formatDate(end)}`;
   };
-  
+
   const formatNumber = (num: number): string => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-    }
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
     return num.toLocaleString();
   };
-  
+
   if (isLoading) {
     return (
       <View style={[styles.container, { paddingBottom: insets.bottom }]}>
-      <Stack.Screen options={{ title: 'Wochenrückblick', headerShown: true }} />
-      <View style={styles.loadingContainer}>
+        <Stack.Screen
+          options={{
+            title: language === 'de' ? 'Wochenrückblick' : 'Weekly Review',
+            headerShown: true,
+            headerBackTitle: language === 'de' ? 'Zurück' : 'Back',
+          }}
+        />
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#3B82F6" />
           <Text style={styles.loadingText}>
             {language === 'de' ? 'Lade Wochenrückblick...' : 'Loading Weekly Review...'}
           </Text>
+        </View>
       </View>
-    </View>
     );
   }
-  
+
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
-      <Stack.Screen 
-        options={{ 
-          title: language === 'de' ? 'Wochenrückblick' : 'Weekly Review', 
+      <Stack.Screen
+        options={{
+          title: language === 'de' ? 'Wochenrückblick' : 'Weekly Review',
           headerShown: true,
-        }} 
+          headerBackTitle: language === 'de' ? 'Zurück' : 'Back',
+        }}
       />
-      
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <LinearGradient
-          colors={['#5B72ED', '#3B54C7']}
-          style={styles.header}
-        >
+        <LinearGradient colors={['#5B72ED', '#3B54C7']} style={styles.header}>
           <Text style={styles.headerTitle}>
             {language === 'de' ? 'Wochenrückblick 📊' : 'Weekly Review 📊'}
           </Text>
           <Text style={styles.headerSubtitle}>
-            {language === 'de' 
-              ? 'Performance der letzten 7 Tage'
-              : 'Performance from the last 7 days'}
+            {language === 'de' ? 'Performance der letzten 7 Tage' : 'Performance from the last 7 days'}
           </Text>
           <Text style={styles.headerDate}>{formatDateRange(mockData.weekStart, mockData.weekEnd)}</Text>
         </LinearGradient>
-        
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             {language === 'de' ? 'Performance-Highlights' : 'Performance Highlights'}
           </Text>
-          
+
           <View style={styles.statsGrid}>
             <StatCard
               title={language === 'de' ? 'Gesamtreichweite' : 'Total Reach'}
@@ -508,7 +324,7 @@ export default function WeeklyReviewScreen() {
             />
           </View>
         </View>
-        
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             {language === 'de' ? 'Meistgesehene Inhalte' : 'Top Performing Posts'}
@@ -517,7 +333,7 @@ export default function WeeklyReviewScreen() {
             <PostCard key={post.id} post={post} />
           ))}
         </View>
-        
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             {language === 'de' ? 'Platform Performance' : 'Platform Performance'}
@@ -552,7 +368,7 @@ export default function WeeklyReviewScreen() {
             ))}
           </View>
         </View>
-        
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             {language === 'de' ? 'Insights' : 'Insights'}
@@ -561,7 +377,7 @@ export default function WeeklyReviewScreen() {
             <InsightCard key={index} insight={insight} />
           ))}
         </View>
-        
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             {language === 'de' ? 'Empfehlungen' : 'Recommendations'}
@@ -577,19 +393,19 @@ export default function WeeklyReviewScreen() {
                 console.log('[Weekly Review] Set reminder action');
               }
             };
-            
+
             return (
-              <RecommendationCard 
-                key={index} 
+              <RecommendationCard
+                key={index}
                 recommendation={recommendation}
                 onActionPress={handleActionPress}
               />
             );
           })}
         </View>
-        
+
         <View style={styles.actionSection}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.primaryButton}
             onPress={() => router.push('/(tabs)/(reports)')}
           >
@@ -598,9 +414,9 @@ export default function WeeklyReviewScreen() {
               {language === 'de' ? 'Vollständige Analytics anzeigen' : 'View Full Analytics'}
             </Text>
           </TouchableOpacity>
-          
+
           <View style={styles.secondaryButtons}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.secondaryButton}
               onPress={() => router.push('/(tabs)/(create)')}
             >
@@ -608,8 +424,8 @@ export default function WeeklyReviewScreen() {
                 {language === 'de' ? 'Content erstellen' : 'Create Content'}
               </Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.secondaryButton}
               onPress={() => router.push('/(tabs)/(calendar)')}
             >
@@ -619,7 +435,7 @@ export default function WeeklyReviewScreen() {
             </TouchableOpacity>
           </View>
         </View>
-        
+
         <View style={styles.bottomPadding} />
       </ScrollView>
     </View>
