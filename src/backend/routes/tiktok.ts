@@ -1,3 +1,4 @@
+// src/backend/routes/tiktok.ts
 import { Hono } from 'hono'
 import { setCookie, getCookie } from 'hono/cookie'
 import { randomBytes } from 'crypto'
@@ -23,12 +24,12 @@ if (!CLIENT_KEY || !CLIENT_SECRET) {
 // trailing Slash entfernen
 const REDIRECT_URI = `${APP_URL.replace(/\/$/, '')}/api/oauth/tiktok/callback`
 
-// TikTok Scopes
-const SCOPES = ['user.info.basic'].join(',')
+// 👉 erstmal nur basic Login, kein video.upload (der macht oft Stress ohne Freigabe)
+const SCOPES = 'user.info.basic'
 
-// OAuth Endpoints
-const AUTHORIZE_URL = 'https://www.tiktok.com/auth/authorize/'
-const TOKEN_URL = 'https://www.tiktok.com/auth/token/'
+// OAuth Endpoints (neue v2-Variante)
+const AUTHORIZE_URL = 'https://www.tiktok.com/v2/auth/authorize/'
+const TOKEN_URL = 'https://open.tiktokapis.com/v2/oauth/token/'
 
 // 🔹 START TikTok Login Flow
 tiktokRouter.get('/start', (c) => {
@@ -59,6 +60,12 @@ tiktokRouter.get('/callback', async (c) => {
   const state = url.searchParams.get('state')
   const saved = getCookie(c, 'tt_state')
 
+  console.log('[TikTok] /callback query', {
+    code,
+    state,
+    saved,
+  })
+
   if (!code) return c.text('Missing code', 400)
 
   if (!state || !saved || state !== saved) {
@@ -74,22 +81,40 @@ tiktokRouter.get('/callback', async (c) => {
     redirect_uri: REDIRECT_URI,
   }).toString()
 
+  console.log('[TikTok] Token request →', TOKEN_URL, 'body=', form)
+
   const res = await fetch(TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: form,
   })
 
+  const rawText = await res.text()
+
   if (!res.ok) {
-    const txt = await res.text()
-    console.error('[TikTok] Token error:', res.status, txt)
+    console.error('[TikTok] Token error:', res.status, rawText)
     return c.text('TikTok token error', 500)
   }
 
-  const data: any = await res.json()
+  let data: any
+  try {
+    data = JSON.parse(rawText)
+  } catch (e) {
+    console.error('[TikTok] JSON parse error:', e, rawText)
+    return c.text('TikTok JSON parse error', 500)
+  }
 
-  const access = data.access_token ?? data.data?.access_token ?? null
-  const refresh = data.refresh_token ?? data.data?.refresh_token ?? null
+  console.log('[TikTok] Token response data =', data)
+
+  const access =
+    data.access_token ??
+    data.data?.access_token ??
+    null
+
+  const refresh =
+    data.refresh_token ??
+    data.data?.refresh_token ??
+    null
 
   if (!access) {
     console.error('[TikTok] No access token', data)
@@ -136,14 +161,25 @@ tiktokRouter.get('/refresh', async (c) => {
     body: form,
   })
 
+  const rawText = await res.text()
+
   if (!res.ok) {
-    const txt = await res.text()
-    console.error('[TikTok] Refresh error:', res.status, txt)
+    console.error('[TikTok] Refresh error:', res.status, rawText)
     return c.text('Refresh failed', 500)
   }
 
-  const data: any = await res.json()
-  const access = data.access_token ?? data.data?.access_token ?? null
+  let data: any
+  try {
+    data = JSON.parse(rawText)
+  } catch (e) {
+    console.error('[TikTok] Refresh JSON parse error:', e, rawText)
+    return c.text('Refresh JSON parse error', 500)
+  }
+
+  const access =
+    data.access_token ??
+    data.data?.access_token ??
+    null
 
   if (!access) return c.json(data, 400)
 
