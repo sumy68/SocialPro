@@ -24,7 +24,7 @@ if (!CLIENT_KEY || !CLIENT_SECRET) {
 const REDIRECT_URI = `${APP_URL.replace(/\/$/, '')}/api/oauth/tiktok/callback`
 
 // TikTok Scopes
-const SCOPES = ['user.info.basic', 'video.upload'].join(',')
+const SCOPES = ['user.info.basic'].join(',')
 
 // OAuth Endpoints
 const AUTHORIZE_URL = 'https://www.tiktok.com/auth/authorize/'
