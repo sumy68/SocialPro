@@ -28,7 +28,7 @@ const SCOPES = ['user.info.basic'].join(',')
 
 // ✅ NEUE OAuth Endpoints (v2 bevorzugt, wenn deine App schon v2 nutzt)
 const AUTHORIZE_URL = 'https://www.tiktok.com/v2/auth/authorize/'
-const TOKEN_URL = 'https://www.tiktok.com/v2/auth/token/'
+const TOKEN_URL = 'https://open.tiktokapis.com/v2/oauth/token/'
 
 // 🔹 START TikTok Login Flow
 tiktokRouter.get('/start', (c) => {
