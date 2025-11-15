@@ -15,20 +15,20 @@ const CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY
 const CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET
 const SCHEME = process.env.EXPO_PUBLIC_SCHEME || 'socialpro'
 
-// 👉 TikTok-Redirect-URL (MUSS exakt im TikTok Dev Dashboard stehen)
-const REDIRECT_URI =
-  process.env.TIKTOK_REDIRECT_URI ||
-  `${APP_URL.replace(/\/$/, '')}/api/oauth/tiktok/callback`
+if (!CLIENT_KEY || !CLIENT_SECRET) {
+  console.warn('[TikTok] Missing TIKTOK_CLIENT_KEY or TIKTOK_CLIENT_SECRET')
+}
 
-console.log('[TikTok] APP_URL      =', APP_URL)
-console.log('[TikTok] REDIRECT_URI =', REDIRECT_URI)
-console.log('[TikTok] CLIENT_KEY   =', CLIENT_KEY?.slice(0, 4) + '...')
+// redirect_uri → exakt wie im TikTok-Dashboard eingetragen
+const REDIRECT_URI = `${APP_URL.replace(/\/$/, '')}/api/oauth/tiktok/callback`
 
-// nur basic Scope zum Start
+// 🔹 TikTok Scopes – erstmal minimal halten
+// Tipp: Erst wenn das läuft, "video.upload" wieder dazu nehmen.
 const SCOPES = ['user.info.basic'].join(',')
 
-const AUTHORIZE_URL = 'https://www.tiktok.com/auth/authorize/'
-const TOKEN_URL = 'https://www.tiktok.com/auth/token/'
+// ✅ NEUE OAuth Endpoints (v2 bevorzugt, wenn deine App schon v2 nutzt)
+const AUTHORIZE_URL = 'https://www.tiktok.com/v2/auth/authorize/'
+const TOKEN_URL = 'https://www.tiktok.com/v2/auth/token/'
 
 // 🔹 START TikTok Login Flow
 tiktokRouter.get('/start', (c) => {
