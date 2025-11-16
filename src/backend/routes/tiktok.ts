@@ -153,3 +153,25 @@ tiktokRouter.get('/refresh', async (c) => {
 
   return c.json({ ok: true })
 })
+
+// 🔹 DISCONNECT: Tokens/Cookies löschen
+tiktokRouter.get('/disconnect', (c) => {
+  setCookie(c, 'tt_access', '', {
+    httpOnly: true,
+    sameSite: 'Lax',
+    path: '/',
+    maxAge: 0,
+  });
+
+  setCookie(c, 'tt_refresh', '', {
+    httpOnly: true,
+    sameSite: 'Lax',
+    path: '/',
+    maxAge: 0,
+  });
+
+  console.log('[TikTok] disconnect → cookies cleared');
+
+  return c.json({ ok: true });
+});
+
