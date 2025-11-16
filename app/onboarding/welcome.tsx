@@ -1,33 +1,46 @@
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useRouter, Stack } from 'expo-router';
-
-import { useTranslation } from '@/hooks/useTranslation';
+import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { Colors } from '@/constants/colors';
+import { useApp } from '@/contexts/AppContext';
+import { translations } from '@/constants/translations';
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const t = useTranslation();
+  const { language } = useApp();
+  const t = translations[language] ?? translations.de;
   const insets = useSafeAreaInsets();
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
-        <View style={{ paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40, flex: 1, paddingHorizontal: 32 }}>
+        <View
+          style={{
+            paddingTop: insets.top + 40,
+            paddingBottom: insets.bottom + 40,
+            flex: 1,
+            paddingHorizontal: 32,
+          }}
+        >
           <View style={styles.content}>
-            <View style={styles.iconContainer}>
-              <Text style={styles.emoji}>🚀</Text>
-            </View>
-            
+            <Text style={styles.emoji}>🚀</Text>
+
             <Text style={styles.title}>SocialPro</Text>
-            <Text style={styles.subtitle}>{t.onboarding.welcome.subtitle}</Text>
+
+            <Text style={styles.subtitle}>
+              Automatisieren Sie Ihre Social Media Posts auf LinkedIn,
+              Instagram, TikTok & YouTube
+            </Text>
 
             <View style={styles.features}>
               <FeatureItem text="LinkedIn • Instagram • TikTok • YouTube" />
-              <FeatureItem text={t.subscription.features.scheduling} />
-              <FeatureItem text={t.subscription.features.aiCaptions} />
-              <FeatureItem text={t.subscription.features.analytics} />
+              <FeatureItem text="Post-Planung & Automatisierung" />
+              <FeatureItem text="KI-generierte Captions & Hashtags" />
+              <FeatureItem text="Analytics & Auswertungen" />
+              <FeatureItem text="Wöchentliche Insights & Empfehlungen" />
             </View>
           </View>
 
@@ -36,7 +49,7 @@ export default function WelcomeScreen() {
             onPress={() => router.push('/onboarding/company-info' as any)}
             activeOpacity={0.8}
           >
-            <Text style={styles.buttonText}>{t.onboarding.welcome.cta}</Text>
+            <Text style={styles.buttonText}>Jetzt starten</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -63,31 +76,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  iconContainer: {
-    marginBottom: 48,
-  },
   emoji: {
     fontSize: 72,
+    marginBottom: 40,
   },
   title: {
-    fontSize: 56,
-    fontWeight: '700' as const,
+    fontSize: 54,
+    fontWeight: '700',
     color: Colors.text,
-    marginBottom: 12,
+    marginBottom: 20,
     textAlign: 'center',
-    letterSpacing: -2,
+    letterSpacing: -1,
   },
   subtitle: {
-    fontSize: 17,
+    fontSize: 18,
     color: Colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 64,
-    lineHeight: 24,
-    maxWidth: 320,
+    marginBottom: 40,
+    lineHeight: 26,
+    paddingHorizontal: 10,
   },
   features: {
     width: '100%',
-    gap: 20,
+    gap: 18,
+    paddingHorizontal: 10,
   },
   featureItem: {
     flexDirection: 'row',
@@ -95,9 +107,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   featureDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: Colors.accent,
   },
   featureText: {
@@ -110,11 +122,11 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     borderRadius: 12,
     alignItems: 'center',
+    marginTop: 20,
   },
   buttonText: {
-    fontSize: 17,
-    fontWeight: '600' as const,
+    fontSize: 18,
+    fontWeight: '600',
     color: Colors.background,
-    letterSpacing: -0.3,
   },
 });
