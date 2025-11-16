@@ -2,6 +2,7 @@ import { View, Text, Button, ActivityIndicator, Alert, Platform } from "react-na
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as SplashScreen from "expo-splash-screen";
+import { useApp } from "@/contexts/AppContext";
 
 const APP_URL = process.env.EXPO_PUBLIC_APP_URL ?? "https://socialpro-fnvo.onrender.com";
 
@@ -22,6 +23,7 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
 export default function ConnectedSuccess() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { connectPlatform } = useApp();
 
   // provider: instagram | linkedin | tiktok
   const provider = useMemo(
@@ -127,23 +129,51 @@ export default function ConnectedSuccess() {
       ? !err // TikTok: ok, solange kein Fehlerparam
       : !!pageId && !!igUserId; // Instagram
 
-  const handleSave = async () => {
-    try {
-      // TODO: Token/Profil speichern (z.B. AsyncStorage / Context / Server)
-      Alert.alert(
-        provider === "linkedin"
-          ? "LinkedIn"
-          : provider === "tiktok"
-          ? "TikTok"
-          : "Instagram",
-        "Verbindung gespeichert ✅"
-      );
-      router.replace("/(tabs)/(dashboard)");
-    } catch (e: any) {
-      Alert.alert("Fehler", e?.message ?? "Konnte nicht speichern");
-    }
-  };
-
+      const handleSave = async () => {
+        try {
+          // 🔹 TikTok: dauerhaft speichern (wie bei LinkedIn & Instagram)
+          if (provider === "tiktok") {
+            await connectPlatform(
+              "tiktok",
+              "TikTok Sandbox User",     // accountName
+              "tiktok-sandbox",          // accountId
+              undefined,                 // accessToken
+              undefined,                 // refreshToken
+              undefined                  // expiresAt
+            );
+      
+            Alert.alert("TikTok", "Erfolgreich verbunden ✅");
+            router.replace("/(tabs)/(dashboard)");
+            return;
+          }
+      
+          // 🔹 LinkedIn
+          if (provider === "linkedin") {
+            await connectPlatform(
+              "linkedin",
+              liUser?.name ?? "LinkedIn User",
+              liUser?.email ?? ""
+            );
+            Alert.alert("LinkedIn", "Erfolgreich verbunden ✅");
+            router.replace("/(tabs)/(dashboard)");
+            return;
+          }
+      
+          // 🔹 Instagram
+          await connectPlatform(
+            "instagram",
+            "Instagram Business",
+            igUserId
+          );
+          Alert.alert("Instagram", "Erfolgreich verbunden ✅");
+          router.replace("/(tabs)/(dashboard)");
+      
+        } catch (e: any) {
+          Alert.alert("Fehler", e?.message ?? "Konnte nicht speichern");
+        }
+      };
+    
+    
   const showErr = !loading && (!ok || !!err);
 
   return (

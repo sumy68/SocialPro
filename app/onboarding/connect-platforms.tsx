@@ -209,6 +209,11 @@ export default function ConnectPlatformsScreen() {
       />
 
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      {/* Zurück-Button oben im Screen */}
+      <TouchableOpacity onPress={() => router.back()} style={{ paddingVertical: 8, marginBottom: 8 }}>
+        <Text style={{ fontSize: 16 }}>← Zurück</Text>
+      </TouchableOpacity>
+
         <View style={styles.header}>
           <Text style={styles.title}>{(t?.onboarding?.platforms?.title ?? 'Plattformen verbinden')}</Text>
           <Text style={styles.subtitle}>{(t?.onboarding?.platforms?.subtitle ?? 'Verbinde Instagram, LinkedIn oder TikTok')}</Text>
