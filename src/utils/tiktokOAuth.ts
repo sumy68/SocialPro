@@ -31,11 +31,12 @@ export function getRedirectUri() {
  */
 export async function startTikTokLogin() {
   const redirectUri = getRedirectUri();
-
   const startUrl = `${APP_URL.replace(/\/$/, "")}/api/oauth/tiktok/start`;
 
   console.log("[TikTok] startUrl 👉", startUrl);
 
   // TikTok Login → Safari → Backend → Deep-Link zurück zur App
-  return WebBrowser.openAuthSessionAsync(startUrl, redirectUri);
+  const result = await WebBrowser.openAuthSessionAsync(startUrl, redirectUri);
+  console.log("[TikTok] AuthSession result:", result);
+  return result;
 }
