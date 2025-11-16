@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   Image,
   ActivityIndicator,
   Dimensions,
-  Platform
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
@@ -25,7 +25,7 @@ import {
   Lightbulb,
   Target,
   Users,
-  Activity
+  Activity,
 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { Colors } from '@/constants/colors';
@@ -42,7 +42,14 @@ interface StatCardProps {
   color: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, change, changePercent, icon, color }) => {
+const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  change,
+  changePercent,
+  icon,
+  color,
+}) => {
   const isPositive = change >= 0;
 
   return (
@@ -58,8 +65,14 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, change, changePercent
         ) : (
           <TrendingDown size={16} color="#EF4444" />
         )}
-        <Text style={[styles.statChangeText, { color: isPositive ? '#10B981' : '#EF4444' }]}>
-          {isPositive ? '+' : ''}{changePercent.toFixed(1)}%
+        <Text
+          style={[
+            styles.statChangeText,
+            { color: isPositive ? '#10B981' : '#EF4444' },
+          ]}
+        >
+          {isPositive ? '+' : ''}
+          {changePercent.toFixed(1)}%
         </Text>
       </View>
       <Text style={styles.statCompare}>vs. letzte Woche</Text>
@@ -85,8 +98,8 @@ interface PostCardProps {
 
 const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const formatNumber = (num: number): string => {
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M';
+    if (num >= 1_000) return (num / 1_000).toFixed(1) + 'K';
     return num.toString();
   };
 
@@ -107,7 +120,9 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
           <Text style={styles.postPlatform}>{post.platform}</Text>
           <Text style={styles.postType}>POST</Text>
         </View>
-        <Text style={styles.postText} numberOfLines={2}>{post.content}</Text>
+        <Text style={styles.postText} numberOfLines={2}>
+          {post.content}
+        </Text>
         <Text style={styles.postDate}>{formatDate(post.publishedAt)}</Text>
 
         <View style={styles.postStats}>
@@ -121,7 +136,9 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
           </View>
           <View style={styles.postStat}>
             <MessageCircle size={14} color="#6B7280" />
-            <Text style={styles.postStatText}>{formatNumber(post.comments)}</Text>
+            <Text style={styles.postStatText}>
+              {formatNumber(post.comments)}
+            </Text>
           </View>
           <View style={styles.postStat}>
             <Share2 size={14} color="#6B7280" />
@@ -160,12 +177,21 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight }) => {
   return (
     <View style={styles.insightCard}>
       <View style={styles.insightHeader}>
-        <View style={[styles.insightIcon, { backgroundColor: insight.color + '20' }]}>
+        <View
+          style={[
+            styles.insightIcon,
+            { backgroundColor: insight.color + '20' },
+          ]}
+        >
           <Lightbulb size={20} color={insight.color} />
         </View>
         <View style={styles.insightTrend}>
           {getTrendIcon()}
-          <Text style={[styles.insightValue, { color: insight.color }]}>{insight.value}</Text>
+          <Text
+            style={[styles.insightValue, { color: insight.color }]}
+          >
+            {insight.value}
+          </Text>
         </View>
       </View>
       <Text style={styles.insightTitle}>{insight.title}</Text>
@@ -187,7 +213,10 @@ interface RecommendationCardProps {
   onActionPress: () => void;
 }
 
-const RecommendationCard: React.FC<RecommendationCardProps> = ({ recommendation, onActionPress }) => {
+const RecommendationCard: React.FC<RecommendationCardProps> = ({
+  recommendation,
+  onActionPress,
+}) => {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
@@ -204,17 +233,34 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ recommendation,
   return (
     <View style={styles.recommendationCard}>
       <View style={styles.recommendationHeader}>
-        <View style={[styles.recommendationIcon, { backgroundColor: recommendation.color + '20' }]}>
+        <View
+          style={[
+            styles.recommendationIcon,
+            { backgroundColor: recommendation.color + '20' },
+          ]}
+        >
           <Target size={20} color={recommendation.color} />
         </View>
-        <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(recommendation.priority) + '20' }]}>
-          <Text style={[styles.priorityText, { color: getPriorityColor(recommendation.priority) }]}>
+        <View
+          style={[
+            styles.priorityBadge,
+            { backgroundColor: getPriorityColor(recommendation.priority) + '20' },
+          ]}
+        >
+          <Text
+            style={[
+              styles.priorityText,
+              { color: getPriorityColor(recommendation.priority) },
+            ]}
+          >
             {recommendation.priority.toUpperCase()}
           </Text>
         </View>
       </View>
       <Text style={styles.recommendationTitle}>{recommendation.title}</Text>
-      <Text style={styles.recommendationDescription}>{recommendation.description}</Text>
+      <Text style={styles.recommendationDescription}>
+        {recommendation.description}
+      </Text>
       <TouchableOpacity
         style={[styles.actionButton, { backgroundColor: recommendation.color }]}
         onPress={onActionPress}
@@ -229,20 +275,33 @@ export default function WeeklyReviewScreen() {
   const { connectedPlatforms, posts, language } = useApp();
   const insets = useSafeAreaInsets();
 
-  const { data: mockData, isLoading } = useWeeklyData({ connectedPlatforms, posts, language });
+  // echte Daten aus Hook (die intern aus deinen Insights kommen)
+  const { data: weeklyData, isLoading } = useWeeklyData({
+    connectedPlatforms,
+    posts,
+    language,
+  });
+
+  const hasConnectedPlatforms =
+    connectedPlatforms && connectedPlatforms.some((p) => p.connected);
 
   const formatDateRange = (start: Date, end: Date): string => {
     const formatDate = (date: Date) =>
-      date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      date.toLocaleDateString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
     return `Woche vom ${formatDate(start)} - ${formatDate(end)}`;
   };
 
   const formatNumber = (num: number): string => {
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M';
+    if (num >= 1_000) return (num / 1_000).toFixed(1) + 'K';
     return num.toLocaleString();
   };
 
+  // Loading
   if (isLoading) {
     return (
       <View style={[styles.container, { paddingBottom: insets.bottom }]}>
@@ -256,12 +315,85 @@ export default function WeeklyReviewScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#3B82F6" />
           <Text style={styles.loadingText}>
-            {language === 'de' ? 'Lade Wochenrückblick...' : 'Loading Weekly Review...'}
+            {language === 'de'
+              ? 'Lade Wochenrückblick...'
+              : 'Loading Weekly Review...'}
           </Text>
         </View>
       </View>
     );
   }
+
+  // Kein Account verbunden → kein Fake-Report, nur Hinweis
+  if (!hasConnectedPlatforms) {
+    return (
+      <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+        <Stack.Screen
+          options={{
+            title: language === 'de' ? 'Wochenrückblick' : 'Weekly Review',
+            headerShown: true,
+            headerBackTitle: language === 'de' ? 'Zurück' : 'Back',
+          }}
+        />
+        <View style={styles.emptyStateWrapper}>
+          <Text style={styles.emptyStateTitle}>
+            {language === 'de'
+              ? 'Noch keine Daten'
+              : 'No data available yet'}
+          </Text>
+          <Text style={styles.emptyStateText}>
+            {language === 'de'
+              ? 'Verbinde zuerst mindestens eine Plattform, damit wir deinen Wochenrückblick aus echten Insights berechnen können.'
+              : 'Connect at least one platform so we can generate a weekly review from your real insights.'}
+          </Text>
+          <TouchableOpacity
+            style={styles.emptyStateButton}
+            onPress={() => router.push('/(tabs)/(settings)')}
+          >
+            <Text style={styles.emptyStateButtonText}>
+              {language === 'de'
+                ? 'Plattformen verbinden'
+                : 'Connect platforms'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Falls Backend/Hooks noch nichts liefern → neutrale 0-Daten
+  if (!weeklyData) {
+    return (
+      <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+        <Stack.Screen
+          options={{
+            title: language === 'de' ? 'Wochenrückblick' : 'Weekly Review',
+            headerShown: true,
+            headerBackTitle: language === 'de' ? 'Zurück' : 'Back',
+          }}
+        />
+        <View style={styles.emptyStateWrapper}>
+          <Text style={styles.emptyStateTitle}>
+            {language === 'de'
+              ? 'Noch keine Insights'
+              : 'No insights yet'}
+          </Text>
+          <Text style={styles.emptyStateText}>
+            {language === 'de'
+              ? 'Wir haben für diese Woche noch keine ausreichenden Daten gefunden.'
+              : 'We don’t have enough data for this week yet.'}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  const comparison = weeklyData.comparisonToPreviousWeek ?? {
+    reach: { change: 0, changePercent: 0 },
+    engagement: { change: 0, changePercent: 0 },
+    followers: { change: 0, changePercent: 0 },
+    posts: { change: 0, changePercent: 0 },
+  };
 
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
@@ -279,89 +411,132 @@ export default function WeeklyReviewScreen() {
             {language === 'de' ? 'Wochenrückblick 📊' : 'Weekly Review 📊'}
           </Text>
           <Text style={styles.headerSubtitle}>
-            {language === 'de' ? 'Performance der letzten 7 Tage' : 'Performance from the last 7 days'}
+            {language === 'de'
+              ? 'Performance der letzten 7 Tage'
+              : 'Performance from the last 7 days'}
           </Text>
-          <Text style={styles.headerDate}>{formatDateRange(mockData.weekStart, mockData.weekEnd)}</Text>
+          <Text style={styles.headerDate}>
+            {formatDateRange(weeklyData.weekStart, weeklyData.weekEnd)}
+          </Text>
         </LinearGradient>
 
+        {/* PERFORMANCE HIGHLIGHTS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {language === 'de' ? 'Performance-Highlights' : 'Performance Highlights'}
+            {language === 'de'
+              ? 'Performance-Highlights'
+              : 'Performance Highlights'}
           </Text>
 
           <View style={styles.statsGrid}>
             <StatCard
               title={language === 'de' ? 'Gesamtreichweite' : 'Total Reach'}
-              value={formatNumber(mockData.totalReach)}
-              change={mockData.comparisonToPreviousWeek.reach.change}
-              changePercent={mockData.comparisonToPreviousWeek.reach.changePercent}
+              value={formatNumber(weeklyData.totalReach ?? 0)}
+              change={comparison.reach.change ?? 0}
+              changePercent={comparison.reach.changePercent ?? 0}
               icon={<Eye size={24} color="#3B82F6" />}
               color="#3B82F6"
             />
             <StatCard
               title={language === 'de' ? 'Engagement' : 'Engagement'}
-              value={formatNumber(mockData.totalEngagement)}
-              change={mockData.comparisonToPreviousWeek.engagement.change}
-              changePercent={mockData.comparisonToPreviousWeek.engagement.changePercent}
+              value={formatNumber(weeklyData.totalEngagement ?? 0)}
+              change={comparison.engagement.change ?? 0}
+              changePercent={comparison.engagement.changePercent ?? 0}
               icon={<Heart size={24} color="#EF4444" />}
               color="#EF4444"
             />
             <StatCard
               title={language === 'de' ? 'Neue Follower' : 'New Followers'}
-              value={formatNumber(mockData.newFollowers)}
-              change={mockData.comparisonToPreviousWeek.followers.change}
-              changePercent={mockData.comparisonToPreviousWeek.followers.changePercent}
+              value={formatNumber(weeklyData.newFollowers ?? 0)}
+              change={comparison.followers.change ?? 0}
+              changePercent={comparison.followers.changePercent ?? 0}
               icon={<Users size={24} color="#10B981" />}
               color="#10B981"
             />
             <StatCard
-              title={language === 'de' ? 'Posts veröffentlicht' : 'Posts Published'}
-              value={mockData.postsPublished.toString()}
-              change={mockData.comparisonToPreviousWeek.posts.change}
-              changePercent={mockData.comparisonToPreviousWeek.posts.changePercent}
+              title={
+                language === 'de'
+                  ? 'Posts veröffentlicht'
+                  : 'Posts Published'
+              }
+              value={(weeklyData.postsPublished ?? 0).toString()}
+              change={comparison.posts.change ?? 0}
+              changePercent={comparison.posts.changePercent ?? 0}
               icon={<Calendar size={24} color="#8B5CF6" />}
               color="#8B5CF6"
             />
           </View>
         </View>
 
+        {/* TOP POSTS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {language === 'de' ? 'Meistgesehene Inhalte' : 'Top Performing Posts'}
+            {language === 'de'
+              ? 'Meistgesehene Inhalte'
+              : 'Top Performing Posts'}
           </Text>
-          {mockData.topPerformingPosts.map((post) => (
+          {(weeklyData.topPerformingPosts ?? []).map((post) => (
             <PostCard key={post.id} post={post} />
           ))}
+          {(!weeklyData.topPerformingPosts ||
+            weeklyData.topPerformingPosts.length === 0) && (
+            <Text style={styles.emptySubText}>
+              {language === 'de'
+                ? 'Keine Top-Posts für diese Woche vorhanden.'
+                : 'No top posts for this week.'}
+            </Text>
+          )}
         </View>
 
+        {/* PLATFORM PERFORMANCE */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             {language === 'de' ? 'Platform Performance' : 'Platform Performance'}
           </Text>
           <View style={styles.platformGrid}>
-            {mockData.platformPerformance.map((platform, index) => (
+            {(weeklyData.platformPerformance ?? []).map((platform, index) => (
               <View key={index} style={styles.platformCard}>
-                <View style={[styles.platformHeader, { backgroundColor: platform.color + '20' }]}>
-                  <Text style={[styles.platformName, { color: platform.color }]}>{platform.platform}</Text>
+                <View
+                  style={[
+                    styles.platformHeader,
+                    { backgroundColor: platform.color + '20' },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.platformName,
+                      { color: platform.color },
+                    ]}
+                  >
+                    {platform.platform}
+                  </Text>
                 </View>
                 <View style={styles.platformStats}>
                   <View style={styles.platformStat}>
                     <Text style={styles.platformStatLabel}>
                       {language === 'de' ? 'Reichweite' : 'Reach'}
                     </Text>
-                    <Text style={styles.platformStatValue}>{formatNumber(platform.reach)}</Text>
+                    <Text style={styles.platformStatValue}>
+                      {formatNumber(platform.reach ?? 0)}
+                    </Text>
                   </View>
                   <View style={styles.platformStat}>
                     <Text style={styles.platformStatLabel}>
                       {language === 'de' ? 'Engagement' : 'Engagement'}
                     </Text>
-                    <Text style={styles.platformStatValue}>{formatNumber(platform.engagement)}</Text>
+                    <Text style={styles.platformStatValue}>
+                      {formatNumber(platform.engagement ?? 0)}
+                    </Text>
                   </View>
                   <View style={styles.platformStat}>
                     <Text style={styles.platformStatLabel}>
-                      {language === 'de' ? 'Engagement-Rate' : 'Engagement Rate'}
+                      {language === 'de'
+                        ? 'Engagement-Rate'
+                        : 'Engagement Rate'}
                     </Text>
-                    <Text style={styles.platformStatValue}>{platform.averageEngagementRate}%</Text>
+                    <Text style={styles.platformStatValue}>
+                      {(platform.averageEngagementRate ?? 0).toFixed(1)}%
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -369,28 +544,39 @@ export default function WeeklyReviewScreen() {
           </View>
         </View>
 
+        {/* INSIGHTS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             {language === 'de' ? 'Insights' : 'Insights'}
           </Text>
-          {mockData.insights.map((insight, index) => (
+          {(weeklyData.insights ?? []).map((insight, index) => (
             <InsightCard key={index} insight={insight} />
           ))}
+          {(!weeklyData.insights || weeklyData.insights.length === 0) && (
+            <Text style={styles.emptySubText}>
+              {language === 'de'
+                ? 'Noch keine automatischen Insights verfügbar.'
+                : 'No automatic insights available yet.'}
+            </Text>
+          )}
         </View>
 
+        {/* RECOMMENDATIONS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             {language === 'de' ? 'Empfehlungen' : 'Recommendations'}
           </Text>
-          {mockData.recommendations.map((recommendation, index) => {
+          {(weeklyData.recommendations ?? []).map((recommendation, index) => {
             const handleActionPress = () => {
-              console.log('[Weekly Review] Action pressed:', recommendation.action);
               if (recommendation.priority === 'high') {
                 router.push('/(tabs)/(create)');
               } else if (recommendation.priority === 'medium') {
                 router.push('/(tabs)/(calendar)');
               } else {
-                console.log('[Weekly Review] Set reminder action');
+                // low priority -> später Reminder/sonstiges
+                console.log(
+                  '[Weekly Review] Low priority recommendation tapped',
+                );
               }
             };
 
@@ -402,8 +588,17 @@ export default function WeeklyReviewScreen() {
               />
             );
           })}
+          {(!weeklyData.recommendations ||
+            weeklyData.recommendations.length === 0) && (
+            <Text style={styles.emptySubText}>
+              {language === 'de'
+                ? 'Noch keine konkreten Empfehlungen.'
+                : 'No concrete recommendations yet.'}
+            </Text>
+          )}
         </View>
 
+        {/* ACTIONS */}
         <View style={styles.actionSection}>
           <TouchableOpacity
             style={styles.primaryButton}
@@ -411,11 +606,13 @@ export default function WeeklyReviewScreen() {
           >
             <BarChart3 size={20} color="white" />
             <Text style={styles.primaryButtonText}>
-              {language === 'de' ? 'Vollständige Analytics anzeigen' : 'View Full Analytics'}
+              {language === 'de'
+                ? 'Vollständige Analytics anzeigen'
+                : 'View Full Analytics'}
             </Text>
           </TouchableOpacity>
 
-          <View style={styles.secondaryButtons}>
+          <View className="secondaryButtons" style={styles.secondaryButtons}>
             <TouchableOpacity
               style={styles.secondaryButton}
               onPress={() => router.push('/(tabs)/(create)')}
@@ -789,5 +986,40 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 40,
+  },
+  emptyStateWrapper: {
+    flex: 1,
+    padding: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyStateTitle: {
+    fontSize: 22,
+    fontWeight: '700' as const,
+    color: Colors.text,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyStateText: {
+    fontSize: 15,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  emptyStateButton: {
+    backgroundColor: Colors.accent,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  emptyStateButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600' as const,
+  },
+  emptySubText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
   },
 });

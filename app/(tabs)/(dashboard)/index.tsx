@@ -1,29 +1,43 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { BarChart3, Rocket, Users, Heart, MessageCircle, TrendingUp, ChevronRight, Bell, Clock, Lightbulb } from 'lucide-react-native';
+import {
+  BarChart3,
+  Rocket,
+  Users,
+  Heart,
+  MessageCircle,
+  TrendingUp,
+  ChevronRight,
+  Bell,
+  Clock,
+  Lightbulb,
+} from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
 import { platformPerformance } from '@/mocks/analytics';
 import React, { useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '@/contexts/AppContext';
+import { useDashboardInsights } from '@/hooks/useDashboardInsights';
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const { language, connectedPlatforms, posts, companyInfo } = useApp();
   const router = useRouter();
-  
+  const { data: insights } = useDashboardInsights();
+
   const connectedPlatformData = useMemo(() => {
-    return platformPerformance.filter(platform => 
-      connectedPlatforms.find(cp => cp.platform === platform.platform && cp.connected)
+    return platformPerformance.filter(platform =>
+      connectedPlatforms.find(cp => cp.platform === platform.platform && cp.connected),
     );
   }, [connectedPlatforms]);
 
   const totalMetrics = useMemo(() => {
     const connected = connectedPlatformData;
     const totalFollowers = connected.reduce((sum, p) => sum + p.followers, 0);
-    const avgEngagement = connected.length > 0 
-      ? (connected.reduce((sum, p) => sum + p.engagement, 0) / connected.length).toFixed(1)
-      : '0.0';
+    const avgEngagement =
+      connected.length > 0
+        ? (connected.reduce((sum, p) => sum + p.engagement, 0) / connected.length).toFixed(1)
+        : '0.0';
     const totalReach = connected.reduce((sum, p) => sum + p.reach, 0);
     const postsThisWeek = posts.filter(post => {
       const postDate = new Date(post.scheduledDate);
@@ -36,13 +50,184 @@ export default function DashboardScreen() {
       followers: totalFollowers,
       engagement: avgEngagement,
       reach: totalReach,
-      postsCount: postsThisWeek
+      postsCount: postsThisWeek,
     };
   }, [connectedPlatformData, posts]);
-  
+
   const userName = companyInfo?.companyName || (language === 'de' ? 'dort' : 'there');
   const greeting = language === 'de' ? `Guten Tag, ${userName}! 👋` : `Good Day, ${userName}! 👋`;
-  const subtitle = language === 'de' ? 'Bereit, großartigen Content zu erstellen?' : 'Ready to create great content?';
+  const subtitle =
+    language === 'de'
+      ? 'Bereit, großartigen Content zu erstellen?'
+      : 'Ready to create great content?';
+
+  const formatK = (value?: number) => {
+    if (!value || value === 0) return '0';
+    if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+    return String(value);
+  };
+
+  const formatPercent = (value?: number) => {
+    if (value == null) return '0%';
+    if (value > 0) return `+${value}%`;
+    if (value < 0) return `${value}%`;
+    return '0%';
+  };
+
+  const formatSigned = (value?: number) => {
+    if (value == null) return '+0';
+    if (value > 0) return `+${value}`;
+    if (value < 0) return `${value}`;
+    return '0';
+  };
+
+  const generatedInsights = useMemo(() => {
+    type InsightCard = {
+      id: string;
+      icon: 'trending' | 'clock' | 'lightbulb';
+      title: string;
+      description: string;
+      badge: string;
+    };
+
+    if (!insights) {
+      const t = (de: string, en: string) => (language === 'de' ? de : en);
+      const cards: InsightCard[] = [
+        {
+          id: 'fallback-1',
+          icon: 'trending',
+          title: t('Video-Content übertrifft andere', 'Video Content Outperforms'),
+          description: t(
+            'Ihre Video-Posts erhalten 40% mehr Interaktionen als statische Bilder',
+            'Your video posts get 40% more interactions than static images',
+          ),
+          badge: '+40%',
+        },
+        {
+          id: 'fallback-2',
+          icon: 'clock',
+          title: t('Beste Posting-Zeit', 'Best Posting Time'),
+          description: t(
+            'Ihre Zielgruppe ist an Wochentagen zwischen 14-16 Uhr am aktivsten',
+            'Your audience is most active on weekdays between 2-4 PM',
+          ),
+          badge: language === 'de' ? '14-16 Uhr' : '2-4 PM',
+        },
+        {
+          id: 'fallback-3',
+          icon: 'lightbulb',
+          title: t('Trending-Thema', 'Trending Topic'),
+          description: t(
+            'Posts über Produktivität performen diese Woche 25% besser',
+            'Posts about productivity perform 25% better this week',
+          ),
+          badge: '+25%',
+        },
+      ];
+      return cards;
+    }
+
+    const t = (de: string, en: string) => (language === 'de' ? de : en);
+    const eb = insights.engagementBreakdown;
+    const rb = insights.reachBreakdown;
+    const summary = insights.weeklySummary;
+
+    const engagementMap = {
+      likes: eb.likes ?? 0,
+      comments: eb.comments ?? 0,
+      shares: eb.shares ?? 0,
+      saves: eb.saves ?? 0,
+    };
+
+    const topEngKey = (Object.keys(engagementMap) as Array<keyof typeof engagementMap>).reduce(
+      (best, key) => (engagementMap[key] > engagementMap[best] ? key : best),
+      'likes',
+    );
+
+    const topEngLabel =
+      topEngKey === 'likes'
+        ? t('Likes', 'Likes')
+        : topEngKey === 'comments'
+        ? t('Kommentare', 'Comments')
+        : topEngKey === 'shares'
+        ? t('Shares', 'Shares')
+        : t('Speichern', 'Saves');
+
+    const reachMap = {
+      organic: rb.organic ?? 0,
+      paid: rb.paid ?? 0,
+      viral: rb.viral ?? 0,
+      stories: rb.stories ?? 0,
+    };
+
+    const topReachKey = (Object.keys(reachMap) as Array<keyof typeof reachMap>).reduce(
+      (best, key) => (reachMap[key] > reachMap[best] ? key : best),
+      'organic',
+    );
+
+    const topReachLabel =
+      topReachKey === 'organic'
+        ? t('organische Reichweite', 'organic reach')
+        : topReachKey === 'paid'
+        ? t('bezahlte Reichweite', 'paid reach')
+        : topReachKey === 'viral'
+        ? t('virale Reichweite', 'viral reach')
+        : t('Story-Reichweite', 'story reach');
+
+    const engagementRate =
+      summary.totalReach > 0
+        ? Math.round((summary.totalInteractions / summary.totalReach) * 1000) / 10
+        : 0;
+
+    const cards: InsightCard[] = [
+      {
+        id: 'engagement-top',
+        icon: 'trending',
+        title: t(
+          `${topEngLabel} sind dein stärkster Engagement-Treiber`,
+          `${topEngLabel} are your strongest engagement driver`,
+        ),
+        description:
+          language === 'de'
+            ? `Der größte Teil deiner Interaktionen kommt aktuell über ${topEngLabel}.`
+            : `Most of your interactions currently come from ${topEngLabel}.`,
+        badge: formatK(engagementMap[topEngKey]),
+      },
+      {
+        id: 'reach-top',
+        icon: 'clock',
+        title:
+          language === 'de'
+            ? `Fokus auf ${topReachLabel}`
+            : `Double down on your ${topReachLabel}`,
+        description:
+          language === 'de'
+            ? `Der größte Anteil deiner Reichweite stammt derzeit aus ${topReachLabel}.`
+            : `The biggest share of your reach currently comes from ${topReachLabel}.`,
+        badge: formatK(reachMap[topReachKey]),
+      },
+      {
+        id: 'engagement-rate',
+        icon: 'lightbulb',
+        title:
+          language === 'de'
+            ? 'Aktuelle Engagement-Rate'
+            : 'Current Engagement Rate',
+        description:
+          language === 'de'
+            ? `Deine Interaktionen im Verhältnis zur Reichweite liegen bei etwa ${engagementRate.toFixed(
+                1,
+              )}%.`
+            : `Your interactions relative to reach are around ${engagementRate.toFixed(1)}%.`,
+        badge: `${engagementRate.toFixed(1)}%`,
+      },
+    ];
+
+    return cards;
+  }, [insights, language]);
+
+  const eb = insights?.engagementBreakdown;
+  const summary = insights?.weeklySummary;
 
   return (
     <>
@@ -51,8 +236,8 @@ export default function DashboardScreen() {
           headerShown: false,
         }}
       />
-      <ScrollView 
-        style={styles.container} 
+      <ScrollView
+        style={styles.container}
         contentContainerStyle={[styles.contentContainer, { paddingTop: insets.top + 20 }]}
         showsVerticalScrollIndicator={false}
       >
@@ -67,7 +252,7 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.weeklyReviewCard}
           activeOpacity={0.7}
           onPress={() => {
@@ -89,27 +274,35 @@ export default function DashboardScreen() {
                 {language === 'de' ? 'Wochenrückblick' : 'Weekly Review'}
               </Text>
               <Text style={styles.weeklyReviewDate}>
-                {language === 'de' ? 'Woche vom 19.09. - 25.09.' : 'Week of Sept 19 - Sept 25'}
+                {insights?.weekLabel || (language === 'de' ? 'Diese Woche' : 'This week')}
               </Text>
             </View>
             <ChevronRight size={24} color="#FFFFFF" strokeWidth={2.5} />
           </View>
-          
+
           <View style={styles.weeklyReviewStats}>
             <View style={styles.weeklyReviewStat}>
-              <Text style={styles.weeklyReviewStatValue}>50.2K</Text>
+              <Text style={styles.weeklyReviewStatValue}>
+                {insights?.weeklySummary ? formatK(insights.weeklySummary.totalReach) : '—'}
+              </Text>
               <Text style={styles.weeklyReviewStatLabel}>
                 {language === 'de' ? 'Gesamtreichweite' : 'Total Reach'}
               </Text>
             </View>
             <View style={styles.weeklyReviewStat}>
-              <Text style={styles.weeklyReviewStatValue}>1.4K</Text>
+              <Text style={styles.weeklyReviewStatValue}>
+                {insights?.weeklySummary
+                  ? formatK(insights.weeklySummary.totalInteractions)
+                  : '—'}
+              </Text>
               <Text style={styles.weeklyReviewStatLabel}>
                 {language === 'de' ? 'Gesamte Interaktionen' : 'Total Interactions'}
               </Text>
             </View>
             <View style={styles.weeklyReviewStat}>
-              <Text style={styles.weeklyReviewStatValue}>+149</Text>
+              <Text style={styles.weeklyReviewStatValue}>
+                {insights?.weeklySummary ? `+${insights.weeklySummary.newFollowers}` : '+0'}
+              </Text>
               <Text style={styles.weeklyReviewStatLabel}>
                 {language === 'de' ? 'Neue Follower' : 'New Followers'}
               </Text>
@@ -127,13 +320,13 @@ export default function DashboardScreen() {
                 {language === 'de' ? '🎯 KI-Content-Vorschlag' : '🎯 AI Content Suggestion'}
               </Text>
               <Text style={styles.aiContentDescription}>
-                {language === 'de' 
+                {language === 'de'
                   ? '"Produktivitätstipps" sind im Trend! Erstelle jetzt ein Reel für 40% mehr Reichweite.'
                   : '"Productivity tips" are trending! Create a Reel now for 40% more reach.'}
               </Text>
             </View>
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.aiContentButton}
             activeOpacity={0.7}
             onPress={() => router.push('/(tabs)/(create)')}
@@ -144,6 +337,7 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Übersicht mit dynamischen lila Changes */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             {language === 'de' ? 'Übersicht' : 'Overview'}
@@ -152,48 +346,56 @@ export default function DashboardScreen() {
             <View style={styles.metricCard}>
               <View style={styles.metricHeader}>
                 <Users size={20} color={Colors.purple} strokeWidth={2} />
-                <Text style={styles.metricChange}>+12%</Text>
+                <Text style={styles.metricChange}>
+                  {summary ? formatPercent(summary.followersChangePercent) : '+0%'}
+                </Text>
               </View>
               <Text style={styles.metricValue}>
-                {totalMetrics.followers >= 1000 
-                  ? `${(totalMetrics.followers / 1000).toFixed(1)}K` 
+                {totalMetrics.followers >= 1000
+                  ? `${(totalMetrics.followers / 1000).toFixed(1)}K`
                   : totalMetrics.followers || 0}
               </Text>
               <Text style={styles.metricLabel}>
                 {language === 'de' ? 'Gesamte Follower' : 'Total Followers'}
               </Text>
             </View>
-            
+
             <View style={styles.metricCard}>
               <View style={styles.metricHeader}>
                 <Heart size={20} color={Colors.accent} strokeWidth={2} />
-                <Text style={styles.metricChange}>+0.8%</Text>
+                <Text style={styles.metricChange}>
+                  {summary ? formatPercent(summary.engagementRateChangePercent) : '+0%'}
+                </Text>
               </View>
               <Text style={styles.metricValue}>{totalMetrics.engagement || 0}%</Text>
               <Text style={styles.metricLabel}>
                 {language === 'de' ? 'Engagement-Rate' : 'Engagement Rate'}
               </Text>
             </View>
-            
+
             <View style={styles.metricCard}>
               <View style={styles.metricHeader}>
                 <MessageCircle size={20} color={Colors.success} strokeWidth={2} />
-                <Text style={styles.metricChange}>+3</Text>
+                <Text style={styles.metricChange}>
+                  {summary ? formatSigned(summary.postsChange) : '+0'}
+                </Text>
               </View>
               <Text style={styles.metricValue}>{totalMetrics.postsCount || 0}</Text>
               <Text style={styles.metricLabel}>
                 {language === 'de' ? 'Posts diese Woche' : 'Posts this Week'}
               </Text>
             </View>
-            
+
             <View style={styles.metricCard}>
               <View style={styles.metricHeader}>
                 <TrendingUp size={20} color={Colors.warning} strokeWidth={2} />
-                <Text style={styles.metricChange}>+28%</Text>
+                <Text style={styles.metricChange}>
+                  {summary ? formatPercent(summary.reachChangePercent) : '+0%'}
+                </Text>
               </View>
               <Text style={styles.metricValue}>
-                {totalMetrics.reach >= 1000 
-                  ? `${(totalMetrics.reach / 1000).toFixed(1)}K` 
+                {totalMetrics.reach >= 1000
+                  ? `${(totalMetrics.reach / 1000).toFixed(1)}K`
                   : totalMetrics.reach || 0}
               </Text>
               <Text style={styles.metricLabel}>
@@ -209,7 +411,7 @@ export default function DashboardScreen() {
               {language === 'de' ? 'Plattformen' : 'Platforms'}
             </Text>
             <View style={styles.platformList}>
-              {connectedPlatformData.map((platform) => (
+              {connectedPlatformData.map(platform => (
                 <PlatformCard key={platform.platform} platform={platform} language={language} />
               ))}
             </View>
@@ -226,11 +428,11 @@ export default function DashboardScreen() {
                 {language === 'de' ? 'Keine Plattformen verbunden' : 'No Platforms Connected'}
               </Text>
               <Text style={styles.emptyStateDescription}>
-                {language === 'de' 
+                {language === 'de'
                   ? 'Verbinde deine Social-Media-Konten in den Einstellungen, um Analytics zu sehen.'
                   : 'Connect your social media accounts in settings to see analytics.'}
               </Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.emptyStateButton}
                 activeOpacity={0.7}
                 onPress={() => router.push('/(tabs)/(settings)')}
@@ -248,62 +450,35 @@ export default function DashboardScreen() {
             {language === 'de' ? '💡 Wichtigste Erkenntnisse' : '💡 Top Insights'}
           </Text>
           <View style={styles.insightsContainer}>
-            <View style={styles.insightCard}>
-              <View style={[styles.insightIconContainer, { backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}>
-                <TrendingUp size={24} color={Colors.accent} strokeWidth={2} />
-              </View>
-              <View style={styles.insightContent}>
-                <Text style={styles.insightTitle}>
-                  {language === 'de' ? 'Video-Content übertrifft andere' : 'Video Content Outperforms'}
-                </Text>
-                <Text style={styles.insightDescription}>
-                  {language === 'de' 
-                    ? 'Ihre Video-Posts erhalten 40% mehr Interaktionen als statische Bilder'
-                    : 'Your video posts get 40% more interactions than static images'}
-                </Text>
-                <View style={styles.insightBadge}>
-                  <Text style={styles.insightBadgeText}>+40%</Text>
+            {generatedInsights.map(card => (
+              <View key={card.id} style={styles.insightCard}>
+                <View
+                  style={[
+                    styles.insightIconContainer,
+                    { backgroundColor: 'rgba(239, 68, 68, 0.1)' },
+                  ]}
+                >
+                  {card.icon === 'trending' && (
+                    <TrendingUp size={24} color={Colors.accent} strokeWidth={2} />
+                  )}
+                  {card.icon === 'clock' && (
+                    <Clock size={24} color={Colors.accent} strokeWidth={2} />
+                  )}
+                  {card.icon === 'lightbulb' && (
+                    <Lightbulb size={24} color={Colors.accent} strokeWidth={2} />
+                  )}
+                </View>
+                <View style={styles.insightContent}>
+                  <Text style={styles.insightTitle}>{card.title}</Text>
+                  <Text style={styles.insightDescription}>{card.description}</Text>
+                  {!!card.badge && (
+                    <View style={styles.insightBadge}>
+                      <Text style={styles.insightBadgeText}>{card.badge}</Text>
+                    </View>
+                  )}
                 </View>
               </View>
-            </View>
-
-            <View style={styles.insightCard}>
-              <View style={[styles.insightIconContainer, { backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}>
-                <Clock size={24} color={Colors.accent} strokeWidth={2} />
-              </View>
-              <View style={styles.insightContent}>
-                <Text style={styles.insightTitle}>
-                  {language === 'de' ? 'Beste Posting-Zeit' : 'Best Posting Time'}
-                </Text>
-                <Text style={styles.insightDescription}>
-                  {language === 'de' 
-                    ? 'Ihre Zielgruppe ist an Wochentagen zwischen 14-16 Uhr am aktivsten'
-                    : 'Your audience is most active on weekdays between 2-4 PM'}
-                </Text>
-                <View style={styles.insightBadge}>
-                  <Text style={styles.insightBadgeText}>14-16 Uhr</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.insightCard}>
-              <View style={[styles.insightIconContainer, { backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}>
-                <Lightbulb size={24} color={Colors.accent} strokeWidth={2} />
-              </View>
-              <View style={styles.insightContent}>
-                <Text style={styles.insightTitle}>
-                  {language === 'de' ? 'Trending-Thema' : 'Trending Topic'}
-                </Text>
-                <Text style={styles.insightDescription}>
-                  {language === 'de' 
-                    ? 'Posts über Produktivität performen diese Woche 25% besser'
-                    : 'Posts about productivity perform 25% better this week'}
-                </Text>
-                <View style={styles.insightBadge}>
-                  <Text style={styles.insightBadgeText}>+25%</Text>
-                </View>
-              </View>
-            </View>
+            ))}
           </View>
         </View>
 
@@ -312,7 +487,7 @@ export default function DashboardScreen() {
             {language === 'de' ? '🎯 Empfehlungen' : '🎯 Recommendations'}
           </Text>
           <View style={styles.recommendationsContainer}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.recommendationCard}
               activeOpacity={0.7}
               onPress={() => router.push('/(tabs)/(create)')}
@@ -327,7 +502,7 @@ export default function DashboardScreen() {
                 {language === 'de' ? 'Mehr Video-Content erstellen' : 'Create More Video Content'}
               </Text>
               <Text style={styles.recommendationDescription}>
-                {language === 'de' 
+                {language === 'de'
                   ? 'Video-Posts sind Ihre Top-Performer. Erstellen Sie diese Woche 2-3 weitere Reels.'
                   : 'Video posts are your top performers. Create 2-3 more Reels this week.'}
               </Text>
@@ -339,7 +514,7 @@ export default function DashboardScreen() {
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.recommendationCard}
               activeOpacity={0.7}
               onPress={() => router.push('/(tabs)/(calendar)')}
@@ -354,7 +529,7 @@ export default function DashboardScreen() {
                 {language === 'de' ? 'Posting-Zeitplan optimieren' : 'Optimize Posting Schedule'}
               </Text>
               <Text style={styles.recommendationDescription}>
-                {language === 'de' 
+                {language === 'de'
                   ? 'Planen Sie mehr Posts zwischen 14-16 Uhr für maximale Sichtbarkeit.'
                   : 'Schedule more posts between 2-4 PM for maximum visibility.'}
               </Text>
@@ -377,25 +552,33 @@ export default function DashboardScreen() {
               <Text style={styles.detailLabel}>
                 {language === 'de' ? 'Organische Reichweite' : 'Organic Reach'}
               </Text>
-              <Text style={styles.detailValue}>142.8K</Text>
+              <Text style={styles.detailValue}>
+                {insights ? formatK(insights.reachBreakdown.organic) : '0'}
+              </Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>
                 {language === 'de' ? 'Bezahlte Reichweite' : 'Paid Reach'}
               </Text>
-              <Text style={styles.detailValue}>13.4K</Text>
+              <Text style={styles.detailValue}>
+                {insights ? formatK(insights.reachBreakdown.paid) : '0'}
+              </Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>
                 {language === 'de' ? 'Virale Reichweite' : 'Viral Reach'}
               </Text>
-              <Text style={styles.detailValue}>8.2K</Text>
+              <Text style={styles.detailValue}>
+                {insights ? formatK(insights.reachBreakdown.viral) : '0'}
+              </Text>
             </View>
             <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
               <Text style={styles.detailLabel}>
                 {language === 'de' ? 'Story-Reichweite' : 'Story Reach'}
               </Text>
-              <Text style={styles.detailValue}>24.6K</Text>
+              <Text style={styles.detailValue}>
+                {insights ? formatK(insights.reachBreakdown.stories) : '0'}
+              </Text>
             </View>
           </View>
         </View>
@@ -406,32 +589,40 @@ export default function DashboardScreen() {
           </Text>
           <View style={styles.engagementGrid}>
             <View style={styles.engagementCard}>
-              <Text style={styles.engagementValue}>8.7K</Text>
+              <Text style={styles.engagementValue}>{formatK(eb?.likes)}</Text>
               <Text style={styles.engagementLabel}>
                 {language === 'de' ? 'Likes' : 'Likes'}
               </Text>
-              <Text style={styles.engagementChange}>+18%</Text>
+              <Text style={styles.engagementChange}>
+                {formatPercent(eb?.likesChange)}
+              </Text>
             </View>
             <View style={styles.engagementCard}>
-              <Text style={styles.engagementValue}>1.2K</Text>
+              <Text style={styles.engagementValue}>{formatK(eb?.comments)}</Text>
               <Text style={styles.engagementLabel}>
                 {language === 'de' ? 'Kommentare' : 'Comments'}
               </Text>
-              <Text style={styles.engagementChange}>+24%</Text>
+              <Text style={styles.engagementChange}>
+                {formatPercent(eb?.commentsChange)}
+              </Text>
             </View>
             <View style={styles.engagementCard}>
-              <Text style={styles.engagementValue}>456</Text>
+              <Text style={styles.engagementValue}>{formatK(eb?.shares)}</Text>
               <Text style={styles.engagementLabel}>
                 {language === 'de' ? 'Shares' : 'Shares'}
               </Text>
-              <Text style={styles.engagementChange}>+32%</Text>
+              <Text style={styles.engagementChange}>
+                {formatPercent(eb?.sharesChange)}
+              </Text>
             </View>
             <View style={styles.engagementCard}>
-              <Text style={styles.engagementValue}>234</Text>
+              <Text style={styles.engagementValue}>{formatK(eb?.saves)}</Text>
               <Text style={styles.engagementLabel}>
                 {language === 'de' ? 'Speichern' : 'Saves'}
               </Text>
-              <Text style={styles.engagementChange}>+41%</Text>
+              <Text style={styles.engagementChange}>
+                {formatPercent(eb?.savesChange)}
+              </Text>
             </View>
           </View>
         </View>
@@ -440,10 +631,16 @@ export default function DashboardScreen() {
   );
 }
 
-function PlatformCard({ platform, language }: { platform: typeof platformPerformance[0]; language: 'de' | 'en' }) {
+function PlatformCard({
+  platform,
+  language,
+}: {
+  platform: typeof platformPerformance[0];
+  language: 'de' | 'en';
+}) {
   const platformName = getPlatformName(platform.platform);
   const platformColor = platform.color;
-  
+
   return (
     <View style={styles.platformCard}>
       <View style={styles.platformCardContent}>
@@ -452,7 +649,8 @@ function PlatformCard({ platform, language }: { platform: typeof platformPerform
           <View style={styles.platformInfo}>
             <Text style={styles.platformName}>{platformName}</Text>
             <Text style={styles.platformFollowers}>
-             {(Number((platform as any).followers ?? 0)).toLocaleString()} {language === 'de' ? 'Follower' : 'Followers'}
+              {Number((platform as any).followers ?? 0).toLocaleString()}{' '}
+              {language === 'de' ? 'Follower' : 'Followers'}
             </Text>
           </View>
         </View>
@@ -478,14 +676,16 @@ function PlatformCard({ platform, language }: { platform: typeof platformPerform
 
 function getPlatformName(platform: string): string {
   switch (platform) {
-    case 'instagram': return 'Instagram';
-    case 'tiktok': return 'TikTok';
-    case 'linkedin': return 'LinkedIn';
-    default: return platform;
+    case 'instagram':
+      return 'Instagram';
+    case 'tiktok':
+      return 'TikTok';
+    case 'linkedin':
+      return 'LinkedIn';
+    default:
+      return platform;
   }
 }
-
-
 
 const styles = StyleSheet.create({
   container: {
