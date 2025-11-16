@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 // app/(tabs)/(settings)/index.tsx
 import {
   View,
@@ -56,10 +57,7 @@ export default function SettingsScreen() {
   };
 
   const handleManageSubscription = () => {
-    Alert.alert(
-      t.settings.manageSubscription,
-      "In production, this would open App Store subscription settings"
-    );
+    router.push("/subscription-manage");
   };
 
   const handleRefreshPlatform = async (platform: Platform) => {
@@ -122,7 +120,7 @@ export default function SettingsScreen() {
             label={t.settings.profile}
             value="Edit"
             onPress={() =>
-              Alert.alert("Profile", "Profile settings would open here")
+router.push("/(tabs)/(settings)/company-info-edit")
             }
           />
 
@@ -245,7 +243,7 @@ export default function SettingsScreen() {
             icon={<HelpCircle size={24} color="#F59E0B" />}
             label={t.settings.contactSupport}
             onPress={() =>
-              Alert.alert("Support", "support@socialpro.app")
+              Alert.alert("Support", "info@smyagency.de")
             }
           />
         </View>
