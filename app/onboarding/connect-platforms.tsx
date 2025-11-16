@@ -26,9 +26,7 @@ WebBrowser.maybeCompleteAuthSession();
 const { EXPO_PUBLIC_APP_URL, EXPO_PUBLIC_SCHEME } =
   (Constants.expoConfig?.extra as any) ?? {};
 const APP_URL: string = EXPO_PUBLIC_APP_URL || "http://localhost:10000";
-const API_BASE = `${APP_URL}/api`;
 const DEEP_LINK_SCHEME: string = EXPO_PUBLIC_SCHEME || "socialpro";
-const OAUTH_STATE = "test-user-123";
 
 // Einheitlicher Success-Deep-Link (muss zu deinem Backend-Redirect passen)
 const REDIRECT_URI = AuthSession.makeRedirectUri({
@@ -99,7 +97,6 @@ export default function ConnectPlatformsScreen() {
       if (platform === "linkedin") {
         const START_URL = `${APP_URL}/api/oauth/linkedin/start`;
 
-        // Deep link muss mit Backend-Redirect matchen: socialpro://connected/success?provider=linkedin&code=...
         const res = await WebBrowser.openAuthSessionAsync(START_URL, REDIRECT_URI);
 
         if (res.type !== "success" || !res.url) {
@@ -112,12 +109,13 @@ export default function ConnectPlatformsScreen() {
         if (q.error) throw new Error(`LinkedIn error: ${q.error}`);
         if (!code) throw new Error("Kein Code erhalten");
 
-        // Code beim Backend eintauschen (Stub/real je nach Umsetzung)
         const ex = await fetch(
-          `${APP_URL}/api/oauth/linkedin/callback/exchange?code=${encodeURIComponent(code)}`,
+          `${APP_URL}/api/oauth/linkedin/callback/exchange?code=${encodeURIComponent(
+            code
+          )}`,
           { method: "POST", headers: { Accept: "application/json" } }
         );
-        const data = await ex.json().catch(() => ({}));
+        const data = await ex.json().catch(() => ({} as any));
         if (!ex.ok || !data?.ok) {
           throw new Error(`Exchange failed: ${data?.error || ex.status}`);
         }
@@ -144,8 +142,6 @@ export default function ConnectPlatformsScreen() {
         return;
       }
 
-
-
       if (platform === "instagram") {
         const startUrl = `${APP_URL}/api/oauth/instagram/start?redirect_uri=${encodeURIComponent(
           REDIRECT_URI
@@ -161,8 +157,15 @@ export default function ConnectPlatformsScreen() {
           if (q.page_id && q.ig_user_id) {
             await AsyncStorage.setItem("ig_connected", "1");
             setIgConnected(true);
-            await connectPlatform("instagram", "Instagram Business", q.ig_user_id ?? "");
-            Alert.alert("Instagram", `Verbunden ✅\nPage: ${q.page_id}\nIG: ${q.ig_user_id}`);
+            await connectPlatform(
+              "instagram",
+              "Instagram Business",
+              q.ig_user_id ?? ""
+            );
+            Alert.alert(
+              "Instagram",
+              `Verbunden ✅\nPage: ${q.page_id}\nIG: ${q.ig_user_id}`
+            );
             return;
           }
         }
@@ -188,7 +191,11 @@ export default function ConnectPlatformsScreen() {
   const handleDisconnect = async (platform: Platform) => {
     Alert.alert(
       "Disconnect Platform",
-      `Disconnect ${({ instagram: "Instagram", linkedin: "LinkedIn", tiktok: "TikTok" } as const)[platform]}?`,
+      `Disconnect ${
+        ({ instagram: "Instagram", linkedin: "LinkedIn", tiktok: "TikTok" } as const)[
+          platform
+        ]
+      }?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -197,48 +204,63 @@ export default function ConnectPlatformsScreen() {
           onPress: async () => {
             try {
               if (platform === "tiktok") {
-                // Backend → TikTok Tokens löschen
                 await fetch(`${APP_URL}/api/oauth/tiktok/disconnect`);
                 console.log("[TikTok] Backend tokens cleared");
               }
             } catch (e) {
               console.log("[TikTok] disconnect error", e);
             }
-  
-            // Lokalen App-Status löschen
+
             await disconnectPlatform(platform);
-  
+
             if (platform === "instagram") {
               await AsyncStorage.removeItem("ig_connected");
               setIgConnected(false);
             }
-  
+
             Alert.alert(
               "Done",
-              `${({ instagram: "Instagram", linkedin: "LinkedIn", tiktok: "TikTok" } as const)[platform]} disconnected`
+              `${
+                ({ instagram: "Instagram", linkedin: "LinkedIn", tiktok: "TikTok" } as const)[
+                  platform
+                ]
+              } disconnected`
             );
           },
         },
       ]
     );
   };
-  
 
   return (
     <>
       <Stack.Screen
-        options={{ title: (t?.onboarding?.platforms?.title ?? 'Plattformen verbinden'), headerBackTitle: 'Zurück' }}
+        options={{
+          title: t?.onboarding?.platforms?.title ?? "Plattformen verbinden",
+        }}
       />
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      {/* Zurück-Button oben im Screen */}
-      <TouchableOpacity onPress={() => router.back()} style={{ paddingVertical: 8, marginBottom: 8 }}>
-        <Text style={{ fontSize: 16 }}>← Zurück</Text>
-      </TouchableOpacity>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+      >
+        {/* Zurück-Button */}
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={styles.backButtonText}>← {t?.common?.back ?? "Back"}</Text>
+        </TouchableOpacity>
 
         <View style={styles.header}>
-          <Text style={styles.title}>{(t?.onboarding?.platforms?.title ?? 'Plattformen verbinden')}</Text>
-          <Text style={styles.subtitle}>{(t?.onboarding?.platforms?.subtitle ?? 'Verbinde Instagram, LinkedIn oder TikTok')}</Text>
+          <Text style={styles.title}>
+            {t?.onboarding?.platforms?.title ?? "Plattformen verbinden"}
+          </Text>
+          <Text style={styles.subtitle}>
+            {t?.onboarding?.platforms?.subtitle ??
+              "Verbinde Instagram, LinkedIn oder TikTok"}
+          </Text>
         </View>
 
         <View style={styles.platforms}>
@@ -277,7 +299,9 @@ export default function ConnectPlatformsScreen() {
           onPress={() => router.push("/subscription" as any)}
           style={styles.skipButton}
         >
-          <Text style={styles.skipButtonText}>{t.onboarding.platforms.connectLater}</Text>
+          <Text style={styles.skipButtonText}>
+            {t.onboarding.platforms.connectLater}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </>
@@ -306,7 +330,9 @@ function PlatformCard({
   };
 
   return (
-    <View style={[styles.platformCard, { borderLeftColor: bg, borderLeftWidth: 4 }]}>
+    <View
+      style={[styles.platformCard, { borderLeftColor: bg, borderLeftWidth: 4 }]}
+    >
       <View style={styles.platformInfo}>
         {icon}
         <View style={styles.platformTextContainer}>
@@ -322,7 +348,10 @@ function PlatformCard({
         <ActivityIndicator color={bg} />
       ) : (
         <TouchableOpacity
-          style={[styles.connectButton, { backgroundColor: isConnected ? "#F3F4F6" : bg }]}
+          style={[
+            styles.connectButton,
+            { backgroundColor: isConnected ? "#F3F4F6" : bg },
+          ]}
           onPress={handlePress}
         >
           <Text
@@ -342,9 +371,33 @@ function PlatformCard({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8F9FA" },
   contentContainer: { padding: 24, paddingBottom: 40 },
+  backButton: {
+    alignSelf: "flex-start",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 999,
+    backgroundColor: "#E5E7EB",
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#111827",
+  },
   header: { alignItems: "center", marginBottom: 32 },
-  title: { fontSize: 28, fontWeight: "700", color: "#0F1419", marginBottom: 8, textAlign: "center" },
-  subtitle: { fontSize: 16, color: "#666", textAlign: "center", paddingHorizontal: 20 },
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#0F1419",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    paddingHorizontal: 20,
+  },
   platforms: { gap: 16, marginBottom: 32 },
   platformCard: {
     backgroundColor: "#FFF",
@@ -354,12 +407,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  platformInfo: { flexDirection: "row", alignItems: "center", gap: 16, flex: 1 },
+  platformInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    flex: 1,
+  },
   platformTextContainer: { flex: 1 },
   platformName: { fontSize: 18, fontWeight: "600", color: "#0F1419" },
   accountName: { fontSize: 12, color: "#666", marginTop: 2 },
-  connectButton: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
+  connectButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
   connectButtonText: { fontSize: 14, fontWeight: "600" },
   skipButton: { paddingVertical: 16, alignItems: "center" },
-  skipButtonText: { fontSize: 16, fontWeight: "600", color: "#0A66C2" },
+  skipButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#0A66C2",
+  },
 });

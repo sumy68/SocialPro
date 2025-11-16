@@ -59,10 +59,21 @@ export default function ConnectedSuccess() {
       setErr(initialError || "");
 
       // 🔹 TikTok: kein Code, kein Exchange, Backend hat schon alles erledigt
-      if (provider === "tiktok") {
-        // wenn hier später noch was gespeichert werden soll → könntest du tRPC o.Ä. callen
-        return;
-      }
+            // 🔹 TikTok: kein Code, aber wir speichern direkt als verbunden
+            if (provider === "tiktok") {
+              try {
+                await connectPlatform(
+                  "tiktok",
+                  "TikTok Sandbox User",
+                  "tiktok-sandbox"
+                );
+              } catch (e) {
+                console.log("TikTok connect error", e);
+                setErr("Konnte TikTok nicht speichern");
+              }
+              return;
+            }
+      
 
       // LinkedIn & Instagram brauchen code (Exchange)
       if (!code) return;
@@ -120,7 +131,7 @@ export default function ConnectedSuccess() {
     };
 
     run();
-  }, [code, provider, initialError]);
+  }, [code, provider, initialError, connectPlatform]);
 
   const ok =
     provider === "linkedin"
@@ -133,19 +144,11 @@ export default function ConnectedSuccess() {
         try {
           // 🔹 TikTok: dauerhaft speichern (wie bei LinkedIn & Instagram)
           if (provider === "tiktok") {
-            await connectPlatform(
-              "tiktok",
-              "TikTok Sandbox User",     // accountName
-              "tiktok-sandbox",          // accountId
-              undefined,                 // accessToken
-              undefined,                 // refreshToken
-              undefined                  // expiresAt
-            );
-      
             Alert.alert("TikTok", "Erfolgreich verbunden ✅");
             router.replace("/(tabs)/(dashboard)");
             return;
           }
+
       
           // 🔹 LinkedIn
           if (provider === "linkedin") {
