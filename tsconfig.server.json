@@ -21,7 +21,7 @@
     "src/api/**/*.ts"
   ],
   "exclude": [
-    "src/utils/**",          // client-only utils (z.B. expo AuthSession)
+    "src/utils/**",          
     "src/app/**",
     "src/components/**",
     "src/(tabs)/**"
