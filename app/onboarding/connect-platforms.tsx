@@ -129,20 +129,21 @@ export default function ConnectPlatformsScreen() {
 
       if (platform === "tiktok") {
         const res = await startTikTokLogin();
-
-        // optional Logging
         console.log("[TikTok] AuthSession result:", res);
-
-        // eigentliche Logik passiert über den Deep Link:
-        // socialpro://connected/success?provider=tiktok
-        // => dein connected/success Screen kümmert sich dann um den Rest
 
         if (res.type === "cancel") {
           Alert.alert("TikTok", "Abgebrochen");
+          return;
+        }
+
+        if (res.type === "success") {
+          await connectPlatform("tiktok", "TikTok", "");
+          Alert.alert("TikTok", "Erfolgreich verbunden ✅");
         }
 
         return;
       }
+
 
 
       if (platform === "instagram") {
@@ -185,22 +186,43 @@ export default function ConnectPlatformsScreen() {
   };
 
   const handleDisconnect = async (platform: Platform) => {
-    Alert.alert("Disconnect Platform", `Disconnect ${({instagram:'Instagram',linkedin:'LinkedIn',tiktok:'TikTok'} as const)[platform]}?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Disconnect",
-        style: "destructive",
-        onPress: async () => {
-          await disconnectPlatform(platform);
-          if (platform === "instagram") {
-            await AsyncStorage.removeItem("ig_connected");
-            setIgConnected(false);
-          }
-          Alert.alert("Done", `${({instagram:'Instagram',linkedin:'LinkedIn',tiktok:'TikTok'} as const)[platform]} disconnected`);
+    Alert.alert(
+      "Disconnect Platform",
+      `Disconnect ${({ instagram: "Instagram", linkedin: "LinkedIn", tiktok: "TikTok" } as const)[platform]}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Disconnect",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              if (platform === "tiktok") {
+                // Backend → TikTok Tokens löschen
+                await fetch(`${APP_URL}/api/oauth/tiktok/disconnect`);
+                console.log("[TikTok] Backend tokens cleared");
+              }
+            } catch (e) {
+              console.log("[TikTok] disconnect error", e);
+            }
+  
+            // Lokalen App-Status löschen
+            await disconnectPlatform(platform);
+  
+            if (platform === "instagram") {
+              await AsyncStorage.removeItem("ig_connected");
+              setIgConnected(false);
+            }
+  
+            Alert.alert(
+              "Done",
+              `${({ instagram: "Instagram", linkedin: "LinkedIn", tiktok: "TikTok" } as const)[platform]} disconnected`
+            );
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
+  
 
   return (
     <>
