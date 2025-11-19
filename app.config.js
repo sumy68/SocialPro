@@ -68,7 +68,10 @@ export default {
             "The app accesses your photos to let you share them with your friends.",
         },
       ],
-      ["expo-av", { microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone" }],
+      [
+        "expo-av",
+        { microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone" },
+      ],
       "expo-web-browser",
       "expo-font",
     ],
@@ -76,6 +79,11 @@ export default {
     experiments: { typedRoutes: true },
 
     extra: {
+      // 👇 EAS Project-Verknüpfung
+      eas: {
+        projectId: "6b80b470-21d3-446d-9478-e7922ef93ba5",
+      },
+
       EXPO_PUBLIC_APP_URL: process.env.EXPO_PUBLIC_APP_URL,
       EXPO_PUBLIC_DEMO_MODE: process.env.EXPO_PUBLIC_DEMO_MODE,
       EXPO_PUBLIC_SCHEME: process.env.EXPO_PUBLIC_SCHEME || "socialpro",

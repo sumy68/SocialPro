@@ -11,31 +11,6 @@ def ccache_enabled?(podfile_properties)
   podfile_properties['apple.ccacheEnabled'] == 'true'
 end
 
-# Patch: SDWebImageAVIFCoder -> libavif-Xcode
-pre_install do |installer|
-  installer.pod_targets.each do |pod|
-    next unless pod.name == 'SDWebImageAVIFCoder'
-
-    puts "🔧 Patching SDWebImageAVIFCoder to use libavif-Xcode"
-
-    if pod.dependencies.is_a?(Array)
-      pod.dependencies.map! do |dependency|
-        dep_name = dependency.respond_to?(:name) ? dependency.name : dependency
-        if dep_name == 'libavif'
-          if dependency.respond_to?(:name)
-            dependency.instance_variable_set(:@name, 'libavif-Xcode')
-            dependency
-          else
-            'libavif-Xcode'
-          end
-        else
-          dependency
-        end
-      end
-    end
-  end
-end
-
 target 'iostemplatefix' do
   use_expo_modules!
 
