@@ -24,7 +24,15 @@ const REDIRECT_URI = `${APP_URL.replace(/\/$/, '')}/api/oauth/tiktok/callback`
 
 // 🔹 TikTok Scopes – erstmal minimal halten
 // Tipp: Erst wenn das läuft, "video.upload" wieder dazu nehmen.
-const SCOPES = ['user.info.basic'].join(',')
+const SCOPES = [
+  'user.info.basic',
+  'user.info.profile',
+  'user.info.stats',
+  'video.list',
+  'video.upload',
+  'video.publish'
+].join(',');
+
 
 // ✅ NEUE OAuth Endpoints (v2 bevorzugt, wenn deine App schon v2 nutzt)
 const AUTHORIZE_URL = 'https://www.tiktok.com/v2/auth/authorize/'

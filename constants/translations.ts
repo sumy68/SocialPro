@@ -70,6 +70,7 @@ export const translations = {
       perMonth: '/Monat',
       perYear: '/Jahr',
       saveYearly: '40€ sparen',
+      featuresTitle: 'Alle Pläne beinhalten:',   // ✅ HINZUGEFÜGT
       features: {
         unlimited: 'Unbegrenzte Posts',
         scheduling: 'Post-Planung & Automatisierung',
@@ -256,6 +257,7 @@ export const translations = {
       perMonth: '/month',
       perYear: '/year',
       saveYearly: 'Save €40',
+      featuresTitle: 'All Plans Include:',   // ✅ HINZUGEFÜGT
       features: {
         unlimited: 'Unlimited Posts',
         scheduling: 'Post Scheduling & Automation',
@@ -331,7 +333,7 @@ export const translations = {
       title: 'Performance Reports',
       weeklyReport: 'Weekly Report',
       thisWeek: 'This Week',
-      lastWeek: 'Last Week',
+      lastWeek: 'Last Last Week',
       performance: 'Performance',
       bestPost: 'Best Post',
       worstPost: 'Weakest Post',

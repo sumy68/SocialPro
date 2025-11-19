@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { Stack, router } from "expo-router";
 // app/(tabs)/(settings)/index.tsx
 import {
   View,
@@ -9,7 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { Stack, useRouter } from "expo-router";
+
 import {
   User,
   Link2,
@@ -29,7 +29,6 @@ import React, { useEffect } from "react";
 import type { Platform } from "@/constants/types";
 
 export default function SettingsScreen() {
-  const router = useRouter();
   const t = useTranslation();
 
   const { language, setLanguage, subscription, connectedPlatforms } = useApp();
@@ -58,6 +57,10 @@ export default function SettingsScreen() {
 
   const handleManageSubscription = () => {
     router.push("/subscription-manage");
+  };
+
+  const handleLogout = () => {
+    router.replace("/onboarding/welcome");
   };
 
   const handleRefreshPlatform = async (platform: Platform) => {
@@ -248,10 +251,14 @@ router.push("/(tabs)/(settings)/company-info-edit")
           />
         </View>
 
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+        >
           <LogOut size={20} color="#EF4444" />
           <Text style={styles.logoutText}>{t.settings.logout}</Text>
         </TouchableOpacity>
+
 
         <Text style={styles.version}>SocialPro v1.0.0</Text>
       </ScrollView>

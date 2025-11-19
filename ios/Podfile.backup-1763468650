@@ -42,11 +42,40 @@ target 'iostemplatefix' do
   config = use_native_modules!
 
   use_react_native!(
-    :path             => config[:reactNativePath],
-    :hermes_enabled   => true,
-    :fabric_enabled   => false,  # Fabric AUS
-    :new_arch_enabled => false   # New Arch AUS
+    :path           => config[:reactNativePath],
+    :hermes_enabled => true,
+    :fabric_enabled => true,   # ✅ New Arch / Fabric AN
+    :new_arch_enabled => true  # ✅ Reanimated happy
   )
+end
+
+# Helper: Fabric-Component-Files in Target ziehen
+def add_fabric_components(installer, target_name, component_path)
+  target = installer.pods_project.targets.find { |t| t.name == target_name }
+  return unless target
+
+  fabric_files = %w[
+    Props.cpp
+    ShadowNodes.cpp
+    ComponentDescriptors.cpp
+    EventEmitters.cpp
+    States.cpp
+  ]
+
+  fabric_files.each do |file_name|
+    file_path = File.join(
+      installer.sandbox.root,
+      "../build/generated/ios/react/renderer/components/#{component_path}/#{file_name}"
+    )
+
+    if File.exist?(file_path)
+      file_ref = installer.pods_project.new_file(file_path)
+      target.source_build_phase.add_file_reference(file_ref)
+      puts "✅ Added #{file_name} to #{target_name}"
+    else
+      puts "⚠️  #{target_name} #{file_name} not found yet (will be generated during build)"
+    end
+  end
 end
 
 post_install do |installer|
@@ -61,4 +90,7 @@ post_install do |installer|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
     end
   end
+
+  # 🔗 RNScreens-Fabric-Files hinzufügen
+  add_fabric_components(installer, 'RNScreens', 'rnscreens')
 end
