@@ -99,9 +99,14 @@ export default function ConnectPlatformsScreen() {
 
         const res = await WebBrowser.openAuthSessionAsync(START_URL, REDIRECT_URI);
 
-        if (res.type !== "success" || !res.url) {
-          throw new Error("Login abgebrochen");
+        if (res.type === "cancel" || res.type === "dismiss") {
+          return;
         }
+        
+        if (res.type !== "success" || !res.url) {
+          return;
+        }
+        
 
         console.log("[LinkedIn] Deep link URL:", res.url);
         const q = parseQuery(res.url);
@@ -296,7 +301,7 @@ export default function ConnectPlatformsScreen() {
         </View>
 
         <TouchableOpacity
-          onPress={() => router.push("/subscription" as any)}
+          onPress={() => router.replace("/(tabs)" as any)}
           style={styles.skipButton}
         >
           <Text style={styles.skipButtonText}>
