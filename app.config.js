@@ -24,7 +24,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "app.rork.socialpro-content-booster",
-      buildNumber: "1.0.0",
+      buildNumber: "1.0.1",
       infoPlist: {
         NSPhotoLibraryUsageDescription:
           "Allow $(PRODUCT_NAME) to access your photos",
