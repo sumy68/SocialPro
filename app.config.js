@@ -23,7 +23,7 @@ export default {
 
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "app.rork.socialpro-content-booster",
+      bundleIdentifier: "app.rork.socialmedia-mastermind-content-planning-analytics",
       buildNumber: "1.0.1",
       infoPlist: {
         NSPhotoLibraryUsageDescription:

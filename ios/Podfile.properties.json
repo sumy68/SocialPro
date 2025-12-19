@@ -1,5 +1,4 @@
 {
   "expo.jsEngine": "hermes",
-  "ios.deploymentTarget": "15.1",
-  "newArchEnabled": "false"
+  "ios.deploymentTarget": "15.1"
 }
