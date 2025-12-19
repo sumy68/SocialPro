@@ -1,390 +1,183 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { useRouter, Stack } from 'expo-router';
-import { useState, useEffect } from 'react';
-import { Check, Rocket } from 'lucide-react-native';
-import { useTranslation } from '@/hooks/useTranslation';
-import { useApp } from '@/contexts/AppContext';
-import * as InAppPurchases from 'expo-in-app-purchases';
-import { Colors } from '@/constants/colors';
+import React, { useEffect, useMemo, useState } from "react";
+import { View, Text, Pressable, ActivityIndicator, Alert, ScrollView } from "react-native";
+import type { CustomerInfo, PurchasesOffering, PurchasesPackage } from "react-native-purchases";
 
-// 🔥 Deine Produkt-IDs aus App Store Connect
-const PRODUCT_IDS = [
-  "com.deinpaket.socialpro.premium.monthly2",
-  "com.deinpaket.socialpro.premium.yearly",
-];
+import { getCustomerInfo, getOfferings, purchasePackage, restorePurchases, isPro } from "@/lib/purchases";
 
 export default function SubscriptionScreen() {
-  const router = useRouter();
-  const t = useTranslation() as any;
-  const { startTrial } = useApp();
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
-  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [offering, setOffering] = useState<PurchasesOffering | null>(null);
+  const [info, setInfo] = useState<CustomerInfo | null>(null);
+  const [purchasingId, setPurchasingId] = useState<string | null>(null);
 
-  // -------------------------------------------------------
-  // 🔥 SAFER TEXT-MAPPING MIT DEFAULTS
-  // -------------------------------------------------------
-  const S = {
-    title: t?.subscription?.title ?? "Wählen Sie Ihren Plan",
-    subtitle: t?.subscription?.subtitle ?? "3 Tage kostenlos testen, jederzeit kündbar",
-    trialBadge: t?.subscription?.trialBadge ?? "3 Tage Gratis",
-    monthly: t?.subscription?.monthly ?? "Monatlich",
-    yearly: t?.subscription?.yearly ?? "Jährlich",
-    monthlyPrice: t?.subscription?.monthlyPrice ?? "29,99€",
-    yearlyPrice: t?.subscription?.yearlyPrice ?? "300€",
-    perMonth: t?.subscription?.perMonth ?? "/Monat",
-    perYear: t?.subscription?.perYear ?? "/Jahr",
-    saveYearly: t?.subscription?.saveYearly ?? "40€ sparen",
-    featuresTitle: t?.subscription?.featuresTitle ?? "Alle Pläne beinhalten:",
-    features: {
-      unlimited: t?.subscription?.features?.unlimited ?? "Unbegrenzte Posts",
-      scheduling: t?.subscription?.features?.scheduling ?? "Post-Planung & Automatisierung",
-      aiCaptions: t?.subscription?.features?.aiCaptions ?? "KI-Captions & Hashtags",
-      analytics: t?.subscription?.features?.analytics ?? "Detaillierte Analytics",
-      contentSuggestions: t?.subscription?.features?.contentSuggestions ?? "KI-Content-Vorschläge",
-      weeklyReports: t?.subscription?.features?.weeklyReports ?? "Wöchentliche Reports",
-      support: t?.subscription?.features?.support ?? "Premium Support",
-    },
-    startTrial: t?.subscription?.startTrial ?? "3-Tage-Testversion starten",
-    restore: t?.subscription?.restore ?? "Käufe wiederherstellen",
-    terms:
-      t?.subscription?.terms ??
-      "Nach der Testphase wird Ihr Abonnement automatisch verlängert. Jederzeit kündbar in den iPhone-Einstellungen.",
-    back: t?.back ?? "Zurück",
-  };
+  const proActive = useMemo(() => (info ? isPro(info) : false), [info]);
 
-  // -------------------------------------------------------
-  // 🔥 IAP INITIALISIEREN
-  // -------------------------------------------------------
+  async function load() {
+    try {
+      setLoading(true);
+
+      const [offerings, customer] = await Promise.all([
+        getOfferings(),
+        getCustomerInfo(),
+      ]);
+
+      // meistens ist "current" gesetzt
+      const current = offerings.current ?? null;
+
+      setOffering(current);
+      setInfo(customer);
+
+      if (!current) {
+        console.warn("[RevenueCat] No current offering found. Check Offerings in dashboard.");
+      }
+    } catch (e) {
+      console.warn("[RevenueCat] load failed", e);
+      Alert.alert("Abo", "Konnte Abos gerade nicht laden.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    const init = async () => {
-      try {
-        if (__DEV__) {
-          console.log("[IAP] Skipping product load in dev (__DEV__)");
-          setLoading(false);
-          return;
-        }
-
-        const { responseCode, results } = await InAppPurchases.getProductsAsync(PRODUCT_IDS);
-
-        if (responseCode === InAppPurchases.IAPResponseCode.OK) {
-          console.log("[IAP] Products loaded:", results);
-          setProducts(results);
-        } else {
-          console.warn("[IAP] Failed to load products");
-        }
-
-        setLoading(false);
-      } catch (err) {
-        console.error("[IAP] Error loading products:", err);
-        setLoading(false);
-      }
-    };
-
-    init();
-
-    const subscription = InAppPurchases.setPurchaseListener(
-      ({ responseCode, results }) => {
-        if (responseCode === InAppPurchases.IAPResponseCode.OK) {
-          results?.forEach(async (purchase) => {
-            if (!purchase.acknowledged) {
-              console.log("[IAP] Purchase successful:", purchase);
-
-              await InAppPurchases.finishTransactionAsync(purchase, true);
-
-              await startTrial(selectedPlan);
-              router.replace("/(tabs)");
-            }
-          });
-        } else {
-          console.warn("[IAP] Purchase failed or canceled.");
-        }
-      }
-    );
-
-    return () => {
-      if (subscription && typeof subscription.remove === "function") {
-        subscription.remove();
-      }
-    };
+    load();
   }, []);
 
-  // -------------------------------------------------------
-  // 🔥 Kauf starten
-  // -------------------------------------------------------
-  const handleStartTrial = async () => {
+  async function onBuy(pkg: PurchasesPackage) {
     try {
-      const productId =
-        selectedPlan === "monthly"
-          ? "com.deinpaket.socialpro.premium.monthly2"
-          : "com.deinpaket.socialpro.premium.yearly";
+      setPurchasingId(pkg.identifier);
+      const updated = await purchasePackage(pkg);
+      setInfo(updated);
 
-      console.log("[IAP] Starting purchase:", productId);
+      if (isPro(updated)) {
+        Alert.alert("Lets go 🔥", "Premium ist aktiv!");
+      } else {
+        Alert.alert("Hinweis", "Kauf ok, aber Entitlement noch nicht aktiv. Check RevenueCat Entitlement ID.");
+      }
+    } catch (e: any) {
+      // User cancel ist normal
+      const msg = String(e?.message ?? e);
+      if (msg.toLowerCase().includes("cancel")) return;
 
-      await InAppPurchases.purchaseItemAsync(productId);
-    } catch (error) {
-      console.error("[IAP] Error purchasing:", error);
-      Alert.alert("Error", "Unable to complete purchase. Please try again.");
+      console.warn("[RevenueCat] purchase failed", e);
+      Alert.alert("Kauf fehlgeschlagen", "Bitte nochmal versuchen.");
+    } finally {
+      setPurchasingId(null);
     }
-  };
+  }
 
-  // -------------------------------------------------------
-  // 🔥 Restore
-  // -------------------------------------------------------
-  const handleRestore = async () => {
+  async function onRestore() {
     try {
-      const history = await InAppPurchases.getPurchaseHistoryAsync();
-      console.log("[IAP] Restore history:", history);
+      setLoading(true);
+      const restored = await restorePurchases();
+      setInfo(restored);
 
-      Alert.alert("Erfolgreich", "Käufe wurden wiederhergestellt.");
-    } catch (error) {
-      Alert.alert("Fehler", "Wiederherstellen nicht möglich.");
+      if (isPro(restored)) {
+        Alert.alert("Wiederhergestellt ✅", "Premium ist aktiv.");
+      } else {
+        Alert.alert("Info", "Kein aktives Abo gefunden.");
+      }
+    } catch (e) {
+      console.warn("[RevenueCat] restore failed", e);
+      Alert.alert("Restore fehlgeschlagen", "Bitte nochmal versuchen.");
+    } finally {
+      setLoading(false);
     }
-  };
+  }
 
-  // -------------------------------------------------------
-  // 🔥 UI
-  // -------------------------------------------------------
-  return (
-    <>
-      <Stack.Screen
-        options={{
-          title: S.title,
-          headerBackTitle: S.back,
-        }}
-      />
+  if (loading) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator />
+        <Text style={{ marginTop: 10 }}>Lade Abos…</Text>
+      </View>
+    );
+  }
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-        <View style={styles.header}>
-          <Rocket size={64} color={Colors.accent} strokeWidth={1.5} />
-          <Text style={styles.headerTitle}>{S.title}</Text>
-          <Text style={styles.headerSubtitle}>{S.subtitle}</Text>
+  if (!offering) {
+    return (
+      <View style={{ flex: 1, padding: 20, justifyContent: "center" }}>
+        <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 8 }}>
+          Keine Abos verfügbar
+        </Text>
+        <Text style={{ opacity: 0.8, marginBottom: 16 }}>
+          RevenueCat hat kein “current offering”. Check im Dashboard:
+          Offerings → set “current” + Packages zuweisen.
+        </Text>
 
-          <View style={styles.trialBadge}>
-            <Text style={styles.trialBadgeText}>{S.trialBadge}</Text>
-          </View>
-        </View>
-
-        <View style={styles.plansContainer}>
-          <PlanCard
-            title={S.monthly}
-            price={S.monthlyPrice}
-            period={S.perMonth}
-            selected={selectedPlan === 'monthly'}
-            onSelect={() => setSelectedPlan('monthly')}
-          />
-          <PlanCard
-            title={S.yearly}
-            price={S.yearlyPrice}
-            period={S.perYear}
-            badge={S.saveYearly}
-            selected={selectedPlan === 'yearly'}
-            onSelect={() => setSelectedPlan('yearly')}
-            highlighted
-          />
-        </View>
-
-        <View style={styles.features}>
-          <Text style={styles.featuresTitle}>{S.featuresTitle}</Text>
-
-          <FeatureItem text={S.features.unlimited} />
-          <FeatureItem text={S.features.scheduling} />
-          <FeatureItem text={S.features.aiCaptions} />
-          <FeatureItem text={S.features.analytics} />
-          <FeatureItem text={S.features.contentSuggestions} />
-          <FeatureItem text={S.features.weeklyReports} />
-          <FeatureItem text={S.features.support} />
-        </View>
-
-        <TouchableOpacity
-          style={styles.startButton}
-          onPress={handleStartTrial}
-          activeOpacity={0.8}
+        <Pressable
+          onPress={load}
+          style={{ padding: 14, borderRadius: 12, backgroundColor: "#111" }}
         >
-          <Text style={styles.startButtonText}>{S.startTrial}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.restoreButton} onPress={handleRestore}>
-          <Text style={styles.restoreButtonText}>{S.restore}</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.terms}>{S.terms}</Text>
-      </ScrollView>
-    </>
-  );
-}
-
-// -------------------------------------------------------
-
-function PlanCard({ title, price, period, badge, selected, onSelect, highlighted }) {
-  return (
-    <TouchableOpacity
-      style={[
-        styles.planCard,
-        selected && styles.planCardSelected,
-        highlighted && styles.planCardHighlighted,
-      ]}
-      onPress={onSelect}
-      activeOpacity={0.7}
-    >
-      {badge ? (
-        <View style={styles.badgeContainer}>
-          <Text style={styles.badgeText}>{badge}</Text>
-        </View>
-      ) : null}
-
-      <View style={styles.planHeader}>
-        <View style={styles.planTitleContainer}>
-          <Text style={[styles.planTitle, selected && styles.planTitleSelected]}>{title}</Text>
-          <View style={styles.priceContainer}>
-            <Text style={[styles.planPrice, selected && styles.planPriceSelected]}>{price}</Text>
-            <Text style={[styles.planPeriod, selected && styles.planPeriodSelected]}>{period}</Text>
-          </View>
-        </View>
-        <View style={[styles.radio, selected && styles.radioSelected]}>
-          {selected && <View style={styles.radioInner} />}
-        </View>
+          <Text style={{ color: "#fff", textAlign: "center", fontWeight: "600" }}>
+            Neu laden
+          </Text>
+        </Pressable>
       </View>
-    </TouchableOpacity>
-  );
-}
+    );
+  }
 
-function FeatureItem({ text }) {
+  const packages = offering.availablePackages ?? [];
+
   return (
-    <View style={styles.featureItem}>
-      <View style={styles.featureIconContainer}>
-        <Check size={20} color={Colors.accent} strokeWidth={3} />
+    <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }}>
+      <Text style={{ fontSize: 24, fontWeight: "800" }}>Premium</Text>
+
+      <View style={{ padding: 14, borderRadius: 14, backgroundColor: "#f2f2f2" }}>
+        <Text style={{ fontWeight: "700" }}>
+          Status: {proActive ? "✅ Aktiv" : "❌ Nicht aktiv"}
+        </Text>
+        <Text style={{ opacity: 0.8, marginTop: 6 }}>
+          Wenn du kaufst und es bleibt ❌, dann ist fast immer die Entitlement-ID falsch
+          (muss exakt matchen).
+        </Text>
       </View>
-      <Text style={styles.featureText}>{text}</Text>
-    </View>
+
+      {packages.length === 0 ? (
+        <Text style={{ opacity: 0.8 }}>
+          Offering gefunden, aber keine Packages drin. Check RevenueCat → Offering Packages.
+        </Text>
+      ) : (
+        packages.map((pkg) => {
+          const price = pkg.product.priceString;
+          const title = pkg.product.title;
+          const desc = pkg.product.description;
+
+          const busy = purchasingId === pkg.identifier;
+
+          return (
+            <Pressable
+              key={pkg.identifier}
+              onPress={() => onBuy(pkg)}
+              disabled={busy}
+              style={{
+                padding: 16,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: "#ddd",
+                backgroundColor: "#fff",
+                opacity: busy ? 0.6 : 1,
+              }}
+            >
+              <Text style={{ fontWeight: "800", fontSize: 16 }}>{title}</Text>
+              <Text style={{ opacity: 0.8, marginTop: 4 }}>{desc}</Text>
+
+              <View style={{ marginTop: 12, flexDirection: "row", justifyContent: "space-between" }}>
+                <Text style={{ fontWeight: "800" }}>{price}</Text>
+                <Text style={{ fontWeight: "700" }}>{busy ? "…" : "Kaufen"}</Text>
+              </View>
+            </Pressable>
+          );
+        })
+      )}
+
+      <Pressable
+        onPress={onRestore}
+        style={{ padding: 14, borderRadius: 12, backgroundColor: "#111", marginTop: 6 }}
+      >
+        <Text style={{ color: "#fff", textAlign: "center", fontWeight: "700" }}>
+          Käufe wiederherstellen
+        </Text>
+      </Pressable>
+    </ScrollView>
   );
 }
-
-// -------------------------------------------------------
-// STYLES
-// -------------------------------------------------------
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  contentContainer: { paddingBottom: 40 },
-  header: {
-    padding: 40,
-    alignItems: "center",
-    backgroundColor: Colors.backgroundSecondary,
-    marginBottom: 32,
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: Colors.text,
-    marginTop: 24,
-    marginBottom: 8,
-    letterSpacing: -1,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  trialBadge: {
-    backgroundColor: Colors.accent,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-  },
-  trialBadgeText: { fontSize: 14, fontWeight: "700", color: "#fff" },
-  plansContainer: { paddingHorizontal: 24, gap: 16, marginBottom: 32 },
-  planCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 2,
-    borderColor: Colors.border,
-  },
-  planCardSelected: {
-    borderColor: Colors.accent,
-    backgroundColor: Colors.backgroundSecondary,
-  },
-  planCardHighlighted: {
-    shadowColor: Colors.accent,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  badgeContainer: {
-    position: "absolute",
-    top: -10,
-    right: 20,
-    backgroundColor: Colors.accent,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-  },
-  badgeText: { fontSize: 12, fontWeight: "700", color: "#fff" },
-  planHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  planTitleContainer: { flex: 1 },
-  planTitle: { fontSize: 20, fontWeight: "700", color: Colors.text, marginBottom: 8 },
-  planTitleSelected: { color: Colors.accent },
-  priceContainer: { flexDirection: "row", alignItems: "baseline", gap: 4 },
-  planPrice: { fontSize: 32, fontWeight: "800", color: Colors.text },
-  planPriceSelected: { color: Colors.accent },
-  planPeriod: { fontSize: 16, color: Colors.textSecondary },
-  planPeriodSelected: { color: Colors.accent },
-  radio: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: Colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  radioSelected: { borderColor: Colors.accent },
-  radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: Colors.accent },
-  features: { paddingHorizontal: 24, marginBottom: 32, gap: 12 },
-  featuresTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.text,
-    marginBottom: 8,
-  },
-  featureItem: { flexDirection: "row", alignItems: "center", gap: 12 },
-  featureIconContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.backgroundSecondary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  featureText: { fontSize: 16, color: Colors.text, flex: 1 },
-  startButton: {
-    marginHorizontal: 24,
-    marginBottom: 16,
-    borderRadius: 12,
-    backgroundColor: Colors.primary,
-    paddingVertical: 18,
-    alignItems: "center",
-  },
-  startButtonText: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: Colors.background,
-    letterSpacing: -0.3,
-  },
-  restoreButton: { paddingVertical: 12, alignItems: "center", marginBottom: 16 },
-  restoreButtonText: { fontSize: 16, fontWeight: "600", color: Colors.accent },
-  terms: {
-    fontSize: 12,
-    color: Colors.textTertiary,
-    textAlign: "center",
-    paddingHorizontal: 32,
-    lineHeight: 18,
-  },
-});
