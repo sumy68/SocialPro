@@ -9,11 +9,12 @@ export default {
     orientation: "portrait",
     icon: "./assets/images/icon.png",
 
-    // Deep Link Scheme (iOS & Android)
     scheme: process.env.EXPO_PUBLIC_SCHEME || "socialpro",
 
     userInterfaceStyle: "automatic",
-    newArchEnabled: true,
+
+    // ⛔ New Architecture AUS (passt zu Podfile, verhindert iOS Crash)
+    newArchEnabled: false,
 
     splash: {
       image: "./assets/images/splash-icon.png",
@@ -24,7 +25,10 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "app.rork.socialmedia-mastermind-content-planning-analytics",
-      buildNumber: "1.0.1",
+
+      // ✅ WICHTIG: Build Number hochgezählt
+      buildNumber: "8",
+
       infoPlist: {
         NSPhotoLibraryUsageDescription:
           "Allow $(PRODUCT_NAME) to access your photos",
@@ -33,8 +37,6 @@ export default {
         NSMicrophoneUsageDescription:
           "Allow $(PRODUCT_NAME) to access your microphone",
         UIBackgroundModes: ["audio"],
-        // safety: ensure scheme is registered (Expo does this automatically,
-        // but we keep it explicit so Safari deep links always resolve)
         CFBundleURLTypes: [{ CFBundleURLSchemes: ["socialpro"] }],
       },
     },
@@ -47,7 +49,6 @@ export default {
       package: "app.rork.socialprocontentbooster",
       versionCode: 1,
       permissions: ["INTERNET", "CAMERA", "RECORD_AUDIO"],
-      // optional: handle deep links on Android too
       intentFilters: [
         {
           action: "VIEW",
@@ -56,8 +57,6 @@ export default {
         },
       ],
     },
-
-    web: { favicon: "./assets/images/favicon.png" },
 
     plugins: [
       "expo-router",
@@ -70,7 +69,10 @@ export default {
       ],
       [
         "expo-av",
-        { microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone" },
+        {
+          microphonePermission:
+            "Allow $(PRODUCT_NAME) to access your microphone",
+        },
       ],
       "expo-web-browser",
       "expo-font",
@@ -79,11 +81,9 @@ export default {
     experiments: { typedRoutes: true },
 
     extra: {
-      // 👇 EAS Project-Verknüpfung
       eas: {
         projectId: "6b80b470-21d3-446d-9478-e7922ef93ba5",
       },
-
       EXPO_PUBLIC_APP_URL: process.env.EXPO_PUBLIC_APP_URL,
       EXPO_PUBLIC_DEMO_MODE: process.env.EXPO_PUBLIC_DEMO_MODE,
       EXPO_PUBLIC_SCHEME: process.env.EXPO_PUBLIC_SCHEME || "socialpro",
