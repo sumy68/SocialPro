@@ -44,7 +44,7 @@ export async function initRevenueCat(userId?: string) {
 
   try {
     Purchases.configure({
-      apiKey,
+      apiKey: "appl_JOmuxVQsEPVPSlWIVselscpMHvh",
       appUserID: userId, // optional
     });
 
