@@ -27,7 +27,7 @@ export default {
       bundleIdentifier: "app.rork.socialmedia-mastermind-content-planning-analytics",
 
       // ✅ WICHTIG: Build Number hochgezählt
-      buildNumber: "9",
+      buildNumber: "11",
 
       infoPlist: {
         NSPhotoLibraryUsageDescription:

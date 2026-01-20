@@ -9,35 +9,36 @@ import Purchases, {
 
 let didInit = false;
 
-function getApiKey() {
-  const iosKey = process.env.EXPO_PUBLIC_RC_IOS_API_KEY;
-  const androidKey = process.env.EXPO_PUBLIC_RC_ANDROID_API_KEY;
+function pickApiKey() {
+  // Expo injiziert EXPO_PUBLIC_* zur Build/Bundle-Zeit
+  // @ts-ignore
+  const iosKey: string | undefined = process.env.EXPO_PUBLIC_RC_IOS_API_KEY;
+  // @ts-ignore
+  const androidKey: string | undefined = process.env.EXPO_PUBLIC_RC_ANDROID_API_KEY;
 
-  if (Platform.OS === "ios") return iosKey;
-  if (Platform.OS === "android") return androidKey;
-  return undefined;
+  const key = Platform.OS === "ios" ? iosKey : Platform.OS === "android" ? androidKey : undefined;
+
+  // Debug ohne Key zu leaken:
+  const prefix = key ? key.slice(0, 5) : "NONE";
+  const len = key ? key.length : 0;
+  console.log(`[RevenueCat] Platform=${Platform.OS} keyPrefix=${prefix} keyLen=${len}`);
+
+  return key;
 }
 
 export async function initRevenueCat(userId?: string) {
   if (didInit) return;
 
-  // ✅ OPTIONAL: Wenn du im Dev Client keine RevenueCat Calls willst, aktivieren:
-  // if (__DEV__) {
-  //   didInit = true;
-  //   return;
-  // }
+  const apiKey = pickApiKey();
 
-  const apiKey = getApiKey();
-
-  if (!apiKey) {
+  // harter Guard
+  if (!apiKey || !apiKey.startsWith("appl_")) {
     console.warn(
-      "[RevenueCat] Missing API key. Set EXPO_PUBLIC_RC_IOS_API_KEY / EXPO_PUBLIC_RC_ANDROID_API_KEY"
+      `[RevenueCat] Invalid/missing iOS key. Expected appl_. Got: ${apiKey ? apiKey.slice(0, 5) : "NONE"}`
     );
-    // nicht initialisieren, sonst wird’s später doppelt versucht
     return;
   }
 
-  // Logs nur in Dev
   if (__DEV__) {
     Purchases.setLogLevel(LOG_LEVEL.DEBUG);
   }
@@ -45,21 +46,19 @@ export async function initRevenueCat(userId?: string) {
   try {
     Purchases.configure({
       apiKey,
-      appUserID: userId, // optional
+      appUserID: userId,
+      usesStoreKit2IfAvailable: false,
     });
-
     didInit = true;
+    console.log("[RevenueCat] configure OK");
   } catch (e) {
     console.warn("[RevenueCat] configure() failed:", e);
-    // didInit NICHT true setzen, falls du später mit validem key neu starten willst
   }
 }
 
 export async function setRevenueCatUser(userId: string) {
-  // ✅ logIn erst sinnvoll, wenn initRevenueCat schon configured hat
   if (!didInit) {
     await initRevenueCat(userId);
-    // falls kein key -> initRevenueCat returned ohne init -> dann abbrechen
     if (!didInit) return;
   }
 
@@ -86,9 +85,7 @@ export async function getOfferings(): Promise<PurchasesOfferings> {
   return Purchases.getOfferings();
 }
 
-export async function purchasePackage(
-  pkg: PurchasesPackage
-): Promise<CustomerInfo> {
+export async function purchasePackage(pkg: PurchasesPackage): Promise<CustomerInfo> {
   const { customerInfo } = await Purchases.purchasePackage(pkg);
   return customerInfo;
 }
@@ -97,14 +94,7 @@ export async function restorePurchases(): Promise<CustomerInfo> {
   return Purchases.restorePurchases();
 }
 
-// Helper: check entitlement
-export function hasEntitlement(info: CustomerInfo, entitlementId: string) {
-  return Boolean(info.entitlements.active?.[entitlementId]);
-}
-
-// --- Entitlement helpers ---
-export const PRO_ENTITLEMENT_ID = "pro";
-// ⚠️ Muss GENAU so heißen wie dein Entitlement in RevenueCat Dashboard!
+export const PRO_ENTITLEMENT_ID = "SocialPro Pro";
 
 export function isPro(info: CustomerInfo) {
   return Boolean(info.entitlements.active?.[PRO_ENTITLEMENT_ID]);

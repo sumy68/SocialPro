@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, Pressable, ActivityIndicator, Alert, ScrollView } from "react-native";
 import type { CustomerInfo, PurchasesOffering, PurchasesPackage } from "react-native-purchases";
+import { router } from "expo-router";
 
 import { getCustomerInfo, getOfferings, purchasePackage, restorePurchases, isPro } from "@/lib/purchases";
 
@@ -21,8 +22,7 @@ export default function SubscriptionScreen() {
         getCustomerInfo(),
       ]);
 
-      // meistens ist "current" gesetzt
-      const current = offerings.current ?? null;
+      const current = offerings.all?.["default"] ?? offerings.current ?? null;
 
       setOffering(current);
       setInfo(customer);
@@ -32,7 +32,7 @@ export default function SubscriptionScreen() {
       }
     } catch (e) {
       console.warn("[RevenueCat] load failed", e);
-      Alert.alert("Abo", "Konnte Abos gerade nicht laden.");
+      Alert.alert("Fehler", "Abos konnten nicht geladen werden. Bitte versuche es später erneut.");
     } finally {
       setLoading(false);
     }
@@ -49,17 +49,14 @@ export default function SubscriptionScreen() {
       setInfo(updated);
 
       if (isPro(updated)) {
-        Alert.alert("Lets go 🔥", "Premium ist aktiv!");
-      } else {
-        Alert.alert("Hinweis", "Kauf ok, aber Entitlement noch nicht aktiv. Check RevenueCat Entitlement ID.");
+        Alert.alert("Willkommen bei Premium! 🎉", "Dein Premium-Zugang ist jetzt aktiv.");
       }
     } catch (e: any) {
-      // User cancel ist normal
       const msg = String(e?.message ?? e);
       if (msg.toLowerCase().includes("cancel")) return;
 
       console.warn("[RevenueCat] purchase failed", e);
-      Alert.alert("Kauf fehlgeschlagen", "Bitte nochmal versuchen.");
+      Alert.alert("Kauf fehlgeschlagen", "Bitte versuche es erneut.");
     } finally {
       setPurchasingId(null);
     }
@@ -72,13 +69,13 @@ export default function SubscriptionScreen() {
       setInfo(restored);
 
       if (isPro(restored)) {
-        Alert.alert("Wiederhergestellt ✅", "Premium ist aktiv.");
+        Alert.alert("Erfolgreich wiederhergestellt", "Dein Premium-Zugang ist aktiv.");
       } else {
-        Alert.alert("Info", "Kein aktives Abo gefunden.");
+        Alert.alert("Keine Käufe gefunden", "Es wurden keine aktiven Abonnements gefunden.");
       }
     } catch (e) {
       console.warn("[RevenueCat] restore failed", e);
-      Alert.alert("Restore fehlgeschlagen", "Bitte nochmal versuchen.");
+      Alert.alert("Wiederherstellung fehlgeschlagen", "Bitte versuche es erneut.");
     } finally {
       setLoading(false);
     }
@@ -86,32 +83,63 @@ export default function SubscriptionScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator />
-        <Text style={{ marginTop: 10 }}>Lade Abos…</Text>
+      <View style={{ flex: 1, backgroundColor: "#F8F9FA" }}>
+        <View style={{ 
+          flexDirection: "row", 
+          alignItems: "center", 
+          padding: 16, 
+          backgroundColor: "#fff",
+          borderBottomWidth: 1,
+          borderBottomColor: "#E0E0E0"
+        }}>
+          <Pressable onPress={() => router.back()} style={{ marginRight: 16 }}>
+            <Text style={{ fontSize: 28, color: "#EF4444" }}>←</Text>
+          </Pressable>
+          <Text style={{ fontSize: 20, fontWeight: "700" }}>Premium</Text>
+        </View>
+
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <ActivityIndicator size="large" color="#EF4444" />
+          <Text style={{ marginTop: 16, fontSize: 16, color: "#666" }}>Lade Premium-Optionen...</Text>
+        </View>
       </View>
     );
   }
 
   if (!offering) {
     return (
-      <View style={{ flex: 1, padding: 20, justifyContent: "center" }}>
-        <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 8 }}>
-          Keine Abos verfügbar
-        </Text>
-        <Text style={{ opacity: 0.8, marginBottom: 16 }}>
-          RevenueCat hat kein “current offering”. Check im Dashboard:
-          Offerings → set “current” + Packages zuweisen.
-        </Text>
+      <View style={{ flex: 1, backgroundColor: "#F8F9FA" }}>
+        <View style={{ 
+          flexDirection: "row", 
+          alignItems: "center", 
+          padding: 16, 
+          backgroundColor: "#fff",
+          borderBottomWidth: 1,
+          borderBottomColor: "#E0E0E0"
+        }}>
+          <Pressable onPress={() => router.back()} style={{ marginRight: 16 }}>
+            <Text style={{ fontSize: 28, color: "#EF4444" }}>←</Text>
+          </Pressable>
+          <Text style={{ fontSize: 20, fontWeight: "700" }}>Premium</Text>
+        </View>
 
-        <Pressable
-          onPress={load}
-          style={{ padding: 14, borderRadius: 12, backgroundColor: "#111" }}
-        >
-          <Text style={{ color: "#fff", textAlign: "center", fontWeight: "600" }}>
-            Neu laden
+        <View style={{ flex: 1, padding: 20, justifyContent: "center", alignItems: "center" }}>
+          <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 12, textAlign: "center" }}>
+            Premium-Abos nicht verfügbar
           </Text>
-        </Pressable>
+          <Text style={{ fontSize: 14, opacity: 0.7, marginBottom: 24, textAlign: "center" }}>
+            Bitte versuche es später erneut.
+          </Text>
+
+          <Pressable
+            onPress={load}
+            style={{ padding: 16, borderRadius: 12, backgroundColor: "#EF4444" }}
+          >
+            <Text style={{ color: "#fff", textAlign: "center", fontWeight: "600", fontSize: 16 }}>
+              Erneut versuchen
+            </Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
@@ -119,65 +147,91 @@ export default function SubscriptionScreen() {
   const packages = offering.availablePackages ?? [];
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20, gap: 12 }}>
-      <Text style={{ fontSize: 24, fontWeight: "800" }}>Premium</Text>
-
-      <View style={{ padding: 14, borderRadius: 14, backgroundColor: "#f2f2f2" }}>
-        <Text style={{ fontWeight: "700" }}>
-          Status: {proActive ? "✅ Aktiv" : "❌ Nicht aktiv"}
-        </Text>
-        <Text style={{ opacity: 0.8, marginTop: 6 }}>
-          Wenn du kaufst und es bleibt ❌, dann ist fast immer die Entitlement-ID falsch
-          (muss exakt matchen).
-        </Text>
+    <View style={{ flex: 1, backgroundColor: "#F8F9FA" }}>
+      <View style={{ 
+        flexDirection: "row", 
+        alignItems: "center", 
+        padding: 16, 
+        backgroundColor: "#fff",
+        borderBottomWidth: 1,
+        borderBottomColor: "#E0E0E0"
+      }}>
+        <Pressable onPress={() => router.back()} style={{ marginRight: 16 }}>
+          <Text style={{ fontSize: 28, color: "#EF4444" }}>←</Text>
+        </Pressable>
+        <Text style={{ fontSize: 20, fontWeight: "700" }}>Premium</Text>
       </View>
 
-      {packages.length === 0 ? (
-        <Text style={{ opacity: 0.8 }}>
-          Offering gefunden, aber keine Packages drin. Check RevenueCat → Offering Packages.
+      <ScrollView contentContainerStyle={{ padding: 20 }}>
+        <Text style={{ fontSize: 28, fontWeight: "800", marginBottom: 8 }}>Premium</Text>
+        <Text style={{ fontSize: 16, opacity: 0.7, marginBottom: 24 }}>
+          Hole dir vollen Zugriff auf alle Premium-Features
         </Text>
-      ) : (
-        packages.map((pkg) => {
-          const price = pkg.product.priceString;
-          const title = pkg.product.title;
-          const desc = pkg.product.description;
 
-          const busy = purchasingId === pkg.identifier;
+        {packages.length === 0 ? (
+          <Text style={{ opacity: 0.7, textAlign: "center", marginTop: 20 }}>
+            Keine Premium-Pakete verfügbar
+          </Text>
+        ) : (
+          <View style={{ gap: 16 }}>
+            {packages.map((pkg) => {
+              const price = pkg.product.priceString;
+              const title = pkg.product.title;
+              const desc = pkg.product.description;
+              const busy = purchasingId === pkg.identifier;
 
-          return (
-            <Pressable
-              key={pkg.identifier}
-              onPress={() => onBuy(pkg)}
-              disabled={busy}
-              style={{
-                padding: 16,
-                borderRadius: 14,
-                borderWidth: 1,
-                borderColor: "#ddd",
-                backgroundColor: "#fff",
-                opacity: busy ? 0.6 : 1,
-              }}
-            >
-              <Text style={{ fontWeight: "800", fontSize: 16 }}>{title}</Text>
-              <Text style={{ opacity: 0.8, marginTop: 4 }}>{desc}</Text>
+              return (
+                <Pressable
+                  key={pkg.identifier}
+                  onPress={() => onBuy(pkg)}
+                  disabled={busy}
+                  style={{
+                    padding: 20,
+                    borderRadius: 16,
+                    borderWidth: 2,
+                    borderColor: "#EF4444",
+                    backgroundColor: "#fff",
+                    opacity: busy ? 0.6 : 1,
+                  }}
+                >
+                  <Text style={{ fontWeight: "800", fontSize: 18, marginBottom: 4 }}>{title}</Text>
+                  <Text style={{ opacity: 0.7, marginBottom: 16 }}>{desc}</Text>
 
-              <View style={{ marginTop: 12, flexDirection: "row", justifyContent: "space-between" }}>
-                <Text style={{ fontWeight: "800" }}>{price}</Text>
-                <Text style={{ fontWeight: "700" }}>{busy ? "…" : "Kaufen"}</Text>
-              </View>
-            </Pressable>
-          );
-        })
-      )}
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text style={{ fontWeight: "800", fontSize: 20, color: "#EF4444" }}>{price}</Text>
+                    <View style={{ 
+                      backgroundColor: "#EF4444", 
+                      paddingHorizontal: 20, 
+                      paddingVertical: 10, 
+                      borderRadius: 8 
+                    }}>
+                      <Text style={{ color: "#fff", fontWeight: "700" }}>
+                        {busy ? "..." : "Jetzt kaufen"}
+                      </Text>
+                    </View>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
 
-      <Pressable
-        onPress={onRestore}
-        style={{ padding: 14, borderRadius: 12, backgroundColor: "#111", marginTop: 6 }}
-      >
-        <Text style={{ color: "#fff", textAlign: "center", fontWeight: "700" }}>
-          Käufe wiederherstellen
-        </Text>
-      </Pressable>
-    </ScrollView>
+        <Pressable
+          onPress={onRestore}
+          style={{ 
+            padding: 16, 
+            borderRadius: 12, 
+            backgroundColor: "#fff",
+            borderWidth: 1,
+            borderColor: "#ddd",
+            marginTop: 24 
+          }}
+        >
+          <Text style={{ color: "#EF4444", textAlign: "center", fontWeight: "600" }}>
+            Käufe wiederherstellen
+          </Text>
+        </Pressable>
+      </ScrollView>
+    </View>
   );
 }
