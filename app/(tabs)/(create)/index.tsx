@@ -255,7 +255,7 @@ function CreateScreenInner() {
         return;
       }
 
-      const result = await publishToMultiplePlatforms(connectedSelectedPlatforms, {
+      const result = await publishToMultiplePlatforms(connectedSelectedPlatforms,{
         caption: fullCaption,
         mediaUrls: allMediaUrls.length ? allMediaUrls : undefined,
         mediaType,
