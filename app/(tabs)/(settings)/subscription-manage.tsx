@@ -6,10 +6,12 @@ import {
   ScrollView,
   TouchableOpacity,
   Linking,
+  Alert,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useApp } from "@/contexts/AppContext";
 import { useTranslation } from "@/hooks/useTranslation";
+import Purchases from "react-native-purchases";
 
 export default function SubscriptionManageScreen() {
   const router = useRouter();
@@ -42,6 +44,33 @@ export default function SubscriptionManageScreen() {
     subscription?.renewalDate ??
     subscription?.expiresAt ??
     null;
+
+  // ✅ NEU: Premium Upgrade Handler
+  const handleUpgradeToPremium = async () => {
+    try {
+      const offerings = await Purchases.getOfferings();
+      if (offerings.current !== null && offerings.current.availablePackages.length > 0) {
+        // Zeige RevenueCat Paywall - nimm erstes Package
+        const purchaserInfo = await Purchases.purchasePackage(offerings.current.availablePackages[0]);
+        
+        // Check ob Premium aktiviert
+        if (typeof purchaserInfo.entitlements.active['premium'] !== 'undefined') {
+          Alert.alert('Erfolg!', 'Premium-Abo erfolgreich aktiviert!');
+          // Optional: App Context updaten
+          if (typeof app.checkSubscription === 'function') {
+            await app.checkSubscription();
+          }
+        }
+      } else {
+        Alert.alert('Fehler', 'Keine Abo-Optionen verfügbar');
+      }
+    } catch (e: any) {
+      if (!e.userCancelled) {
+        console.error('[Premium Upgrade]', e);
+        Alert.alert('Fehler', 'Abo-Kauf fehlgeschlagen. Bitte versuche es erneut.');
+      }
+    }
+  };
 
   const handleOpenStoreSubscriptions = async () => {
     const url = "https://apps.apple.com/account/subscriptions";
@@ -114,6 +143,19 @@ export default function SubscriptionManageScreen() {
             öffne die App-Store-Abos über den Button unten und folge den
             Anweisungen von Apple.
           </Text>
+
+          {/* ✅ NEU: Premium Upgrade Button - nur wenn NICHT aktiv */}
+          {status !== 'active' && (
+            <TouchableOpacity
+              style={[styles.buttonPrimary, styles.upgradeButton]}
+              activeOpacity={0.8}
+              onPress={handleUpgradeToPremium}
+            >
+              <Text style={styles.buttonPrimaryText}>
+                🚀 Jetzt Premium Upgraden
+              </Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
             style={styles.buttonPrimary}
@@ -210,6 +252,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#111827",
     fontWeight: "600",
+  },
+  upgradeButton: {
+    backgroundColor: "#0A66C2",
+    marginBottom: 12,
   },
   buttonPrimary: {
     marginTop: 12,

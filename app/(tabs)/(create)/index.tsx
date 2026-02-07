@@ -49,9 +49,11 @@ function CreateScreenInner() {
         Alert.alert('Berechtigung erforderlich', 'Bitte Galerie-Zugriff erlauben.', [{ text: 'OK' }]);
         return;
       }
+      
+      // ✅ FIX: Multiple selection deaktiviert für iPad Crash
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.All,
-        allowsMultipleSelection: true,
+        allowsMultipleSelection: false, // ✅ GEÄNDERT: false statt true
         quality: 0.8,
         base64: false,
         videoMaxDuration: 300,
