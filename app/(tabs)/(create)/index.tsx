@@ -10,6 +10,7 @@ import { generateText } from '@/lib/toolkit';
 import { usePublishPost } from '@/hooks/usePublishPost';
 
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 // 👇 einzig neu:
@@ -98,9 +99,12 @@ function CreateScreenInner() {
       const imageParts = await Promise.all(
         selectedImages.slice(0, 3).map(async (uri) => {
           try {
+            // Bild komprimieren
+const resized = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: 1024 } }], { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG });
+const compressedUri = resized.uri;
             let base64Data: string;
             if (RNPlatform.OS === 'web') {
-              const res = await fetch(uri);
+              const res = await fetch(compressedUri);
               const blob = await res.blob();
               base64Data = await new Promise<string>((resolve) => {
                 const r = new FileReader();
@@ -108,9 +112,9 @@ function CreateScreenInner() {
                 r.readAsDataURL(blob);
               });
             } else {
-              base64Data = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+              base64Data = await FileSystem.readAsStringAsync(compressedUri, { encoding: 'base64' });
             }
-            return { type: 'image' as const, image: `data:image/jpeg;base64,${base64Data}` };
+            return { type: 'image' as const, image: base64Data };
           } catch (e) {
             console.error('[AI] base64 error', e);
             return null;
