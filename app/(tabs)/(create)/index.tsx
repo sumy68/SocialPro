@@ -51,8 +51,12 @@ function CreateScreenInner() {
       }
       
       // ✅ FIX: Multiple selection deaktiviert für iPad Crash
+      const mediaTypes = (ImagePicker as any).MediaType
+        ? [(ImagePicker as any).MediaType.Images, (ImagePicker as any).MediaType.Videos]
+        : undefined;
+
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        mediaTypes,
         allowsMultipleSelection: false, // ✅ GEÄNDERT: false statt true
         quality: 0.8,
         base64: false,
