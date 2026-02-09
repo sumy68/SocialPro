@@ -41,3 +41,5 @@ server.log
 ios/Pods/
 ios/Pods 2/
 SocialPro.ipa
+*.backup
+*.bak
