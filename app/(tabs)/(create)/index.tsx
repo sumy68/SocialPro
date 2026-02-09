@@ -299,7 +299,7 @@ const compressedUri = resized.uri;
               throw new Error(`${platform} nicht verbunden`);
             }
   
-            // Hole AccessToken (du musst diese Funktion haben oder anpassen)
+            // Hole AccessToken
             const tokenResult = await trpcVanillaClient.platforms.getToken.query({ platform });
             if (!tokenResult.ok || !tokenResult.accessToken) {
               throw new Error(`Kein Token für ${platform}`);
@@ -307,7 +307,7 @@ const compressedUri = resized.uri;
   
             // Schedule Post im Backend
             const result = await trpcVanillaClient.posts.schedule.mutate({
-              userId: 'default-user', // TODO: Echte User-ID verwenden
+              userId: 'default-user',
               platform: platform as any,
               caption: fullCaption,
               mediaUrls: allMediaUrls.length ? allMediaUrls : undefined,
@@ -359,57 +359,6 @@ const compressedUri = resized.uri;
     setContentType('post');
   };
 
-    if (autoPost) {
-      const connectedSelectedPlatforms = selectedPlatforms.filter(p => {
-        const item = connectedPlatforms.find(x => x.platform === p);
-        return item?.connected;
-      });
-
-      if (connectedSelectedPlatforms.length === 0) {
-        Alert.alert('Keine verbundenen Plattformen', 'Bitte zuerst Plattformen verbinden.');
-        return;
-      }
-
-      const result = await publishToMultiplePlatforms(connectedSelectedPlatforms,{
-        caption: fullCaption,
-        mediaUrls: allMediaUrls.length ? allMediaUrls : undefined,
-        mediaType,
-        contentType,
-      });
-
-      if (result.successfulPlatforms.length > 0) {
-        const successMsg = `Erfolgreich auf: ${result.successfulPlatforms.join(', ')}`;
-        const failMsg =
-          result.failedPlatforms.length > 0
-            ? `\n\nFehlgeschlagen: ${result.failedPlatforms
-                .map(p => `${p} (${result.errors[p]})`)
-                .join(', ')}`
-            : '';
-        Alert.alert(result.failedPlatforms.length ? 'Teilweise erfolgreich' : 'Erfolg!', successMsg + failMsg);
-      } else {
-        Alert.alert(
-          'Veröffentlichung fehlgeschlagen',
-          result.failedPlatforms.map(p => `${p}: ${result.errors[p]}`).join('\n')
-        );
-        return;
-      }
-    }
-
-    await addPost(post);
-
-    const dateStr = scheduledDate.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' });
-    const timeStr = scheduledDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-    if (!autoPost) Alert.alert('Erfolg!', `Post geplant für ${dateStr} um ${timeStr}`);
-
-    setCaption('');
-    setHashtags('');
-    setSelectedPlatforms([]);
-    setSelectedImages([]);
-    setSelectedVideos([]);
-    setScheduledDate(new Date(Date.now() + 3600000));
-    setContentType('post');
-  };
-
   return (
     <>
       <Stack.Screen options={{ title: 'Erstellen' }} />
@@ -450,7 +399,6 @@ const compressedUri = resized.uri;
                         <Text style={styles.videoIndicatorText}>VIDEO</Text>
                       </View>
                     ) : (
-                      // @ts-ignore: expo-av not bundled here
                       <View style={{ width: 100, height: 100, borderRadius: 12, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' }}>
                         <Text style={[styles.videoIndicatorText, { color: '#FFF' }]}>VIDEO</Text>
                       </View>
@@ -607,7 +555,6 @@ const compressedUri = resized.uri;
               <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowDatePicker(false)}>
                 <View style={styles.modalContent}>
                   <Text style={styles.modalTitle}>Datum wählen</Text>
-                  {/* @ts-ignore */}
                   <input
                     type="date"
                     style={{ width: '100%', padding: 12, fontSize: 16, borderRadius: 8, border: '1.5px solid #7C3AED', marginBottom: 16 }}
@@ -632,7 +579,6 @@ const compressedUri = resized.uri;
               <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowTimePicker(false)}>
                 <View style={styles.modalContent}>
                   <Text style={styles.modalTitle}>Uhrzeit wählen</Text>
-                  {/* @ts-ignore */}
                   <input
                     type="time"
                     style={{ width: '100%', padding: 12, fontSize: 16, borderRadius: 8, border: '1.5px solid #7C3AED', marginBottom: 16 }}
