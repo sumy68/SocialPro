@@ -1,40 +1,7 @@
-import { z } from 'zod';
-import { publicProcedure } from '../../../create-context';
+import cron from 'node-cron';
+import { db, type ScheduledPost } from './db/database';
 
-const platformSchema = z.enum(['instagram', 'linkedin', 'tiktok', 'youtube']);
-
-export const publishPostProcedure = publicProcedure
-  .input(z.object({
-    platform: platformSchema,
-    caption: z.string(),
-    mediaUrls: z.array(z.string()).optional(),
-    mediaType: z.enum(['image', 'video']).optional(),
-    accessToken: z.string(),
-    userId: z.string().optional(),
-    contentType: z.enum(['post', 'reel']).optional(),
-  }))
-  .mutation(async ({ input }) => {
-    console.log('[Publish] Publishing to', input.platform);
-
-    try {
-      switch (input.platform) {
-        case 'instagram':
-          return await publishToInstagram(input);
-        case 'linkedin':
-          return await publishToLinkedIn(input);
-        case 'tiktok':
-          return await publishToTikTok(input);
-        case 'youtube':
-          return await publishToYouTube(input);
-        default:
-          throw new Error(`Unsupported platform: ${input.platform}`);
-      }
-    } catch (error: any) {
-      console.error(`[Publish] Error publishing to ${input.platform}:`, error);
-      throw new Error(`Failed to publish to ${input.platform}: ${error.message}`);
-    }
-  });
-
+// Import publish functions from existing route
 async function publishToInstagram(input: any) {
   const { accessToken, userId, caption, mediaUrls, mediaType, contentType } = input;
 
@@ -45,10 +12,6 @@ async function publishToInstagram(input: any) {
   const isVideo = mediaType === 'video';
   const isReel = contentType === 'reel';
   
-  const createMediaEndpoint = isVideo || isReel
-    ? `https://graph.instagram.com/v18.0/${userId}/media`
-    : `https://graph.instagram.com/v18.0/${userId}/media`;
-
   const mediaParams: any = {
     caption,
     access_token: accessToken,
@@ -61,7 +24,7 @@ async function publishToInstagram(input: any) {
     mediaParams.image_url = mediaUrls[0];
   }
 
-  const mediaResponse = await fetch(createMediaEndpoint, {
+  const mediaResponse = await fetch(`https://graph.instagram.com/v18.0/${userId}/media`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(mediaParams),
@@ -212,4 +175,83 @@ async function publishToYouTube(input: any) {
   const uploadUrl = response.headers.get('Location');
   
   return { postId: uploadUrl, platform: 'youtube', uploadUrl };
+}
+
+async function publishScheduledPost(post: ScheduledPost) {
+  const mediaUrls = post.media_urls ? JSON.parse(post.media_urls) : null;
+
+  const input = {
+    accessToken: post.access_token,
+    userId: post.platform_user_id,
+    caption: post.caption,
+    mediaUrls,
+    mediaType: post.media_type,
+    contentType: post.content_type,
+  };
+
+  switch (post.platform) {
+    case 'instagram':
+      return await publishToInstagram(input);
+    case 'linkedin':
+      return await publishToLinkedIn(input);
+    case 'tiktok':
+      return await publishToTikTok(input);
+    case 'youtube':
+      return await publishToYouTube(input);
+    default:
+      throw new Error(`Unsupported platform: ${post.platform}`);
+  }
+}
+
+async function processScheduledPosts() {
+  const now = new Date().toISOString();
+  
+  const stmt = db.prepare(`
+    SELECT * FROM scheduled_posts 
+    WHERE status = 'scheduled' 
+    AND scheduled_date <= ? 
+    LIMIT 10
+  `);
+
+  const posts = stmt.all(now) as ScheduledPost[];
+
+  console.log(`[Scheduler] Found ${posts.length} posts to publish`);
+
+  for (const post of posts) {
+    try {
+      console.log(`[Scheduler] Publishing post ${post.id} to ${post.platform}`);
+      
+      const result = await publishScheduledPost(post);
+
+      const updateStmt = db.prepare(`
+        UPDATE scheduled_posts 
+        SET status = 'published', published_at = ? 
+        WHERE id = ?
+      `);
+      updateStmt.run(new Date().toISOString(), post.id);
+
+      console.log(`[Scheduler] Successfully published post ${post.id}`, result);
+    } catch (error: any) {
+      console.error(`[Scheduler] Failed to publish post ${post.id}:`, error);
+
+      const errorStmt = db.prepare(`
+        UPDATE scheduled_posts 
+        SET status = 'failed', error_message = ? 
+        WHERE id = ?
+      `);
+      errorStmt.run(error.message, post.id);
+    }
+  }
+}
+
+export function startScheduler() {
+  console.log('[Scheduler] Starting cron job - checking every minute');
+  
+  // Run every minute
+  cron.schedule('* * * * *', async () => {
+    await processScheduledPosts();
+  });
+
+  // Also run on startup
+  processScheduledPosts();
 }

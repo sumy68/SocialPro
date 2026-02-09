@@ -5,10 +5,12 @@ import { createServer } from 'node:http'
 import { Readable } from 'node:stream'
 import type { IncomingHttpHeaders } from 'node:http'
 
+// SCHEDULER IMPORT
+import { startScheduler } from './backend/scheduler.js'
+
 const PORT = Number(process.env.PORT ?? 10000)
 const HOST = process.env.HOST ?? '0.0.0.0'
 
-/** Node -> Fetch Headers */
 function nodeHeadersToFetchHeaders(h: IncomingHttpHeaders) {
   const headers = new Headers()
   for (const [k, v] of Object.entries(h)) {
@@ -21,7 +23,6 @@ function nodeHeadersToFetchHeaders(h: IncomingHttpHeaders) {
   return headers
 }
 
-/** Best-effort Origin aus Forwarded-Headern ableiten (Render/Proxy-safe) */
 function resolveOrigin(headers: IncomingHttpHeaders) {
   const proto =
     (Array.isArray(headers['x-forwarded-proto'])
@@ -39,37 +40,29 @@ function resolveOrigin(headers: IncomingHttpHeaders) {
 const server = createServer(async (req, res) => {
   try {
     const origin = resolveOrigin(req.headers)
-    // req.url ist bereits Pfad + evtl. Query
     const url = new URL(req.url || '/', origin)
-
     const headers = nodeHeadersToFetchHeaders(req.headers)
     const method = req.method || 'GET'
 
-    // RequestInit
     const init: RequestInit & { duplex?: 'half' } = { method, headers }
 
-    // Body nur für Methoden mit Body streamen
     const methodHasBody = !/^(GET|HEAD)$/i.test(method)
     if (methodHasBody) {
       init.body = req as any
-      // nötig für Node Streaming → WHATWG Fetch
       ;(init as any).duplex = 'half'
     }
 
     const request = new Request(url, init)
     const r = await app.fetch(request)
 
-    // Status & Headers übernehmen
     res.statusCode = r.status
     r.headers.forEach((v, k) => res.setHeader(k, v))
 
-    // HEAD → nur Header senden
     if (method.toUpperCase() === 'HEAD') {
       res.end()
       return
     }
 
-    // Body streamen (ohne Buffering)
     if (r.body) {
       const readable = Readable.fromWeb(r.body as any)
       readable.on('error', (e) => {
@@ -91,16 +84,17 @@ const server = createServer(async (req, res) => {
   }
 })
 
-// Keep-Alive & Timeouts (sane defaults)
 server.keepAliveTimeout = 75_000
 server.headersTimeout = 80_000
 server.requestTimeout = 75_000
 
 server.listen(PORT, HOST, () => {
   console.log(`Server listening on http://${HOST}:${PORT}`)
+  
+  startScheduler()
+  console.log('[Server] Scheduler started!')
 })
 
-// Graceful shutdown
 function shutdown(signal: string) {
   console.log(`[server] received ${signal}, shutting down...`)
   server.close((err) => {
@@ -111,6 +105,7 @@ function shutdown(signal: string) {
     process.exit(0)
   })
 }
+
 process.on('SIGTERM', () => shutdown('SIGTERM'))
 process.on('SIGINT', () => shutdown('SIGINT'))
 

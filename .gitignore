@@ -43,3 +43,6 @@ ios/Pods 2/
 SocialPro.ipa
 *.backup
 *.bak
+data/
+*.db
+dist/
