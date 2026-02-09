@@ -3,7 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchWeeklyInsights } from "@/lib/insights";
 import type { Platform } from "@/types/insights";
 
-type ConnectedPlatform = { platform: Platform; connected?: boolean; connectedAt?: string };
+type ConnectedPlatform = { 
+  platform: Platform; 
+  connected?: boolean; 
+  connectedAt?: string;
+  accessToken?: string;
+  accountId?: string;
+};
 type Post = { id: string; caption: string; scheduledDate?: string; platforms?: Platform[]; mediaUrls?: string[] };
 
 export function useWeeklyData(params: {
@@ -13,18 +19,23 @@ export function useWeeklyData(params: {
 }) {
   const { connectedPlatforms, posts, language } = params;
 
-  const activePlatforms = useMemo<Platform[]>(
-    () =>
-      connectedPlatforms
-        .filter(p => p.connected || p.connectedAt)
-        .map(p => p.platform),
+  // Build platform params with tokens
+  const platformParams = useMemo(() => 
+    connectedPlatforms
+      .filter(p => p.connected && p.accessToken && p.accountId)
+      .map(p => ({
+        platform: p.platform,
+        accessToken: p.accessToken!,
+        userId: p.accountId!,
+      })),
     [connectedPlatforms]
   );
 
   const { data, isLoading } = useQuery({
-    queryKey: ["weekly-insights", activePlatforms.sort().join(","), language],
-    queryFn: () => fetchWeeklyInsights({ platforms: activePlatforms }),
+    queryKey: ["weekly-insights", platformParams.map(p => p.platform).sort().join(","), language],
+    queryFn: () => fetchWeeklyInsights({ platforms: platformParams }),
     staleTime: 5 * 60 * 1000,
+    enabled: platformParams.length > 0, // Only run if we have connected platforms with tokens
   });
 
   // Map in das Format deines Screens
