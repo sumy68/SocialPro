@@ -233,12 +233,12 @@ const compressedUri = resized.uri;
       Alert.alert('Ungültige Zeit', 'Zeitpunkt muss in der Zukunft liegen.');
       return;
     }
-
+  
     const allMediaUrls = [...selectedImages, ...selectedVideos];
     const fullCaption = caption.trim() + (hashtags.trim() ? ' ' + hashtags.trim() : '');
     const mediaType =
       selectedVideos.length > 0 ? ('video' as const) : selectedImages.length > 0 ? ('image' as const) : undefined;
-
+  
     const post = {
       id: Date.now().toString(),
       platforms: selectedPlatforms,
@@ -251,6 +251,113 @@ const compressedUri = resized.uri;
       autoPost,
       contentType,
     };
+  
+    if (autoPost) {
+      const connectedSelectedPlatforms = selectedPlatforms.filter(p => {
+        const item = connectedPlatforms.find(x => x.platform === p);
+        return item?.connected;
+      });
+  
+      if (connectedSelectedPlatforms.length === 0) {
+        Alert.alert('Keine verbundenen Plattformen', 'Bitte zuerst Plattformen verbinden.');
+        return;
+      }
+  
+      const result = await publishToMultiplePlatforms(connectedSelectedPlatforms,{
+        caption: fullCaption,
+        mediaUrls: allMediaUrls.length ? allMediaUrls : undefined,
+        mediaType,
+        contentType,
+      });
+  
+      if (result.successfulPlatforms.length > 0) {
+        const successMsg = `Erfolgreich auf: ${result.successfulPlatforms.join(', ')}`;
+        const failMsg =
+          result.failedPlatforms.length > 0
+            ? `\n\nFehlgeschlagen: ${result.failedPlatforms
+                .map(p => `${p} (${result.errors[p]})`)
+                .join(', ')}`
+            : '';
+        Alert.alert(result.failedPlatforms.length ? 'Teilweise erfolgreich' : 'Erfolg!', successMsg + failMsg);
+      } else {
+        Alert.alert(
+          'Veröffentlichung fehlgeschlagen',
+          result.failedPlatforms.map(p => `${p}: ${result.errors[p]}`).join('\n')
+        );
+        return;
+      }
+    } else {
+      // 🚀 NEU: Scheduled Posts ans Backend schicken!
+      try {
+        const { trpcVanillaClient } = await import('@/lib/trpc');
+        
+        // Für jede Plattform einen scheduled post erstellen
+        const scheduledResults = await Promise.allSettled(
+          selectedPlatforms.map(async (platform) => {
+            const platformConn = connectedPlatforms.find(x => x.platform === platform);
+            if (!platformConn?.connected) {
+              throw new Error(`${platform} nicht verbunden`);
+            }
+  
+            // Hole AccessToken (du musst diese Funktion haben oder anpassen)
+            const tokenResult = await trpcVanillaClient.platforms.getToken.query({ platform });
+            if (!tokenResult.ok || !tokenResult.accessToken) {
+              throw new Error(`Kein Token für ${platform}`);
+            }
+  
+            // Schedule Post im Backend
+            const result = await trpcVanillaClient.posts.schedule.mutate({
+              userId: 'default-user', // TODO: Echte User-ID verwenden
+              platform: platform as any,
+              caption: fullCaption,
+              mediaUrls: allMediaUrls.length ? allMediaUrls : undefined,
+              mediaType,
+              contentType,
+              scheduledDate: scheduledDate.toISOString(),
+              accessToken: tokenResult.accessToken,
+              platformUserId: tokenResult.accountId,
+            });
+  
+            if (!result.ok) {
+              throw new Error(`Backend Fehler für ${platform}`);
+            }
+  
+            return { platform, success: true };
+          })
+        );
+  
+        const successful = scheduledResults.filter(r => r.status === 'fulfilled').map(r => (r as any).value.platform);
+        const failed = scheduledResults.filter(r => r.status === 'rejected');
+  
+        if (successful.length > 0) {
+          const dateStr = scheduledDate.toLocaleDateString('de-DE', { day: '2-digit', month: 'short' });
+          const timeStr = scheduledDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+          Alert.alert(
+            'Post geplant!',
+            `Wird automatisch am ${dateStr} um ${timeStr} auf ${successful.join(', ')} veröffentlicht!` +
+            (failed.length > 0 ? `\n\nFehler: ${failed.length} Plattform(en)` : '')
+          );
+        } else {
+          Alert.alert('Fehler', 'Konnte Posts nicht planen. Bitte später versuchen.');
+          return;
+        }
+      } catch (error: any) {
+        console.error('[Schedule] Error:', error);
+        Alert.alert('Fehler', error.message || 'Konnte Posts nicht planen');
+        return;
+      }
+    }
+  
+    await addPost(post);
+  
+    setCaption('');
+    setHashtags('');
+    setSelectedPlatforms([]);
+    setSelectedImages([]);
+    setSelectedVideos([]);
+    setScheduledDate(new Date(Date.now() + 3600000));
+    setContentType('post');
+  };
 
     if (autoPost) {
       const connectedSelectedPlatforms = selectedPlatforms.filter(p => {

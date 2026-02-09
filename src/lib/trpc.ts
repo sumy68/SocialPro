@@ -11,18 +11,6 @@ export function getBaseUrl() {
   return env.replace(/\/$/, "");
 }
 
-/**
- * Minimaler Vanilla-Client für die Plattform-Calls.
- * Erwartete Signaturen im Code:
- *   trpcVanillaClient.platforms.getToken.query({ platform })
- *   trpcVanillaClient.platforms.refreshToken.mutate({ platform })
- *
- * Backend-Endpunkte:
- *   GET  /api/oauth/:platform/status        -> { ok, connected, accountName?, accountId?, isExpired? }
- *   POST /api/oauth/:platform/refresh-token -> { ok, requiresReauth? }
- *
- * Falls dein Backend andere Pfade nutzt, passt du die URLs unten an.
- */
 async function getJson(url: string, opts?: RequestInit) {
   const res = await fetch(url, { ...opts, headers: { "content-type": "application/json", ...(opts?.headers || {}) }});
   const text = await res.text();
@@ -35,7 +23,6 @@ export const trpcVanillaClient = {
     getToken: {
       async query(input: { platform: "instagram" | "linkedin" | "tiktok" }) {
         const base = getBaseUrl();
-        // passe ggf. auf deinen echten Status-Endpunkt an
         const { ok, data } = await getJson(`${base}/api/oauth/${input.platform}/status`);
         if (!ok) return { ok: false };
         return { ok: true, ...data };
@@ -44,10 +31,43 @@ export const trpcVanillaClient = {
     refreshToken: {
       async mutate(input: { platform: "instagram" | "linkedin" | "tiktok" }) {
         const base = getBaseUrl();
-        // passe ggf. auf deinen echten Refresh-Endpunkt an
         const { ok, data } = await getJson(`${base}/api/oauth/${input.platform}/refresh-token`, { method: "POST" });
         if (!ok) return { ok: false, requiresReauth: true };
         return { ok: true, ...(data ?? {}) };
+      },
+    },
+  },
+  posts: {
+    schedule: {
+      async mutate(input: {
+        userId: string;
+        platform: "instagram" | "linkedin" | "tiktok" | "youtube";
+        caption: string;
+        mediaUrls?: string[];
+        mediaType?: "image" | "video";
+        contentType?: "post" | "reel";
+        scheduledDate: string;
+        accessToken: string;
+        platformUserId?: string;
+      }) {
+        const base = getBaseUrl();
+        const { ok, data } = await getJson(`${base}/api/trpc/posts.schedule`, {
+          method: "POST",
+          body: JSON.stringify({ input }),
+        });
+        if (!ok) return { ok: false, error: data };
+        return { ok: true, ...data };
+      },
+    },
+    list: {
+      async query(input: {
+        userId: string;
+        status?: "scheduled" | "published" | "failed";
+      }) {
+        const base = getBaseUrl();
+        const { ok, data } = await getJson(`${base}/api/trpc/posts.list?input=${encodeURIComponent(JSON.stringify(input))}`);
+        if (!ok) return { ok: false, error: data };
+        return { ok: true, data };
       },
     },
   },
