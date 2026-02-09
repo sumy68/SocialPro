@@ -13,7 +13,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-// 👇 einzig neu:
+// 👇 einzig 
 import { LocalTRPCProvider } from './trpc-local';
 
 function CreateScreenInner() {
