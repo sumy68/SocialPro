@@ -1,24 +1,28 @@
 import { Stack } from 'expo-router';
-import { ClerkProvider, ClerkLoaded, useUser } from '@clerk/clerk-expo';
+import { ClerkProvider, ClerkLoaded } from '@clerk/clerk-expo';
 import { AppProvider } from '@/contexts/AppContext';
 import { ReactQueryProvider } from '@/lib/query';
 import { useEffect } from 'react';
-import { initRevenueCat, setRevenueCatUser } from '@/lib/purchases';
+import { initRevenueCat } from '@/lib/purchases';
 import * as SecureStore from 'expo-secure-store';
 
 const tokenCache = {
   async getToken(key: string) {
     try {
-      return SecureStore.getItemAsync(key);
-    } catch (err) {
+      const item = await SecureStore.getItemAsync(key);
+      console.log('[Clerk] Get token:', key, item ? 'EXISTS' : 'MISSING');
+      return item;
+    } catch (error) {
+      console.error('[Clerk] Error getting token:', error);
       return null;
     }
   },
   async saveToken(key: string, value: string) {
     try {
+      console.log('[Clerk] Save token:', key);
       return SecureStore.setItemAsync(key, value);
-    } catch (err) {
-      return;
+    } catch (error) {
+      console.error('[Clerk] Error saving token:', error);
     }
   },
 };
@@ -31,41 +35,25 @@ if (!publishableKey) {
   );
 }
 
-function RootLayoutContent() {
-  const { user, isLoaded } = useUser();
-
+export default function RootLayout() {
   useEffect(() => {
     (async () => {
       try {
-        if (isLoaded && user) {
-          // User eingeloggt - setze Clerk User-ID in RevenueCat
-          console.log('[RevenueCat] Setting user:', user.id);
-          await setRevenueCatUser(user.id);
-        } else if (isLoaded) {
-          // Kein User - init ohne ID
-          console.log('[RevenueCat] Init without user');
-          await initRevenueCat();
-        }
+        await initRevenueCat();
       } catch (e) {
         console.warn('[RevenueCat] init failed', e);
       }
     })();
-  }, [isLoaded, user?.id]);
+  }, []);
 
-  return (
-    <ReactQueryProvider>
-      <AppProvider>
-        <Stack screenOptions={{ headerShown: false }} />
-      </AppProvider>
-    </ReactQueryProvider>
-  );
-}
-
-export default function RootLayout() {
   return (
     <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
       <ClerkLoaded>
-        <RootLayoutContent />
+        <ReactQueryProvider>
+          <AppProvider>
+            <Stack screenOptions={{ headerShown: false }} />
+          </AppProvider>
+        </ReactQueryProvider>
       </ClerkLoaded>
     </ClerkProvider>
   );

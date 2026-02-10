@@ -24,7 +24,7 @@ export default function SignUpScreen() {
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
     } catch (err: any) {
-      Alert.alert('Error', err.errors?.[0]?.message || 'Sign up failed');
+      Alert.alert('Fehler', err.errors?.[0]?.message || 'Registrierung fehlgeschlagen');
     }
   };
 
@@ -37,28 +37,28 @@ export default function SignUpScreen() {
       });
 
       await setActive({ session: completeSignUp.createdSessionId });
-      router.replace('/onboarding/welcome');
+      router.replace('/paywall');
     } catch (err: any) {
-      Alert.alert('Error', err.errors?.[0]?.message || 'Verification failed');
+      Alert.alert('Fehler', err.errors?.[0]?.message || 'Verifizierung fehlgeschlagen');
     }
   };
 
   if (pendingVerification) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Verify Email</Text>
-        <Text style={styles.subtitle}>Enter the code sent to {emailAddress}</Text>
+        <Text style={styles.title}>E-Mail bestätigen</Text>
+        <Text style={styles.subtitle}>Code eingeben, den wir an {emailAddress} gesendet haben</Text>
 
         <TextInput
           style={styles.input}
-          placeholder="Verification Code"
+          placeholder="Bestätigungscode"
           value={code}
           onChangeText={setCode}
           keyboardType="number-pad"
         />
 
         <TouchableOpacity style={styles.button} onPress={onVerifyPress}>
-          <Text style={styles.buttonText}>Verify</Text>
+          <Text style={styles.buttonText}>Verifizieren & Testversion starten</Text>
         </TouchableOpacity>
       </View>
     );
@@ -66,12 +66,16 @@ export default function SignUpScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
-      <Text style={styles.subtitle}>Join SocialPro today</Text>
+      <Text style={styles.title}>Konto erstellen</Text>
+      <Text style={styles.subtitle}>Starte heute deine kostenlose Testversion</Text>
+
+      <View style={styles.trialBadge}>
+        <Text style={styles.trialText}>🎁 3 Tage kostenlos testen</Text>
+      </View>
 
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder="E-Mail"
         value={emailAddress}
         onChangeText={setEmailAddress}
         autoCapitalize="none"
@@ -80,18 +84,26 @@ export default function SignUpScreen() {
 
       <TextInput
         style={styles.input}
-        placeholder="Password"
+        placeholder="Passwort (min. 8 Zeichen)"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
 
       <TouchableOpacity style={styles.button} onPress={onSignUpPress}>
-        <Text style={styles.buttonText}>Sign Up</Text>
+        <Text style={styles.buttonText}>3 Tage kostenlos starten</Text>
       </TouchableOpacity>
 
+      <View style={styles.termsBox}>
+        <Text style={styles.termsText}>
+          Kostenlose 3-Tage-Testversion. Danach automatische Verlängerung für €29,99/Monat.
+          {'\n\n'}
+          Jederzeit in den Einstellungen kündbar.
+        </Text>
+      </View>
+
       <Link href="/(auth)/sign-in" style={styles.link}>
-        <Text style={styles.linkText}>Already have an account? Sign in</Text>
+        <Text style={styles.linkText}>Du hast bereits ein Konto? Anmelden</Text>
       </Link>
     </View>
   );
@@ -113,8 +125,21 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#666',
-    marginBottom: 40,
+    marginBottom: 20,
     textAlign: 'center',
+  },
+  trialBadge: {
+    backgroundColor: '#10B981',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    alignSelf: 'center',
+    marginBottom: 30,
+  },
+  trialText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   input: {
     borderWidth: 1,
@@ -135,6 +160,18 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  termsBox: {
+    backgroundColor: '#F3F4F6',
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 15,
+  },
+  termsText: {
+    fontSize: 12,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 18,
   },
   link: {
     marginTop: 20,

@@ -28,14 +28,12 @@ const { EXPO_PUBLIC_APP_URL, EXPO_PUBLIC_SCHEME } =
 const APP_URL: string = EXPO_PUBLIC_APP_URL || "http://localhost:10000";
 const DEEP_LINK_SCHEME: string = EXPO_PUBLIC_SCHEME || "socialpro";
 
-// Einheitlicher Success-Deep-Link (muss zu deinem Backend-Redirect passen)
 const REDIRECT_URI = AuthSession.makeRedirectUri({
   scheme: DEEP_LINK_SCHEME,
   path: "connected/success",
 });
 console.log("OAuth Redirect URI 👉", REDIRECT_URI);
 
-// intent:// Fix + robustes Parsing
 const parseQuery = (url: string) => {
   try {
     const safe = url.replace(/^intent:\/\//, "https://").replace("#", "?");
@@ -62,7 +60,6 @@ export default function ConnectPlatformsScreen() {
   const [connecting, setConnecting] = useState<Platform | null>(null);
   const [igConnected, setIgConnected] = useState(false);
 
-  // ✅ Deep-Link abfangen & speichern (Instagram)
   useEffect(() => {
     const handleUrl = async (url: string) => {
       const q = parseQuery(url);
@@ -85,7 +82,6 @@ export default function ConnectPlatformsScreen() {
     return () => sub.remove();
   }, [connectPlatform]);
 
-  // ✅ gespeicherten IG-Zustand laden
   useEffect(() => {
     AsyncStorage.getItem("ig_connected").then((v) => setIgConnected(v === "1"));
   }, []);
@@ -96,7 +92,6 @@ export default function ConnectPlatformsScreen() {
 
       if (platform === "linkedin") {
         const START_URL = `${APP_URL}/api/oauth/linkedin/start`;
-
         const res = await WebBrowser.openAuthSessionAsync(START_URL, REDIRECT_URI);
 
         if (res.type === "cancel" || res.type === "dismiss") {
@@ -106,7 +101,6 @@ export default function ConnectPlatformsScreen() {
         if (res.type !== "success" || !res.url) {
           return;
         }
-        
 
         console.log("[LinkedIn] Deep link URL:", res.url);
         const q = parseQuery(res.url);
@@ -115,9 +109,7 @@ export default function ConnectPlatformsScreen() {
         if (!code) throw new Error("Kein Code erhalten");
 
         const ex = await fetch(
-          `${APP_URL}/api/oauth/linkedin/callback/exchange?code=${encodeURIComponent(
-            code
-          )}`,
+          `${APP_URL}/api/oauth/linkedin/callback/exchange?code=${encodeURIComponent(code)}`,
           { method: "POST", headers: { Accept: "application/json" } }
         );
         const data = await ex.json().catch(() => ({} as any));
@@ -148,9 +140,7 @@ export default function ConnectPlatformsScreen() {
       }
 
       if (platform === "instagram") {
-        const startUrl = `${APP_URL}/api/oauth/instagram/start?redirect_uri=${encodeURIComponent(
-          REDIRECT_URI
-        )}`;
+        const startUrl = `${APP_URL}/api/oauth/instagram/start?redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
         const result = await WebBrowser.openAuthSessionAsync(startUrl, REDIRECT_URI);
 
         if (result.type === "success" && result.url) {
@@ -162,15 +152,8 @@ export default function ConnectPlatformsScreen() {
           if (q.page_id && q.ig_user_id) {
             await AsyncStorage.setItem("ig_connected", "1");
             setIgConnected(true);
-            await connectPlatform(
-              "instagram",
-              "Instagram Business",
-              q.ig_user_id ?? ""
-            );
-            Alert.alert(
-              "Instagram",
-              `Verbunden ✅\nPage: ${q.page_id}\nIG: ${q.ig_user_id}`
-            );
+            await connectPlatform("instagram", "Instagram Business", q.ig_user_id ?? "");
+            Alert.alert("Instagram", `Verbunden ✅\nPage: ${q.page_id}\nIG: ${q.ig_user_id}`);
             return;
           }
         }
@@ -196,11 +179,7 @@ export default function ConnectPlatformsScreen() {
   const handleDisconnect = async (platform: Platform) => {
     Alert.alert(
       "Disconnect Platform",
-      `Disconnect ${
-        ({ instagram: "Instagram", linkedin: "LinkedIn", tiktok: "TikTok" } as const)[
-          platform
-        ]
-      }?`,
+      `Disconnect ${({ instagram: "Instagram", linkedin: "LinkedIn", tiktok: "TikTok" } as const)[platform]}?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -223,14 +202,7 @@ export default function ConnectPlatformsScreen() {
               setIgConnected(false);
             }
 
-            Alert.alert(
-              "Done",
-              `${
-                ({ instagram: "Instagram", linkedin: "LinkedIn", tiktok: "TikTok" } as const)[
-                  platform
-                ]
-              } disconnected`
-            );
+            Alert.alert("Done", `${({ instagram: "Instagram", linkedin: "LinkedIn", tiktok: "TikTok" } as const)[platform]} disconnected`);
           },
         },
       ]
@@ -249,22 +221,30 @@ export default function ConnectPlatformsScreen() {
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
       >
-        {/* Zurück-Button */}
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Text style={styles.backButtonText}>← {t?.common?.back ?? "Back"}</Text>
-        </TouchableOpacity>
+        <View style={styles.topBar}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text style={styles.backButtonText}>← {t?.common?.back ?? "Back"}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => router.replace("/(tabs)/(dashboard)")}
+            style={styles.skipButtonTop}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text style={styles.skipButtonTopText}>Überspringen</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.header}>
           <Text style={styles.title}>
             {t?.onboarding?.platforms?.title ?? "Plattformen verbinden"}
           </Text>
           <Text style={styles.subtitle}>
-            {t?.onboarding?.platforms?.subtitle ??
-              "Verbinde Instagram, LinkedIn oder TikTok"}
+            {t?.onboarding?.platforms?.subtitle ?? "Verbinde Instagram, LinkedIn oder TikTok"}
           </Text>
         </View>
 
@@ -299,15 +279,6 @@ export default function ConnectPlatformsScreen() {
             isConnecting={connecting === "tiktok"}
           />
         </View>
-
-        <TouchableOpacity
-          onPress={() => router.replace("/(tabs)" as any)}
-          style={styles.skipButton}
-        >
-          <Text style={styles.skipButtonText}>
-            {t.onboarding.platforms.connectLater}
-          </Text>
-        </TouchableOpacity>
       </ScrollView>
     </>
   );
@@ -335,9 +306,7 @@ function PlatformCard({
   };
 
   return (
-    <View
-      style={[styles.platformCard, { borderLeftColor: bg, borderLeftWidth: 4 }]}
-    >
+    <View style={[styles.platformCard, { borderLeftColor: bg, borderLeftWidth: 4 }]}>
       <View style={styles.platformInfo}>
         {icon}
         <View style={styles.platformTextContainer}>
@@ -353,18 +322,10 @@ function PlatformCard({
         <ActivityIndicator color={bg} />
       ) : (
         <TouchableOpacity
-          style={[
-            styles.connectButton,
-            { backgroundColor: isConnected ? "#F3F4F6" : bg },
-          ]}
+          style={[styles.connectButton, { backgroundColor: isConnected ? "#F3F4F6" : bg }]}
           onPress={handlePress}
         >
-          <Text
-            style={[
-              styles.connectButtonText,
-              { color: isConnected ? "#6B7280" : "#FFF" },
-            ]}
-          >
+          <Text style={[styles.connectButtonText, { color: isConnected ? "#6B7280" : "#FFF" }]}>
             {isConnected ? "Disconnect" : "Connect"}
           </Text>
         </TouchableOpacity>
@@ -376,11 +337,15 @@ function PlatformCard({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8F9FA" },
   contentContainer: { padding: 24, paddingBottom: 40 },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
   backButton: {
-    alignSelf: "flex-start",
     paddingVertical: 10,
     paddingHorizontal: 16,
-    marginBottom: 16,
     borderRadius: 999,
     backgroundColor: "#E5E7EB",
   },
@@ -388,6 +353,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     color: "#111827",
+  },
+  skipButtonTop: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    backgroundColor: "#E5E7EB",
+  },
+  skipButtonTopText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#0A66C2",
   },
   header: { alignItems: "center", marginBottom: 32 },
   title: {
@@ -427,10 +403,4 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   connectButtonText: { fontSize: 14, fontWeight: "600" },
-  skipButton: { paddingVertical: 16, alignItems: "center" },
-  skipButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#0A66C2",
-  },
 });

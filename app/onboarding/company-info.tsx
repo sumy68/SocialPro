@@ -42,7 +42,7 @@ export default function CompanyInfoScreen() {
     };
 
     await completeOnboarding(info);
-    router.push('/subscription' as any);
+    router.push('/onboarding/connect-platforms');
   };
 
   const canContinue = companyName.trim().length > 0;

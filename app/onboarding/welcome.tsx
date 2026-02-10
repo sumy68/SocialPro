@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 import { Colors } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { translations } from '@/constants/translations';
@@ -27,16 +26,14 @@ export default function WelcomeScreen() {
         >
           <View style={styles.content}>
             <Text style={styles.emoji}>🚀</Text>
-
             <Text style={styles.title}>SocialPro</Text>
-
             <Text style={styles.subtitle}>
               Automatisieren Sie Ihre Social Media Posts auf LinkedIn,
-              Instagram, TikTok & YouTube
+              Instagram & TikTok
             </Text>
 
             <View style={styles.features}>
-              <FeatureItem text="LinkedIn • Instagram • TikTok • YouTube" />
+              <FeatureItem text="LinkedIn • Instagram • TikTok" />
               <FeatureItem text="Post-Planung & Automatisierung" />
               <FeatureItem text="KI-generierte Captions & Hashtags" />
               <FeatureItem text="Analytics & Auswertungen" />
