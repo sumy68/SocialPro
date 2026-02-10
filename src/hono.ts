@@ -2,16 +2,16 @@
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { timing } from "hono/timing";
-
 // ✅ richtige Imports
 import { linkedin } from "./backend/routes/linkedin.js";
 import { instagramRouter } from "./backend/routes/instagram.js";
 import insightsRouter from "./backend/routes/insights/index.js";
-import { tiktokRouter } from "./backend/routes/tiktok.js"; // 👈 TikTok hinzugefügt
+import { tiktokRouter } from "./backend/routes/tiktok.js";
+import aiRouter from "./backend/routes/ai.js"; // 🤖 AI Route
 import { trpcServer } from "@hono/trpc-server";
 import { appRouter } from "./backend/trpc/router.js";
 
-// 🧠 App-Instance
+// �� App-Instance
 const app = new Hono();
 
 // 🌐 CORS (für App-Calls wie /callback/exchange)
@@ -52,13 +52,14 @@ app.use("*", async (c, next) => {
 const BUILD = process.env.BUILD_TAG || "local-dev";
 console.log("[BOOT] hono.ts loaded");
 console.log("[BOOT] BUILD =", BUILD);
-console.log("[BOOT] mounting /api/oauth/linkedin + /api/oauth/instagram + /api/oauth/tiktok + /api/insights + /api/trpc");
+console.log("[BOOT] mounting /api/oauth/linkedin + /api/oauth/instagram + /api/oauth/tiktok + /api/insights + /api/ai + /api/trpc");
 
 // 🔗 Router Mounts
 app.route("/api/oauth/linkedin", linkedin);
 app.route("/api/oauth/instagram", instagramRouter);
-app.route("/api/oauth/tiktok", tiktokRouter); // 👈 TikTok Router hier eingebunden
+app.route("/api/oauth/tiktok", tiktokRouter);
 app.route("/api/insights", insightsRouter);
+app.route("/api/ai", aiRouter); // 🤖 AI Router
 
 // 🔌 tRPC Mount
 app.use("/api/trpc/*", trpcServer({ router: appRouter }));
@@ -76,7 +77,7 @@ app.get("/status", (c: Context) =>
       publicBaseUrl: process.env.PUBLIC_BASE_URL || null,
       port: process.env.PORT || null,
     },
-    routers: ["linkedin", "instagram", "tiktok", "trpc"],
+    routers: ["linkedin", "instagram", "tiktok", "ai", "trpc"],
     now: new Date().toISOString(),
   })
 );
