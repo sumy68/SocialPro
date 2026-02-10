@@ -13,7 +13,6 @@ import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-// 👇 einzig 
 import { LocalTRPCProvider } from './trpc-local';
 
 function CreateScreenInner() {
@@ -51,14 +50,13 @@ function CreateScreenInner() {
         return;
       }
       
-      // ✅ FIX: Multiple selection deaktiviert für iPad Crash
       const mediaTypes = (ImagePicker as any).MediaType
         ? [(ImagePicker as any).MediaType.Images, (ImagePicker as any).MediaType.Videos]
         : undefined;
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes,
-        allowsMultipleSelection: false, // ✅ GEÄNDERT: false statt true
+        allowsMultipleSelection: false,
         quality: 0.8,
         base64: false,
         videoMaxDuration: 300,
@@ -67,11 +65,21 @@ function CreateScreenInner() {
       if (!result.canceled && result.assets?.length) {
         const images = result.assets.filter(a => a.type === 'image').map(a => a.uri);
         const videos = result.assets.filter(a => a.type === 'video').map(a => a.uri);
+        
         if (images.length) setSelectedImages(prev => [...prev, ...images]);
         if (videos.length) setSelectedVideos(prev => [...prev, ...videos]);
 
+        // ✅ AUTOMATISCH contentType setzen basierend auf Medium
+        if (videos.length > 0) {
+          setContentType('reel');
+          Alert.alert('📹 Video hochgeladen', 'Content-Typ automatisch auf "Reel" gesetzt');
+        } else if (images.length > 0) {
+          setContentType('post');
+          Alert.alert('🖼️ Bild hochgeladen', 'Content-Typ automatisch auf "Post" gesetzt');
+        }
+
         const total = images.length + videos.length;
-        Alert.alert('Erfolg', `${total} Datei(en) hochgeladen (${images.length} Bilder, ${videos.length} Videos)`);
+        console.log(`✅ ${total} Datei(en) hochgeladen (${images.length} Bilder, ${videos.length} Videos)`);
       }
     } catch (e) {
       console.error('[Image Picker] Error:', e);
@@ -81,10 +89,22 @@ function CreateScreenInner() {
     }
   };
 
-  const removeImage = (index: number) => setSelectedImages(prev => prev.filter((_, i) => i !== index));
-  const removeVideo = (index: number) => setSelectedVideos(prev => prev.filter((_, i) => i !== index));
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    // Wenn keine Videos mehr da sind und keine Bilder, reset auf post
+    if (selectedVideos.length === 0 && selectedImages.length === 1) {
+      setContentType('post');
+    }
+  };
+  
+  const removeVideo = (index: number) => {
+    setSelectedVideos(prev => prev.filter((_, i) => i !== index));
+    // Wenn keine Videos mehr da sind, zurück auf post
+    if (selectedVideos.length === 1) {
+      setContentType('post');
+    }
+  };
 
-  // --- SMART VISION CAPTION (JSON-Output) ---
   const handleGenerateCaption = async () => {
     if (isGenerating) return;
 
@@ -95,13 +115,11 @@ function CreateScreenInner() {
 
     setIsGenerating(true);
     try {
-      // Bilder → Base64 (max 3)
       const imageParts = await Promise.all(
         selectedImages.slice(0, 3).map(async (uri) => {
           try {
-            // Bild komprimieren
-const resized = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: 1024 } }], { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG });
-const compressedUri = resized.uri;
+            const resized = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: 1024 } }], { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG });
+            const compressedUri = resized.uri;
             let base64Data: string;
             if (RNPlatform.OS === 'web') {
               const res = await fetch(compressedUri);
@@ -186,7 +204,6 @@ const compressedUri = resized.uri;
       setIsGenerating(false);
     }
   };
-  // --- /SMART VISION CAPTION ---
 
   const onDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
@@ -287,11 +304,9 @@ const compressedUri = resized.uri;
         return;
       }
     } else {
-      // 🚀 NEU: Scheduled Posts ans Backend schicken!
       try {
         const { trpcVanillaClient } = await import('@/lib/trpc');
         
-        // Für jede Plattform einen scheduled post erstellen
         const scheduledResults = await Promise.allSettled(
           selectedPlatforms.map(async (platform) => {
             const platformConn = connectedPlatforms.find(x => x.platform === platform);
@@ -299,13 +314,11 @@ const compressedUri = resized.uri;
               throw new Error(`${platform} nicht verbunden`);
             }
   
-            // Hole AccessToken
             const tokenResult = await trpcVanillaClient.platforms.getToken.query({ platform });
             if (!tokenResult.ok || !tokenResult.accessToken) {
               throw new Error(`Kein Token für ${platform}`);
             }
   
-            // Schedule Post im Backend
             const result = await trpcVanillaClient.posts.schedule.mutate({
               userId: 'default-user',
               platform: platform as any,
@@ -451,15 +464,37 @@ const compressedUri = resized.uri;
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Veröffentlichungsart</Text>
-          <Text style={styles.sectionDescription}>Wähle, wie dein Content veröffentlicht werden soll</Text>
+          <Text style={styles.sectionDescription}>
+            {selectedVideos.length > 0 
+              ? '📹 Video erkannt - wird als Reel gepostet' 
+              : selectedImages.length > 0 
+              ? '🖼️ Bild erkannt - wird als Post gepostet'
+              : 'Lade Medien hoch um den Typ zu sehen'}
+          </Text>
           <View style={styles.contentTypeRow}>
-            <TouchableOpacity style={[styles.contentTypeButton, contentType === 'post' && styles.contentTypeButtonSelected]} onPress={() => setContentType('post')}>
-              <ImageIcon size={20} color={contentType === 'post' ? '#7C3AED' : '#666'} />
-              <Text style={[styles.contentTypeText, contentType === 'post' && styles.contentTypeTextSelected]}>Post</Text>
+            <TouchableOpacity 
+              style={[
+                styles.contentTypeButton, 
+                contentType === 'post' && styles.contentTypeButtonSelected,
+                selectedVideos.length > 0 && styles.contentTypeButtonDisabled
+              ]} 
+              onPress={() => selectedVideos.length === 0 && setContentType('post')}
+              disabled={selectedVideos.length > 0}
+            >
+              <ImageIcon size={20} color={contentType === 'post' && selectedVideos.length === 0 ? '#7C3AED' : '#CCC'} />
+              <Text style={[styles.contentTypeText, contentType === 'post' && selectedVideos.length === 0 && styles.contentTypeTextSelected]}>Post (Foto)</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.contentTypeButton, contentType === 'reel' && styles.contentTypeButtonSelected]} onPress={() => setContentType('reel')}>
-              <ImageIcon size={20} color={contentType === 'reel' ? '#7C3AED' : '#666'} />
-              <Text style={[styles.contentTypeText, contentType === 'reel' && styles.contentTypeTextSelected]}>Reel</Text>
+            <TouchableOpacity 
+              style={[
+                styles.contentTypeButton, 
+                contentType === 'reel' && styles.contentTypeButtonSelected,
+                selectedImages.length > 0 && selectedVideos.length === 0 && styles.contentTypeButtonDisabled
+              ]} 
+              onPress={() => selectedImages.length === 0 && setContentType('reel')}
+              disabled={selectedImages.length > 0 && selectedVideos.length === 0}
+            >
+              <ImageIcon size={20} color={contentType === 'reel' && selectedVideos.length > 0 ? '#7C3AED' : '#CCC'} />
+              <Text style={[styles.contentTypeText, contentType === 'reel' && selectedVideos.length > 0 && styles.contentTypeTextSelected]}>Reel (Video)</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -641,6 +676,7 @@ const styles = StyleSheet.create({
   contentTypeRow: { flexDirection: 'row', gap: 12 },
   contentTypeButton: { flex: 1, backgroundColor: '#FFF', borderRadius: 12, borderWidth: 1.5, borderColor: '#E5E5E5', paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   contentTypeButtonSelected: { borderColor: '#7C3AED', backgroundColor: '#F5F3FF' },
+  contentTypeButtonDisabled: { opacity: 0.5, backgroundColor: '#F5F5F5' },
   contentTypeText: { fontSize: 14, fontWeight: '500' as const, color: '#666' },
   contentTypeTextSelected: { color: '#7C3AED', fontWeight: '600' as const },
   platformRow: { backgroundColor: '#FFF', borderRadius: 12, borderWidth: 1.5, borderColor: '#E5E5E5', padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
