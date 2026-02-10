@@ -18,12 +18,14 @@ import React, { useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '@/contexts/AppContext';
 import { useDashboardInsights } from '@/hooks/useDashboardInsights';
+import { useAIContentSuggestions } from '@/hooks/useAIContentSuggestions';
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
-  const { language, connectedPlatforms, posts, companyInfo } = useApp();
+  const { language, connectedPlatforms, posts, companyInfo, accountType, userProfile } = useApp();
   const router = useRouter();
   const { data: insights } = useDashboardInsights();
+  const { suggestions: aiSuggestions, loading: aiLoading } = useAIContentSuggestions();
 
   const connectedPlatformData = useMemo(() => {
     return platformPerformance.filter(platform =>
@@ -310,32 +312,32 @@ export default function DashboardScreen() {
           </View>
         </TouchableOpacity>
 
-        <View style={styles.aiContentCard}>
-          <View style={styles.aiContentHeader}>
-            <View style={styles.aiContentIcon}>
-              <Rocket size={24} color="#FFFFFF" strokeWidth={2.5} />
+        {aiSuggestions.length > 0 && !aiLoading && (
+          <View style={styles.aiContentCard}>
+            <View style={styles.aiContentHeader}>
+              <View style={styles.aiContentIcon}>
+                <Rocket size={24} color="#FFFFFF" strokeWidth={2.5} />
+              </View>
+              <View style={styles.aiContentTextContainer}>
+                <Text style={styles.aiContentTitle}>
+                  {language === 'de' ? '🎯 KI-Content-Vorschlag' : '🎯 AI Content Suggestion'}
+                </Text>
+                <Text style={styles.aiContentDescription}>
+                  {aiSuggestions[0].description}
+                </Text>
+              </View>
             </View>
-            <View style={styles.aiContentTextContainer}>
-              <Text style={styles.aiContentTitle}>
-                {language === 'de' ? '🎯 KI-Content-Vorschlag' : '🎯 AI Content Suggestion'}
+            <TouchableOpacity
+              style={styles.aiContentButton}
+              activeOpacity={0.7}
+              onPress={() => router.push('/(tabs)/(create)')}
+            >
+              <Text style={styles.aiContentButtonText}>
+                {language === 'de' ? 'Jetzt erstellen' : 'Create Now'}
               </Text>
-              <Text style={styles.aiContentDescription}>
-                {language === 'de'
-                  ? '"Produktivitätstipps" sind im Trend! Erstelle jetzt ein Reel für 40% mehr Reichweite.'
-                  : '"Productivity tips" are trending! Create a Reel now for 40% more reach.'}
-              </Text>
-            </View>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.aiContentButton}
-            activeOpacity={0.7}
-            onPress={() => router.push('/(tabs)/(create)')}
-          >
-            <Text style={styles.aiContentButtonText}>
-              {language === 'de' ? 'Jetzt erstellen' : 'Create Now'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        )}
 
         {/* Übersicht mit dynamischen lila Changes */}
         <View style={styles.section}>

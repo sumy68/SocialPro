@@ -15,5 +15,5 @@ CREATE TABLE IF NOT EXISTS scheduled_posts (
   error_message TEXT
 );
 
-CREATE INDEX idx_scheduled_date ON scheduled_posts(scheduled_date);
-CREATE INDEX idx_status ON scheduled_posts(status);
+CREATE INDEX IF NOT EXISTS idx_scheduled_date ON scheduled_posts(scheduled_date);
+CREATE INDEX IF NOT EXISTS idx_status ON scheduled_posts(status);
