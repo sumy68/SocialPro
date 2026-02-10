@@ -8,33 +8,51 @@ import {
   ScrollView,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { ChevronRight, Building2 } from 'lucide-react-native';
-
+import { ChevronRight, Building2, User, Users } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { translations } from '@/constants/translations';
 import type { CompanyInfo, TonePreference } from '@/constants/types';
 
+type AccountType = 'business' | 'creator' | 'both';
+
 export default function CompanyInfoScreen() {
   const router = useRouter();
-  const { language, completeOnboarding } = useApp();
+  const { language, completeOnboarding, updateAccountType, updateUserProfile } = useApp();
   const t = translations[language] ?? translations.de;
-
-  // extra: lokal alias, aber alles optional
   const c = t.onboarding?.companyInfo ?? ({} as any);
 
-  const [companyName, setCompanyName] = useState<string>('');
+  const [step, setStep] = useState<'type' | 'info'>('type');
+  const [accountType, setAccountTypeState] = useState<AccountType | null>(null);
+  
+  const [name, setName] = useState<string>('');
   const [industry, setIndustry] = useState<string>('');
+  const [niche, setNiche] = useState<string>('');
   const [targetAudience, setTargetAudience] = useState<string>('');
   const [contentGoals, setContentGoals] = useState<string>('');
-  const [postingFrequency, setPostingFrequency] = useState<
-    'daily' | 'weekly' | 'biweekly'
-  >('weekly');
+  const [postingFrequency, setPostingFrequency] = useState<'daily' | 'weekly' | 'biweekly'>('weekly');
   const [tone, setTone] = useState<TonePreference>('casual');
 
+  const handleTypeSelect = (type: AccountType) => {
+    setAccountTypeState(type);
+    setStep('info');
+  };
+
   const handleContinue = async () => {
+    if (!accountType) return;
+
+    await updateAccountType(accountType);
+    
+    await updateUserProfile({
+      name,
+      industry: accountType === 'business' || accountType === 'both' ? industry : '',
+      niche: accountType === 'creator' || accountType === 'both' ? niche : '',
+      targetAudience,
+      contentGoals,
+    });
+
     const info: CompanyInfo = {
-      companyName,
-      industry,
+      companyName: name,
+      industry: accountType === 'business' || accountType === 'both' ? industry : niche,
       targetAudience,
       contentGoals,
       postingFrequency,
@@ -45,13 +63,82 @@ export default function CompanyInfoScreen() {
     router.push('/onboarding/connect-platforms');
   };
 
-  const canContinue = companyName.trim().length > 0;
+  const canContinue = name.trim().length > 0 && 
+    (accountType === 'business' ? industry.trim().length > 0 : 
+     accountType === 'creator' ? niche.trim().length > 0 : 
+     industry.trim().length > 0 && niche.trim().length > 0);
+
+  if (step === 'type') {
+    return (
+      <>
+        <Stack.Screen
+          options={{
+            title: 'Account Typ',
+            headerBackTitle: t.back ?? 'Zurück',
+          }}
+        />
+        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Für wen erstellst du Content?</Text>
+            <Text style={styles.subtitle}>
+              Wähle deinen Account-Typ für personalisierte Vorschläge
+            </Text>
+          </View>
+
+          <View style={styles.typeCards}>
+            <TouchableOpacity
+              style={styles.typeCard}
+              onPress={() => handleTypeSelect('business')}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.typeIcon, { backgroundColor: '#E3F2FD' }]}>
+                <Building2 size={40} color="#0A66C2" strokeWidth={2} />
+              </View>
+              <Text style={styles.typeTitle}>Unternehmen</Text>
+              <Text style={styles.typeDescription}>
+                Für Firmen, Marken und Business-Accounts
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.typeCard}
+              onPress={() => handleTypeSelect('creator')}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.typeIcon, { backgroundColor: '#FEE2E2' }]}>
+                <User size={40} color="#EF4444" strokeWidth={2} />
+              </View>
+              <Text style={styles.typeTitle}>Creator</Text>
+              <Text style={styles.typeDescription}>
+                Für Influencer, Content Creator und Personal Brands
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.typeCard}
+              onPress={() => handleTypeSelect('both')}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.typeIcon, { backgroundColor: '#F3E8FF' }]}>
+                <Users size={40} color="#7C3AED" strokeWidth={2} />
+              </View>
+              <Text style={styles.typeTitle}>Beides</Text>
+              <Text style={styles.typeDescription}>
+                Für Unternehmer mit Personal Brand
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </>
+    );
+  }
 
   return (
     <>
       <Stack.Screen
         options={{
-          title: c.title ?? 'Über Ihr Unternehmen',
+          title: accountType === 'business' ? 'Über dein Unternehmen' : 
+                 accountType === 'creator' ? 'Über dich' : 'Dein Profil',
           headerBackTitle: t.back ?? 'Zurück',
         }}
       />
@@ -59,72 +146,92 @@ export default function CompanyInfoScreen() {
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
       >
+        <TouchableOpacity 
+          onPress={() => setStep('type')} 
+          style={styles.backButton}
+        >
+          <Text style={styles.backButtonText}>← Typ ändern</Text>
+        </TouchableOpacity>
+
         <View style={styles.header}>
           <View style={styles.iconCircle}>
-            <Building2 size={32} color="#0A66C2" strokeWidth={2} />
+            {accountType === 'business' && <Building2 size={32} color="#0A66C2" strokeWidth={2} />}
+            {accountType === 'creator' && <User size={32} color="#EF4444" strokeWidth={2} />}
+            {accountType === 'both' && <Users size={32} color="#7C3AED" strokeWidth={2} />}
           </View>
-          <Text style={styles.title}>{c.title ?? 'Über Ihr Unternehmen'}</Text>
+          <Text style={styles.title}>
+            {accountType === 'business' ? 'Über dein Unternehmen' : 
+             accountType === 'creator' ? 'Über dich' : 'Dein Profil'}
+          </Text>
           <Text style={styles.subtitle}>
-            {c.subtitle ??
-              'Helfen Sie uns, Ihre perfekte Content-Strategie zu erstellen.'}
+            Helfen Sie uns, Ihre perfekte Content-Strategie zu erstellen
           </Text>
         </View>
 
         <View style={styles.form}>
-          <View className="inputGroup" style={styles.inputGroup}>
+          <View style={styles.inputGroup}>
             <Text style={styles.label}>
-              {c.companyName ?? 'Firmenname'}
+              {accountType === 'business' ? 'Firmenname' : 
+               accountType === 'creator' ? 'Dein Name / Creator Name' : 
+               'Name / Firmenname'}
             </Text>
             <TextInput
               style={styles.input}
-              value={companyName}
-              onChangeText={setCompanyName}
-              placeholder={c.companyNamePlaceholder ?? 'Ihr Firmenname'}
-              placeholderTextColor="#999"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>{c.industry ?? 'Branche'}</Text>
-            <TextInput
-              style={styles.input}
-              value={industry}
-              onChangeText={setIndustry}
+              value={name}
+              onChangeText={setName}
               placeholder={
-                c.industryPlaceholder ?? 'z.B. Technologie, Mode, Gesundheit'
+                accountType === 'business' ? 'z.B. SMY Agency' : 
+                accountType === 'creator' ? 'z.B. Max Mustermann' : 
+                'z.B. Max Mustermann / SMY Agency'
               }
               placeholderTextColor="#999"
             />
           </View>
 
+          {(accountType === 'business' || accountType === 'both') && (
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Branche</Text>
+              <TextInput
+                style={styles.input}
+                value={industry}
+                onChangeText={setIndustry}
+                placeholder="z.B. Marketing, Tech, E-Commerce"
+                placeholderTextColor="#999"
+              />
+            </View>
+          )}
+
+          {(accountType === 'creator' || accountType === 'both') && (
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Nische / Thema</Text>
+              <TextInput
+                style={styles.input}
+                value={niche}
+                onChangeText={setNiche}
+                placeholder="z.B. Fitness, Lifestyle, Business"
+                placeholderTextColor="#999"
+              />
+            </View>
+          )}
+
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              {c.targetAudience ?? 'Zielgruppe'}
-            </Text>
+            <Text style={styles.label}>Zielgruppe</Text>
             <TextInput
               style={styles.input}
               value={targetAudience}
               onChangeText={setTargetAudience}
-              placeholder={
-                c.targetAudiencePlaceholder ??
-                'z.B. B2B Entscheider, Gen Z, Eltern'
-              }
+              placeholder="z.B. Unternehmer, Gen Z, Fitness-Enthusiasten"
               placeholderTextColor="#999"
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              {c.contentGoals ?? 'Content-Ziele'}
-            </Text>
+            <Text style={styles.label}>Content-Ziele</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={contentGoals}
               onChangeText={setContentGoals}
-              placeholder={
-                c.contentGoalsPlaceholder ??
-                'z.B. Brand Awareness, Lead Generation'
-              }
+              placeholder="z.B. Mehr Reichweite, Kunden gewinnen, Community aufbauen"
               placeholderTextColor="#999"
               multiline
               numberOfLines={3}
@@ -132,65 +239,52 @@ export default function CompanyInfoScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              {c.postingFrequency ?? 'Posting-Frequenz'}
-            </Text>
+            <Text style={styles.label}>Posting-Frequenz</Text>
             <View style={styles.frequencyButtons}>
               <FrequencyButton
-                label={c.daily ?? 'Täglich'}
+                label="Täglich"
                 selected={postingFrequency === 'daily'}
                 onPress={() => setPostingFrequency('daily')}
               />
               <FrequencyButton
-                label={c.weekly ?? '3–4x pro Woche'}
+                label="Wöchentlich"
                 selected={postingFrequency === 'weekly'}
                 onPress={() => setPostingFrequency('weekly')}
               />
               <FrequencyButton
-                label={c.biweekly ?? '1–2x pro Woche'}
+                label="2x pro Monat"
                 selected={postingFrequency === 'biweekly'}
                 onPress={() => setPostingFrequency('biweekly')}
               />
             </View>
           </View>
-        </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>{c.tone ?? 'Tonalität'}</Text>
-          <View style={styles.toneButtons}>
-            {(
-              [
-                'casual',
-                'serious',
-                'inspiring',
-                'professional',
-                'friendly',
-                'educational',
-                'authoritative',
-                'playful',
-                'empathetic',
-              ] as TonePreference[]
-            ).map((key) => (
-              <TouchableOpacity
-                key={key}
-                testID={`tone-${key}`}
-                style={[
-                  styles.toneButton,
-                  tone === key && styles.toneButtonSelected,
-                ]}
-                onPress={() => setTone(key)}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[
-                    styles.toneButtonText,
-                    tone === key && styles.toneButtonTextSelected,
-                  ]}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Ton / Schreibstil</Text>
+            <View style={styles.toneButtons}>
+              {[
+                { key: 'casual', label: 'Locker' },
+                { key: 'professional', label: 'Professionell' },
+                { key: 'inspiring', label: 'Inspirierend' },
+                { key: 'friendly', label: 'Freundlich' },
+                { key: 'educational', label: 'Lehrreich' },
+                { key: 'serious', label: 'Seriös' },
+                { key: 'playful', label: 'Verspielt' },
+                { key: 'empathetic', label: 'Einfühlsam' },
+                { key: 'authoritative', label: 'Autoritär' },
+              ].map(({ key, label }) => (
+                <TouchableOpacity
+                  key={key}
+                  style={[styles.toneButton, tone === key && styles.toneButtonSelected]}
+                  onPress={() => setTone(key as TonePreference)}
+                  activeOpacity={0.7}
                 >
-                  {c.toneOptions?.[key] ?? key}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text style={[styles.toneButtonText, tone === key && styles.toneButtonTextSelected]}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         </View>
 
@@ -200,7 +294,7 @@ export default function CompanyInfoScreen() {
           disabled={!canContinue}
           activeOpacity={0.8}
         >
-          <Text style={styles.buttonText}>{t.next ?? 'Weiter'}</Text>
+          <Text style={styles.buttonText}>Speichern</Text>
           <ChevronRight size={20} color="#FFFFFF" />
         </TouchableOpacity>
       </ScrollView>
@@ -219,19 +313,11 @@ function FrequencyButton({
 }) {
   return (
     <TouchableOpacity
-      style={[
-        styles.frequencyButton,
-        selected && styles.frequencyButtonSelected,
-      ]}
+      style={[styles.frequencyButton, selected && styles.frequencyButtonSelected]}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Text
-        style={[
-          styles.frequencyButtonText,
-          selected && styles.frequencyButtonTextSelected,
-        ]}
-      >
+      <Text style={[styles.frequencyButtonText, selected && styles.frequencyButtonTextSelected]}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -246,6 +332,19 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: 24,
     paddingBottom: 40,
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 16,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 999,
+  },
+  backButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0A66C2',
   },
   header: {
     alignItems: 'center',
@@ -268,6 +367,37 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   subtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  typeCards: {
+    gap: 16,
+  },
+  typeCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+  },
+  typeIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  typeTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  typeDescription: {
     fontSize: 14,
     color: '#6B7280',
     textAlign: 'center',
@@ -315,7 +445,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E3F2FD',
   },
   frequencyButtonText: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#4B5563',
   },
   frequencyButtonTextSelected: {

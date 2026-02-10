@@ -8,6 +8,8 @@ const STORAGE_KEYS = {
   LANGUAGE: '@socialpro:language',
   ONBOARDING: '@socialpro:onboarding',
   COMPANY_INFO: '@socialpro:companyInfo',
+  ACCOUNT_TYPE: '@socialpro:accountType',
+  USER_PROFILE: '@socialpro:userProfile',
   PLATFORMS: '@socialpro:platforms',
   SUBSCRIPTION: '@socialpro:subscription',
   POSTS: '@socialpro:posts',
@@ -15,7 +17,6 @@ const STORAGE_KEYS = {
 
 const ALL_PLATFORMS: Platform[] = ['linkedin', 'instagram', 'tiktok'];
 
-/** stellt sicher, dass alle Plattform-Einträge existieren */
 function ensureAllPlatforms(list: ConnectedPlatform[] | null | undefined): ConnectedPlatform[] {
   const base = list?.slice() ?? [];
   const map = new Map<Platform, ConnectedPlatform>(base.map(p => [p.platform, p]));
@@ -31,6 +32,14 @@ export const [AppProvider, useApp] = createContextHook(() => {
   const [language, setLanguageState] = useState<Language>('de');
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean>(false);
   const [companyInfo, setCompanyInfoState] = useState<CompanyInfo | null>(null);
+  const [accountType, setAccountType] = useState<'business' | 'creator' | 'both' | null>(null);
+  const [userProfile, setUserProfile] = useState<{
+    name: string;
+    industry: string;
+    niche: string;
+    targetAudience: string;
+    contentGoals: string;
+  } | null>(null);
   const [connectedPlatforms, setConnectedPlatformsState] = useState<ConnectedPlatform[]>(ensureAllPlatforms([]));
   const [subscription, setSubscriptionState] = useState<SubscriptionInfo>({ plan: null, status: 'expired' });
   const [posts, setPostsState] = useState<Post[]>([]);
@@ -50,6 +59,8 @@ export const [AppProvider, useApp] = createContextHook(() => {
         AsyncStorage.getItem(STORAGE_KEYS.LANGUAGE),
         AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING),
         AsyncStorage.getItem(STORAGE_KEYS.COMPANY_INFO),
+        AsyncStorage.getItem(STORAGE_KEYS.ACCOUNT_TYPE),
+        AsyncStorage.getItem(STORAGE_KEYS.USER_PROFILE),
         AsyncStorage.getItem(STORAGE_KEYS.PLATFORMS),
         AsyncStorage.getItem(STORAGE_KEYS.SUBSCRIPTION),
         AsyncStorage.getItem(STORAGE_KEYS.POSTS),
@@ -59,6 +70,8 @@ export const [AppProvider, useApp] = createContextHook(() => {
         storedLanguage,
         storedOnboarding,
         storedCompanyInfo,
+        storedAccountType,
+        storedUserProfile,
         storedPlatforms,
         storedSubscription,
         storedPosts,
@@ -67,8 +80,9 @@ export const [AppProvider, useApp] = createContextHook(() => {
       if (storedLanguage) setLanguageState(storedLanguage as Language);
       if (storedOnboarding) setHasCompletedOnboarding(JSON.parse(storedOnboarding));
       if (storedCompanyInfo) setCompanyInfoState(JSON.parse(storedCompanyInfo));
+      if (storedAccountType) setAccountType(JSON.parse(storedAccountType));
+      if (storedUserProfile) setUserProfile(JSON.parse(storedUserProfile));
 
-      // Plattformen immer vollständig sicherstellen
       const parsedPlatforms: ConnectedPlatform[] | null = storedPlatforms ? JSON.parse(storedPlatforms) : null;
       setConnectedPlatformsState(ensureAllPlatforms(parsedPlatforms));
 
@@ -119,7 +133,30 @@ export const [AppProvider, useApp] = createContextHook(() => {
     }
   }, []);
 
-  /** ✅ Plattform verbinden (z. B. nach OAuth) */
+  const updateAccountType = useCallback(async (type: 'business' | 'creator' | 'both') => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.ACCOUNT_TYPE, JSON.stringify(type));
+      setAccountType(type);
+    } catch (error) {
+      console.error('[AppContext] Error updating account type:', error);
+    }
+  }, []);
+
+  const updateUserProfile = useCallback(async (profile: {
+    name: string;
+    industry: string;
+    niche: string;
+    targetAudience: string;
+    contentGoals: string;
+  }) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
+      setUserProfile(profile);
+    } catch (error) {
+      console.error('[AppContext] Error updating user profile:', error);
+    }
+  }, []);
+
   const connectPlatform = useCallback(
     async (
       platform: Platform,
@@ -155,7 +192,6 @@ export const [AppProvider, useApp] = createContextHook(() => {
     []
   );
 
-  /** Plattform trennen */
   const disconnectPlatform = useCallback(async (platform: Platform) => {
     try {
       setConnectedPlatformsState(prev => {
@@ -171,7 +207,6 @@ export const [AppProvider, useApp] = createContextHook(() => {
     }
   }, []);
 
-  /** Trial & Subscription Handling */
   const startTrial = useCallback(async (plan: 'monthly' | 'yearly') => {
     try {
       const trialEndsAt = new Date();
@@ -199,7 +234,6 @@ export const [AppProvider, useApp] = createContextHook(() => {
     }
   }, []);
 
-  /** Posts speichern etc. */
   const addPost = useCallback(async (post: Post) => {
     try {
       setPostsState(prev => {
@@ -236,7 +270,6 @@ export const [AppProvider, useApp] = createContextHook(() => {
     }
   }, []);
 
-  /** automatische Dummy-Performance */
   const generateRandomMetrics = (platform: Platform) => {
     const baseReach = Math.floor(Math.random() * 5000) + 1000;
     const engagementRate = Math.random() * 0.15 + 0.02;
@@ -310,8 +343,12 @@ export const [AppProvider, useApp] = createContextHook(() => {
       completeOnboarding,
       companyInfo,
       updateCompanyInfo,
+      accountType,
+      updateAccountType,
+      userProfile,
+      updateUserProfile,
       connectedPlatforms,
-      connectPlatform, // <— wichtig: wird vom IG-Login aufgerufen
+      connectPlatform,
       disconnectPlatform,
       subscription,
       startTrial,
@@ -327,6 +364,8 @@ export const [AppProvider, useApp] = createContextHook(() => {
       language,
       hasCompletedOnboarding,
       companyInfo,
+      accountType,
+      userProfile,
       connectedPlatforms,
       subscription,
       posts,

@@ -20,6 +20,7 @@ import {
   LogOut,
   AlertCircle,
   RefreshCw,
+  Building2,
 } from "lucide-react-native";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useApp } from "@/contexts/AppContext";
@@ -31,7 +32,7 @@ import type { Platform } from "@/constants/types";
 export default function SettingsScreen() {
   const t = useTranslation();
 
-  const { language, setLanguage, subscription, connectedPlatforms } = useApp();
+  const { language, setLanguage, subscription, connectedPlatforms, accountType } = useApp();
   const { statusMap, checking, checkAllPlatforms, refreshPlatformToken } =
     usePlatformConnection();
 
@@ -104,6 +105,13 @@ export default function SettingsScreen() {
     (p) => p.platform === "tiktok" && p.connected
   );
 
+  const getAccountTypeLabel = () => {
+    if (accountType === 'business') return 'Unternehmen';
+    if (accountType === 'creator') return 'Creator';
+    if (accountType === 'both') return 'Beides';
+    return 'Nicht festgelegt';
+  };
+
   return (
     <>
       <Stack.Screen
@@ -119,11 +127,18 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>{t.settings.account}</Text>
 
           <SettingItem
+            icon={<Building2 size={24} color="#7C3AED" />}
+            label="Account-Typ"
+            value={getAccountTypeLabel()}
+            onPress={() => router.push("/onboarding/company-info")}
+          />
+
+          <SettingItem
             icon={<User size={24} color="#0A66C2" />}
             label={t.settings.profile}
             value="Edit"
             onPress={() =>
-router.push("/(tabs)/(settings)/company-info-edit")
+              router.push("/(tabs)/(settings)/company-info-edit")
             }
           />
 
