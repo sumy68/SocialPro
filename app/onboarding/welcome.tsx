@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Sparkles, Calendar, TrendingUp, Zap, Instagram, Linkedin, Music2 } from 'lucide-react-native';
@@ -24,13 +24,13 @@ export default function WelcomeScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
-        <View
-          style={{
+        <ScrollView 
+          contentContainerStyle={{
             paddingTop: insets.top + 60,
             paddingBottom: insets.bottom + 40,
-            flex: 1,
             paddingHorizontal: 24,
           }}
+          showsVerticalScrollIndicator={false}
         >
           {/* HEADER */}
           <View style={styles.header}>
@@ -85,7 +85,7 @@ export default function WelcomeScreen() {
               {t.welcome?.getStarted || 'Jetzt starten'}
             </Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </View>
     </>
   );
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 32,
   },
   logoContainer: {
     width: 100,
@@ -149,8 +149,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   featuresContainer: {
-    flex: 1,
     gap: 16,
+    marginBottom: 24,
   },
   featureCard: {
     flexDirection: 'row',
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    marginTop: 24,
+    marginTop: 8,
     shadowColor: '#EF4444',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,

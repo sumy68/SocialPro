@@ -74,17 +74,17 @@ export default function Index() {
     );
   }
 
-  // ✅ 1. LANGUAGE SELECTION KOMMT ZUERST
+  // ✅ 1. LANGUAGE SELECTION ZUERST
   if (!hasSelectedLanguage) {
     return <Redirect href="/language-selection" />;
   }
 
-  // ✅ 2. WELCOME SCREEN (in gewählter Sprache!)
+  // ✅ 2. WELCOME SCREEN (in gewählter Sprache - zeigt was die App ist!)
   if (!hasSeenWelcome) {
     return <Redirect href="/onboarding/welcome" />;
   }
 
-  // ✅ 3. SIGN IN / REGISTER
+  // ✅ 3. SIGN IN / REGISTER (jetzt erst anmelden!)
   if (!isSignedIn) {
     return <Redirect href="/(auth)/sign-in" />;
   }
