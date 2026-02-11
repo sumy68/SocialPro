@@ -8,7 +8,6 @@ import {
   MessageCircle,
   TrendingUp,
   ChevronRight,
-  Bell,
   Clock,
   Lightbulb,
 } from 'lucide-react-native';
@@ -231,6 +230,13 @@ export default function DashboardScreen() {
   const eb = insights?.engagementBreakdown;
   const summary = insights?.weeklySummary;
 
+  const bestPlatform = useMemo(() => {
+    if (connectedPlatformData.length === 0) return null;
+    return connectedPlatformData.reduce((best, current) => 
+      current.engagement > best.engagement ? current : best
+    );
+  }, [connectedPlatformData]);
+
   return (
     <>
       <Stack.Screen
@@ -248,10 +254,6 @@ export default function DashboardScreen() {
             <Text style={styles.greeting}>{greeting}</Text>
             <Text style={styles.subtitle}>{subtitle}</Text>
           </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <Bell size={24} color={Colors.text} strokeWidth={2} />
-            <View style={styles.notificationBadge} />
-          </TouchableOpacity>
         </View>
 
         <TouchableOpacity
@@ -311,6 +313,26 @@ export default function DashboardScreen() {
             </View>
           </View>
         </TouchableOpacity>
+
+        {bestPlatform && (
+          <View style={styles.bestPlatformCard}>
+            <View style={styles.bestPlatformHeader}>
+              <Text style={styles.bestPlatformEmoji}>👑</Text>
+              <View style={styles.bestPlatformTextContainer}>
+                <Text style={styles.bestPlatformTitle}>
+                  {language === 'de' ? 'Beste Plattform' : 'Best Platform'}
+                </Text>
+                <Text style={styles.bestPlatformName}>
+                  {bestPlatform.platform === 'instagram' ? 'Instagram' : 
+                   bestPlatform.platform === 'linkedin' ? 'LinkedIn' : 'TikTok'}
+                </Text>
+              </View>
+              <Text style={styles.bestPlatformStat}>
+                {bestPlatform.engagement}% {language === 'de' ? 'Engagement' : 'Engagement'}
+              </Text>
+            </View>
+          </View>
+        )}
 
         {aiSuggestions.length > 0 && !aiLoading && (
           <View style={styles.aiContentCard}>
@@ -700,9 +722,6 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
     marginBottom: 24,
   },
   greeting: {
@@ -715,24 +734,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 15,
     color: Colors.textSecondary,
-  },
-  notificationButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.accent,
   },
   weeklyReviewCard: {
     backgroundColor: Colors.accent,
@@ -790,6 +791,46 @@ const styles = StyleSheet.create({
   weeklyReviewStatLabel: {
     fontSize: 12,
     color: 'rgba(255, 255, 255, 0.8)',
+  },
+  bestPlatformCard: {
+    backgroundColor: '#FFD700',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  bestPlatformHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  bestPlatformEmoji: {
+    fontSize: 36,
+    marginRight: 12,
+  },
+  bestPlatformTextContainer: {
+    flex: 1,
+  },
+  bestPlatformTitle: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#000',
+    marginBottom: 4,
+    opacity: 0.7,
+  },
+  bestPlatformName: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: '#000',
+    letterSpacing: -0.3,
+  },
+  bestPlatformStat: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#000',
   },
   aiContentCard: {
     backgroundColor: Colors.accent,
