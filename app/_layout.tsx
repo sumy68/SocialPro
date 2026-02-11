@@ -47,7 +47,28 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+    <ClerkProvider 
+      tokenCache={tokenCache} 
+      publishableKey={publishableKey}
+      appearance={{
+        variables: {
+          colorPrimary: '#EF4444',
+          colorText: '#000000',
+          colorTextSecondary: '#666666',
+        },
+        elements: {
+          formButtonPrimary: {
+            backgroundColor: '#EF4444',
+          },
+          footerActionLink: {
+            color: '#EF4444',
+          },
+          socialButtonsBlockButton: {
+            borderColor: '#E5E7EB',
+          },
+        },
+      }}
+    >
       <ClerkLoaded>
         <ReactQueryProvider>
           <AppProvider>

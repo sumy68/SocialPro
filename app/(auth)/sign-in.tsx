@@ -20,7 +20,9 @@ export default function SignInScreen() {
       });
 
       await setActive({ session: completeSignIn.createdSessionId });
-      router.replace('/(tabs)/(dashboard)');
+      
+      // ✅ Lass index.tsx den Flow entscheiden!
+      router.replace('/');
     } catch (err: any) {
       Alert.alert('Error', err.errors?.[0]?.message || 'Sign in failed');
     }
@@ -87,7 +89,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   button: {
-    backgroundColor: '#7C3AED',
+    backgroundColor: '#EF4444',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
@@ -102,7 +104,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   linkText: {
-    color: '#7C3AED',
+    color: '#EF4444',
     textAlign: 'center',
     fontSize: 14,
   },
