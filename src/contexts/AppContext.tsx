@@ -1,8 +1,10 @@
 import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Language } from '@/constants/translations';
 import { CompanyInfo, ConnectedPlatform, SubscriptionInfo, Post, Platform } from '@/constants/types';
+
+// ✅ UPDATED: 4 Sprachen
+type Language = 'de' | 'en' | 'es' | 'tr';
 
 const STORAGE_KEYS = {
   LANGUAGE: '@socialpro:language',

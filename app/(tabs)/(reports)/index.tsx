@@ -616,7 +616,7 @@ function getPlatformColor(platform: SocialPlatform | string): string {
     case 'instagram':
       return '#E1306C';
     case 'linkedin':
-      return '#0A66C2';
+      return '#EF4444';
     case 'tiktok':
       return '#000000';
     default:

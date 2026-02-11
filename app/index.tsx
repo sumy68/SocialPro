@@ -7,15 +7,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TRIAL_START_KEY = '@trial_start_date';
 const TRIAL_DAYS = 3;
+const LANGUAGE_SELECTED_KEY = '@socialpro:languageSelected';
 
 export default function Index() {
   const { isSignedIn, isLoaded } = useAuth();
   const { hasCompletedOnboarding, isLoading } = useApp();
   const [trialExpired, setTrialExpired] = useState(false);
   const [checkingTrial, setCheckingTrial] = useState(true);
+  const [hasSelectedLanguage, setHasSelectedLanguage] = useState(false);
+  const [checkingLanguage, setCheckingLanguage] = useState(true);
 
   useEffect(() => {
     checkTrial();
+    checkLanguageSelection();
   }, [isSignedIn, isLoaded]);
 
   const checkTrial = async () => {
@@ -38,7 +42,18 @@ export default function Index() {
     }
   };
 
-  if (!isLoaded || isLoading || checkingTrial) {
+  const checkLanguageSelection = async () => {
+    try {
+      const languageSelected = await AsyncStorage.getItem(LANGUAGE_SELECTED_KEY);
+      setHasSelectedLanguage(languageSelected === 'true');
+    } catch (error) {
+      console.error('Error checking language selection:', error);
+    } finally {
+      setCheckingLanguage(false);
+    }
+  };
+
+  if (!isLoaded || isLoading || checkingTrial || checkingLanguage) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
         <ActivityIndicator size="large" color="#7C3AED" />
@@ -50,13 +65,21 @@ export default function Index() {
     return <Redirect href="/(auth)/sign-in" />;
   }
 
+  // ✅ LANGUAGE SELECTION KOMMT ZUERST - VOR ALLEM!
+  if (!hasSelectedLanguage) {
+    return <Redirect href="/language-selection" />;
+  }
+
+  // ✅ DANN PAYWALL (Trial Check)
   if (trialExpired) {
     return <Redirect href="/paywall" />;
   }
 
+  // ✅ DANN ONBOARDING
   if (!hasCompletedOnboarding) {
     return <Redirect href="/onboarding/welcome" />;
   }
 
+  // ✅ DANN DASHBOARD
   return <Redirect href="/(tabs)/(dashboard)" />;
 }

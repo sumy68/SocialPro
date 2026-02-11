@@ -1,10 +1,14 @@
 import { useApp } from '@/contexts/AppContext';
-import { translations, TranslationKeys } from '@/constants/translations';
+import { translations, onboardingTranslations } from '@/constants/translations';
 
 export function useTranslation() {
   const { language } = useApp();
   
-  return translations[language];
+  return translations[language] ?? translations.de;
 }
 
-export type Translation = TranslationKeys;
+export function useOnboardingTranslation() {
+  const { language } = useApp();
+  
+  return onboardingTranslations[language] ?? onboardingTranslations.de;
+}

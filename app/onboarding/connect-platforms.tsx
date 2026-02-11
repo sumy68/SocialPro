@@ -213,7 +213,7 @@ export default function ConnectPlatformsScreen() {
     <>
       <Stack.Screen
         options={{
-          title: t?.onboarding?.platforms?.title ?? "Plattformen verbinden",
+          title: "Plattformen verbinden",
         }}
       />
 
@@ -227,7 +227,7 @@ export default function ConnectPlatformsScreen() {
             style={styles.backButton}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text style={styles.backButtonText}>← {t?.common?.back ?? "Back"}</Text>
+            <Text style={styles.backButtonText}>← Zurück</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -240,18 +240,14 @@ export default function ConnectPlatformsScreen() {
         </View>
 
         <View style={styles.header}>
-          <Text style={styles.title}>
-            {t?.onboarding?.platforms?.title ?? "Plattformen verbinden"}
-          </Text>
-          <Text style={styles.subtitle}>
-            {t?.onboarding?.platforms?.subtitle ?? "Verbinde Instagram, LinkedIn oder TikTok"}
-          </Text>
+          <Text style={styles.title}>Plattformen verbinden</Text>
+          <Text style={styles.subtitle}>Verbinde Instagram, LinkedIn oder TikTok</Text>
         </View>
 
         <View style={styles.platforms}>
           <PlatformCard
             icon={<Linkedin size={32} color="#0A66C2" />}
-            name={t.platforms.linkedin}
+            name="LinkedIn"
             color="#0A66C2"
             status={connectedPlatforms.find((p) => p.platform === "linkedin")}
             onConnect={() => startConnect("linkedin")}
@@ -261,7 +257,7 @@ export default function ConnectPlatformsScreen() {
 
           <PlatformCard
             icon={<Instagram size={32} color="#E1306C" />}
-            name={t.platforms.instagram}
+            name="Instagram"
             color="#E1306C"
             status={connectedPlatforms.find((p) => p.platform === "instagram")}
             onConnect={() => startConnect("instagram")}
@@ -271,7 +267,7 @@ export default function ConnectPlatformsScreen() {
 
           <PlatformCard
             icon={<Music2 size={32} color="#000000" />}
-            name={t.platforms.tiktok}
+            name="TikTok"
             color="#000000"
             status={connectedPlatforms.find((p) => p.platform === "tiktok")}
             onConnect={() => startConnect("tiktok")}

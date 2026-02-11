@@ -41,8 +41,7 @@ export default function SettingsScreen() {
   }, []);
 
   const handleLanguageToggle = () => {
-    const newLang = language === "de" ? "en" : "de";
-    setLanguage(newLang);
+    router.push('/language-selection');
   };
 
   const handleOpenPrivacyPolicy = async () => {
@@ -116,7 +115,7 @@ export default function SettingsScreen() {
     <>
       <Stack.Screen
         options={{
-          title: t.settings.title,
+          title: "Einstellungen",
         }}
       />
       <ScrollView
@@ -124,7 +123,7 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.contentContainer}
       >
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t.settings.account}</Text>
+          <Text style={styles.sectionTitle}>Account</Text>
 
           <SettingItem
             icon={<Building2 size={24} color="#7C3AED" />}
@@ -134,8 +133,8 @@ export default function SettingsScreen() {
           />
 
           <SettingItem
-            icon={<User size={24} color="#0A66C2" />}
-            label={t.settings.profile}
+            icon={<User size={24} color="#EF4444" />}
+            label="Profil"
             value="Edit"
             onPress={() =>
               router.push("/(tabs)/(settings)/company-info-edit")
@@ -154,13 +153,13 @@ export default function SettingsScreen() {
                 <Link2 size={24} color="#E1306C" />
               </View>
               <Text style={styles.settingLabel}>
-                {t.settings.connectedPlatforms}
+                Verbundene Plattformen
               </Text>
             </View>
 
             <View style={styles.platformStatusContainer}>
               {checking ? (
-                <ActivityIndicator size="small" color="#0A66C2" />
+                <ActivityIndicator size="small" color="#EF4444" />
               ) : (
                 <View style={styles.platformBadges}>
                   <View
@@ -205,22 +204,18 @@ export default function SettingsScreen() {
 
           <SettingItem
             icon={<Globe size={24} color="#7C3AED" />}
-            label={t.settings.language}
-            value={
-              language === "de"
-                ? t.settings.german
-                : t.settings.english
-            }
+            label="Sprache"
+            value={language === "de" ? "Deutsch" : "English"}
             onPress={handleLanguageToggle}
           />
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t.settings.subscription}</Text>
+          <Text style={styles.sectionTitle}>Abonnement</Text>
 
           <View style={styles.subscriptionCard}>
             <Text style={styles.subscriptionTitle}>
-              {t.settings.currentPlan}
+              Aktueller Plan
             </Text>
             <Text style={styles.subscriptionPlan}>
               {subscription.plan === "monthly"
@@ -239,27 +234,27 @@ export default function SettingsScreen() {
 
           <SettingItem
             icon={<CreditCard size={24} color="#10B981" />}
-            label={t.settings.manageSubscription}
+            label="Abonnement verwalten"
             onPress={handleManageSubscription}
           />
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t.settings.legal}</Text>
+          <Text style={styles.sectionTitle}>Rechtliches</Text>
 
           <SettingItem
             icon={<FileText size={24} color="#666" />}
-            label={t.settings.privacyPolicy}
+            label="Datenschutz"
             onPress={handleOpenPrivacyPolicy}
           />
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t.settings.support}</Text>
+          <Text style={styles.sectionTitle}>Support</Text>
 
           <SettingItem
             icon={<HelpCircle size={24} color="#F59E0B" />}
-            label={t.settings.contactSupport}
+            label="Support kontaktieren"
             onPress={() =>
               Alert.alert("Support", "info@smyagency.de")
             }
@@ -271,7 +266,7 @@ export default function SettingsScreen() {
           onPress={handleLogout}
         >
           <LogOut size={20} color="#EF4444" />
-          <Text style={styles.logoutText}>{t.settings.logout}</Text>
+          <Text style={styles.logoutText}>Abmelden</Text>
         </TouchableOpacity>
 
 
@@ -358,16 +353,16 @@ const styles = StyleSheet.create({
   },
   settingValue: {
     fontSize: 14,
-    color: "#0A66C2",
+    color: "#EF4444",
     fontWeight: "600" as const,
   },
   subscriptionCard: {
-    backgroundColor: "#E3F2FD",
+    backgroundColor: "#FEE2E2",
     padding: 20,
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#0A66C2",
+    borderColor: "#EF4444",
   },
   subscriptionTitle: {
     fontSize: 14,
@@ -377,7 +372,7 @@ const styles = StyleSheet.create({
   subscriptionPlan: {
     fontSize: 24,
     fontWeight: "800" as const,
-    color: "#0A66C2",
+    color: "#EF4444",
     marginBottom: 4,
   },
   subscriptionStatus: {
@@ -432,9 +427,9 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#E5E7EB", // grau
+    backgroundColor: "#E5E7EB",
   },
   platformDotActive: {
-    backgroundColor: "#10B981", // grün
+    backgroundColor: "#10B981",
   },
 });

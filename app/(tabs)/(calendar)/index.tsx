@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Stack } from 'expo-router';
-import { Clock, Instagram, Linkedin, Youtube, ChevronLeft, ChevronRight, Bike } from 'lucide-react-native';
+import { Clock, Instagram, Linkedin, ChevronLeft, ChevronRight, Music2 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { Platform } from '@/constants/types';
 
@@ -147,10 +147,8 @@ function getPlatformIcon(platform: Platform) {
       return <Instagram size={size} color="#E1306C" />;
     case 'linkedin':
       return <Linkedin size={size} color="#0A66C2" />;
-    case 'youtube': break;
-      return <Youtube size={size} color="#FF0000" />;
     case 'tiktok':
-      return <Bike size={size} color="#000000" />;
+      return <Music2 size={size} color="#000000" />;
     default:
       return <Instagram size={size} color="#000000" />;
   }
@@ -162,10 +160,6 @@ function getPlatformColor(platform: string): string {
       return '#E1306C';
     case 'linkedin':
       return '#0A66C2';
-    case 'youtube': break;
-      return '#FF0000';
-    case 'facebook':
-      return '#1877F2';
     case 'tiktok':
       return '#000000';
     default:

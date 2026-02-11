@@ -8,9 +8,9 @@ import {
   ScrollView,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { ChevronRight, Building2, User, Users } from 'lucide-react-native';
+import { ChevronRight, Building2, User, Users, ChevronLeft } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
-import { translations } from '@/constants/translations';
+import { onboardingTranslations } from '@/constants/translations';
 import type { CompanyInfo, TonePreference } from '@/constants/types';
 
 type AccountType = 'business' | 'creator' | 'both';
@@ -18,8 +18,8 @@ type AccountType = 'business' | 'creator' | 'both';
 export default function CompanyInfoScreen() {
   const router = useRouter();
   const { language, completeOnboarding, updateAccountType, updateUserProfile } = useApp();
-  const t = translations[language] ?? translations.de;
-  const c = t.onboarding?.companyInfo ?? ({} as any);
+  const t = onboardingTranslations[language] ?? onboardingTranslations.de;
+  const c = t.companyInfo ?? ({} as any);
 
   const [step, setStep] = useState<'type' | 'info'>('type');
   const [accountType, setAccountTypeState] = useState<AccountType | null>(null);
@@ -73,15 +73,24 @@ export default function CompanyInfoScreen() {
       <>
         <Stack.Screen
           options={{
-            title: 'Account Typ',
-            headerBackTitle: t.back ?? 'Zurück',
+            title: c.accountTypeTitle || 'Account Typ',
+            headerShown: false,
           }}
         />
         <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+          {/* ✅ ZURÜCK BUTTON */}
+          <TouchableOpacity 
+            onPress={() => router.replace('/(tabs)/(settings)')}
+            style={styles.backButton}
+          >
+            <ChevronLeft size={20} color="#EF4444" />
+            <Text style={styles.backButtonText}>Zurück</Text>
+          </TouchableOpacity>
+
           <View style={styles.header}>
-            <Text style={styles.title}>Für wen erstellst du Content?</Text>
+            <Text style={styles.title}>{c.accountTypeTitle || 'Wähle deinen Account-Typ'}</Text>
             <Text style={styles.subtitle}>
-              Wähle deinen Account-Typ für personalisierte Vorschläge
+              {c.accountTypeSubtitle || 'Wähle den Typ, der am besten zu dir passt'}
             </Text>
           </View>
 
@@ -94,9 +103,9 @@ export default function CompanyInfoScreen() {
               <View style={[styles.typeIcon, { backgroundColor: '#E3F2FD' }]}>
                 <Building2 size={40} color="#0A66C2" strokeWidth={2} />
               </View>
-              <Text style={styles.typeTitle}>Unternehmen</Text>
+              <Text style={styles.typeTitle}>{c.business || 'Unternehmen'}</Text>
               <Text style={styles.typeDescription}>
-                Für Firmen, Marken und Business-Accounts
+                {c.businessDesc || 'Für Firmen, Marken und Business-Accounts'}
               </Text>
             </TouchableOpacity>
 
@@ -108,9 +117,9 @@ export default function CompanyInfoScreen() {
               <View style={[styles.typeIcon, { backgroundColor: '#FEE2E2' }]}>
                 <User size={40} color="#EF4444" strokeWidth={2} />
               </View>
-              <Text style={styles.typeTitle}>Creator</Text>
+              <Text style={styles.typeTitle}>{c.creator || 'Creator'}</Text>
               <Text style={styles.typeDescription}>
-                Für Influencer, Content Creator und Personal Brands
+                {c.creatorDesc || 'Für Influencer, Content Creator und Personal Brands'}
               </Text>
             </TouchableOpacity>
 
@@ -122,9 +131,9 @@ export default function CompanyInfoScreen() {
               <View style={[styles.typeIcon, { backgroundColor: '#F3E8FF' }]}>
                 <Users size={40} color="#7C3AED" strokeWidth={2} />
               </View>
-              <Text style={styles.typeTitle}>Beides</Text>
+              <Text style={styles.typeTitle}>{c.both || 'Beides'}</Text>
               <Text style={styles.typeDescription}>
-                Für Unternehmer mit Personal Brand
+                {c.bothDesc || 'Für Unternehmer mit Personal Brand'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -139,7 +148,7 @@ export default function CompanyInfoScreen() {
         options={{
           title: accountType === 'business' ? 'Über dein Unternehmen' : 
                  accountType === 'creator' ? 'Über dich' : 'Dein Profil',
-          headerBackTitle: t.back ?? 'Zurück',
+          headerShown: false,
         }}
       />
       <ScrollView
@@ -150,7 +159,8 @@ export default function CompanyInfoScreen() {
           onPress={() => setStep('type')} 
           style={styles.backButton}
         >
-          <Text style={styles.backButtonText}>← Typ ändern</Text>
+          <ChevronLeft size={20} color="#EF4444" />
+          <Text style={styles.backButtonText}>Typ ändern</Text>
         </TouchableOpacity>
 
         <View style={styles.header}>
@@ -160,11 +170,10 @@ export default function CompanyInfoScreen() {
             {accountType === 'both' && <Users size={32} color="#7C3AED" strokeWidth={2} />}
           </View>
           <Text style={styles.title}>
-            {accountType === 'business' ? 'Über dein Unternehmen' : 
-             accountType === 'creator' ? 'Über dich' : 'Dein Profil'}
+            {c.profileTitle || 'Vervollständige dein Profil'}
           </Text>
           <Text style={styles.subtitle}>
-            Helfen Sie uns, Ihre perfekte Content-Strategie zu erstellen
+            {c.profileSubtitle || 'Helfen Sie uns, Ihre perfekte Content-Strategie zu erstellen'}
           </Text>
         </View>
 
@@ -179,23 +188,19 @@ export default function CompanyInfoScreen() {
               style={styles.input}
               value={name}
               onChangeText={setName}
-              placeholder={
-                accountType === 'business' ? 'z.B. SMY Agency' : 
-                accountType === 'creator' ? 'z.B. Max Mustermann' : 
-                'z.B. Max Mustermann / SMY Agency'
-              }
+              placeholder={c.namePlaceholder || 'Dein Name'}
               placeholderTextColor="#999"
             />
           </View>
 
           {(accountType === 'business' || accountType === 'both') && (
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Branche</Text>
+              <Text style={styles.label}>{c.industry || 'Branche'}</Text>
               <TextInput
                 style={styles.input}
                 value={industry}
                 onChangeText={setIndustry}
-                placeholder="z.B. Marketing, Tech, E-Commerce"
+                placeholder={c.industryPlaceholder || 'z.B. Marketing, Tech, E-Commerce'}
                 placeholderTextColor="#999"
               />
             </View>
@@ -203,35 +208,35 @@ export default function CompanyInfoScreen() {
 
           {(accountType === 'creator' || accountType === 'both') && (
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Nische / Thema</Text>
+              <Text style={styles.label}>{c.niche || 'Nische / Thema'}</Text>
               <TextInput
                 style={styles.input}
                 value={niche}
                 onChangeText={setNiche}
-                placeholder="z.B. Fitness, Lifestyle, Business"
+                placeholder={c.nichePlaceholder || 'z.B. Fitness, Lifestyle, Business'}
                 placeholderTextColor="#999"
               />
             </View>
           )}
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Zielgruppe</Text>
+            <Text style={styles.label}>{c.targetAudience || 'Zielgruppe'}</Text>
             <TextInput
               style={styles.input}
               value={targetAudience}
               onChangeText={setTargetAudience}
-              placeholder="z.B. Unternehmer, Gen Z, Fitness-Enthusiasten"
+              placeholder={c.targetAudiencePlaceholder || 'z.B. Unternehmer, Gen Z, Fitness-Enthusiasten'}
               placeholderTextColor="#999"
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Content-Ziele</Text>
+            <Text style={styles.label}>{c.contentGoals || 'Content-Ziele'}</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={contentGoals}
               onChangeText={setContentGoals}
-              placeholder="z.B. Mehr Reichweite, Kunden gewinnen, Community aufbauen"
+              placeholder={c.contentGoalsPlaceholder || 'z.B. Mehr Reichweite, Kunden gewinnen, Community aufbauen'}
               placeholderTextColor="#999"
               multiline
               numberOfLines={3}
@@ -294,7 +299,7 @@ export default function CompanyInfoScreen() {
           disabled={!canContinue}
           activeOpacity={0.8}
         >
-          <Text style={styles.buttonText}>Speichern</Text>
+          <Text style={styles.buttonText}>{c.complete || 'Speichern'}</Text>
           <ChevronRight size={20} color="#FFFFFF" />
         </TouchableOpacity>
       </ScrollView>
@@ -334,17 +339,20 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
     paddingVertical: 8,
     paddingHorizontal: 12,
     marginBottom: 16,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#FEE2E2',
     borderRadius: 999,
+    gap: 4,
   },
   backButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#0A66C2',
+    color: '#EF4444',
   },
   header: {
     alignItems: 'center',
@@ -441,15 +449,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   frequencyButtonSelected: {
-    borderColor: '#0A66C2',
-    backgroundColor: '#E3F2FD',
+    borderColor: '#EF4444',
+    backgroundColor: '#FEE2E2',
   },
   frequencyButtonText: {
     fontSize: 12,
     color: '#4B5563',
   },
   frequencyButtonTextSelected: {
-    color: '#0A66C2',
+    color: '#EF4444',
     fontWeight: '600',
   },
   toneButtons: {
@@ -466,20 +474,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   toneButtonSelected: {
-    borderColor: '#0A66C2',
-    backgroundColor: '#E3F2FD',
+    borderColor: '#EF4444',
+    backgroundColor: '#FEE2E2',
   },
   toneButtonText: {
     fontSize: 13,
     color: '#4B5563',
   },
   toneButtonTextSelected: {
-    color: '#0A66C2',
+    color: '#EF4444',
     fontWeight: '600',
   },
   button: {
     marginTop: 16,
-    backgroundColor: '#0A66C2',
+    backgroundColor: '#EF4444',
     borderRadius: 999,
     paddingVertical: 14,
     paddingHorizontal: 18,
