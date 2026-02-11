@@ -126,7 +126,7 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>Account</Text>
 
           <SettingItem
-            icon={<Building2 size={24} color="#7C3AED" />}
+            icon={<Building2 size={24} color="#EF4444" />}
             label="Account-Typ"
             value={getAccountTypeLabel()}
             onPress={() => router.push("/onboarding/company-info")}
@@ -203,7 +203,7 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>Preferences</Text>
 
           <SettingItem
-            icon={<Globe size={24} color="#7C3AED" />}
+            icon={<Globe size={24} color="#EF4444" />}
             label="Sprache"
             value={language === "de" ? "Deutsch" : "English"}
             onPress={handleLanguageToggle}

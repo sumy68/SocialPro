@@ -90,7 +90,7 @@ export default function CompanyInfoEditScreen() {
       >
         <View style={styles.header}>
           <View style={styles.iconCircle}>
-            <Building2 size={32} color="#0A66C2" strokeWidth={2} />
+            <Building2 size={32} color="#EF4444" strokeWidth={2} />
           </View>
           <Text style={styles.title}>Profil & Strategie bearbeiten</Text>
           <Text style={styles.subtitle}>
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
   },
   toneButtonSelected: {
     backgroundColor: "#E3F2FD",
-    borderColor: "#0A66C2",
+    borderColor: "#EF4444",
   },
   toneButtonText: {
     fontSize: 14,
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
     textAlign: "center" as const,
   },
   toneButtonTextSelected: {
-    color: "#0A66C2",
+    color: "#EF4444",
   },
   frequencyButton: {
     flex: 1,
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
   },
   frequencyButtonSelected: {
     backgroundColor: "#E3F2FD",
-    borderColor: "#0A66C2",
+    borderColor: "#EF4444",
   },
   frequencyButtonText: {
     fontSize: 14,
@@ -423,10 +423,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   frequencyButtonTextSelected: {
-    color: "#0A66C2",
+    color: "#EF4444",
   },
   button: {
-    backgroundColor: "#0A66C2",
+    backgroundColor: "#EF4444",
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 12,

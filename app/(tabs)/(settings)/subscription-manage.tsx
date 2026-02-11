@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   upgradeButton: {
-    backgroundColor: "#0A66C2",
+    backgroundColor: "#EF4444",
     marginBottom: 12,
   },
   buttonPrimary: {

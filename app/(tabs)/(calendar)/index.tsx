@@ -406,6 +406,6 @@ const styles = StyleSheet.create({
   typeText: {
     fontSize: 12,
     fontWeight: '600' as const,
-    color: '#7C3AED',
+    color: '#EF4444',
   },
 });

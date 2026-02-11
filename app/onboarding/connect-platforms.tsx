@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   skipButtonTopText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#0A66C2",
+    color: "#EF4444",
   },
   header: { alignItems: "center", marginBottom: 32 },
   title: {
