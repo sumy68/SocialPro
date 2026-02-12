@@ -22,7 +22,11 @@ export default function SignInScreen() {
       await setActive({ session: completeSignIn.createdSessionId });
       
       // Wait for Clerk to update session state
-      router.replace('/(tabs)/(dashboard)');
+      // Wait for Clerk to sync then navigate
+      const checkAndNav = () => {
+        router.replace('/(tabs)/(dashboard)');
+      };
+      checkAndNav();
     } catch (err: any) {
       Alert.alert('Error', err.errors?.[0]?.message || 'Sign in failed');
     }

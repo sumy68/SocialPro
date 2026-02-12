@@ -19,7 +19,7 @@ export default function WelcomeScreen() {
 
   const handleStart = async () => {
     await AsyncStorage.setItem(WELCOME_SEEN_KEY, 'true');
-    router.replace('/(auth)/sign-up' as any);
+    router.replace('/onboarding/company-info' as any);
   };
 
   return (

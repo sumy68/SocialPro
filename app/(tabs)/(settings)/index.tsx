@@ -32,6 +32,7 @@ import type { Platform } from "@/constants/types";
 
 export default function SettingsScreen() {
   const { language, setLanguage, subscription, connectedPlatforms, accountType } = useApp();
+  const { signOut } = useAuth();
   const t = (translations[language as Language] ?? translations.de);
   const s = t.settings;
   const { statusMap, checking, checkAllPlatforms, refreshPlatformToken } = usePlatformConnection();
@@ -47,7 +48,15 @@ export default function SettingsScreen() {
 
   const handleManageSubscription = () => { router.push("/subscription-manage"); };
 
-  const handleLogout = async () => { try { await signOut(); router.replace("/"); } catch (e) { console.error(e); } };
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      // Clear onboarding state so fresh start
+      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+      await AsyncStorage.multiRemove(['@socialpro:welcomeSeen', '@trial_start_date']);
+      setTimeout(() => router.replace('/'), 1000);
+    } catch (e) { console.error(e); }
+  };
 
   const handleRefreshPlatform = async (platform: Platform) => {
     try {

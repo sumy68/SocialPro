@@ -45,7 +45,7 @@ export default function SignUpScreen() {
       });
 
       await setActive({ session: completeSignUp.createdSessionId });
-      setTimeout(() => router.replace('/'), 500);
+      router.replace('/onboarding/welcome' as any);
     } catch (err: any) {
       Alert.alert(auth.error, err.errors?.[0]?.message || auth.verifyFailed);
     }
