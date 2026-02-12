@@ -341,7 +341,7 @@ export default function WeeklyReviewScreen() {
             {wr.weeklyReview || 'Weekly Review'}
           </Text>
           <Text style={styles.emptyStateText}>
-            {wr.connectFirst || 'Connect at least one platform so we can generate your weekly review.'}
+            {(translations[language as Language] ?? translations.de).reports?.connectFirst || 'Connect at least one platform so we can generate your weekly review.'}
           </Text>
           <TouchableOpacity
             style={styles.emptyStateButton}
