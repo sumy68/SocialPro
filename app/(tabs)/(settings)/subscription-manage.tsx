@@ -11,12 +11,16 @@ import {
 import { Stack, useRouter } from "expo-router";
 import { useApp } from "@/contexts/AppContext";
 import { useTranslation } from "@/hooks/useTranslation";
+import { translations } from '@/constants/translations';
+import type { Language } from '@/constants/translations';
 import Purchases from "react-native-purchases";
 
 export default function SubscriptionManageScreen() {
   const router = useRouter();
   const t = useTranslation();
   const app = useApp() as any;
+  const lang = (app.language ?? 'de') as Language;
+  const st = (translations[lang] ?? translations.de).settings;
 
   const subscription = app.subscription ?? null;
   const isDemo = app.demoMode ?? app.isDemoMode ?? false;
@@ -26,9 +30,9 @@ export default function SubscriptionManageScreen() {
 
   const planLabel =
     planKey === "monthly"
-      ? "Monatlich"
+      ? st?.monthly || "Monthly"
       : planKey === "yearly"
-      ? "Jährlich"
+      ? st?.yearly || "Yearly"
       : "Kein aktives Abo";
 
   const statusLabel =

@@ -28,6 +28,8 @@ import {
   Activity,
 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
+import { translations } from '@/constants/translations';
+import type { Language } from '@/constants/translations';
 import { Colors } from '@/constants/colors';
 import { useWeeklyData } from '@/hooks/useWeeklyData';
 
@@ -75,7 +77,7 @@ const StatCard: React.FC<StatCardProps> = ({
           {changePercent.toFixed(1)}%
         </Text>
       </View>
-      <Text style={styles.statCompare}>vs. letzte Woche</Text>
+      <Text style={styles.statCompare}>{wr.vsLastWeek || 'vs. last week'}</Text>
     </View>
   );
 };
@@ -273,6 +275,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
 
 export default function WeeklyReviewScreen() {
   const { connectedPlatforms, posts, language } = useApp();
+  const wr = (translations[language as Language] ?? translations.de).dashboard;
   const insets = useSafeAreaInsets();
 
   // echte Daten aus Hook (die intern aus deinen Insights kommen)
@@ -292,7 +295,7 @@ export default function WeeklyReviewScreen() {
         month: '2-digit',
         year: 'numeric',
       });
-    return `Woche vom ${formatDate(start)} - ${formatDate(end)}`;
+    return `${formatDate(start)} - ${formatDate(end)}`;
   };
 
   const formatNumber = (num: number): string => {
@@ -307,17 +310,15 @@ export default function WeeklyReviewScreen() {
       <View style={[styles.container, { paddingBottom: insets.bottom }]}>
         <Stack.Screen
           options={{
-            title: language === 'de' ? 'Wochenrückblick' : 'Weekly Review',
+            title: wr.weeklyReview || 'Weekly Review',
             headerShown: true,
-            headerBackTitle: language === 'de' ? 'Zurück' : 'Back',
+            headerBackTitle: '',
           }}
         />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#3B82F6" />
           <Text style={styles.loadingText}>
-            {language === 'de'
-              ? 'Lade Wochenrückblick...'
-              : 'Loading Weekly Review...'}
+            {wr.weeklyReview || 'Loading Weekly Review...'}
           </Text>
         </View>
       </View>
@@ -330,30 +331,24 @@ export default function WeeklyReviewScreen() {
       <View style={[styles.container, { paddingBottom: insets.bottom }]}>
         <Stack.Screen
           options={{
-            title: language === 'de' ? 'Wochenrückblick' : 'Weekly Review',
+            title: wr.weeklyReview || 'Weekly Review',
             headerShown: true,
-            headerBackTitle: language === 'de' ? 'Zurück' : 'Back',
+            headerBackTitle: '',
           }}
         />
         <View style={styles.emptyStateWrapper}>
           <Text style={styles.emptyStateTitle}>
-            {language === 'de'
-              ? 'Noch keine Daten'
-              : 'No data available yet'}
+            {wr.weeklyReview || 'No data available yet'}
           </Text>
           <Text style={styles.emptyStateText}>
-            {language === 'de'
-              ? 'Verbinde zuerst mindestens eine Plattform, damit wir deinen Wochenrückblick aus echten Insights berechnen können.'
-              : 'Connect at least one platform so we can generate a weekly review from your real insights.'}
+            {wr.weeklyReview || 'Connect at least one platform so we can generate a weekly review from your real insights.'}
           </Text>
           <TouchableOpacity
             style={styles.emptyStateButton}
             onPress={() => router.push('/(tabs)/(settings)')}
           >
             <Text style={styles.emptyStateButtonText}>
-              {language === 'de'
-                ? 'Plattformen verbinden'
-                : 'Connect platforms'}
+              {wr.weeklyReview || 'Connect platforms'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -367,21 +362,17 @@ export default function WeeklyReviewScreen() {
       <View style={[styles.container, { paddingBottom: insets.bottom }]}>
         <Stack.Screen
           options={{
-            title: language === 'de' ? 'Wochenrückblick' : 'Weekly Review',
+            title: wr.weeklyReview || 'Weekly Review',
             headerShown: true,
-            headerBackTitle: language === 'de' ? 'Zurück' : 'Back',
+            headerBackTitle: '',
           }}
         />
         <View style={styles.emptyStateWrapper}>
           <Text style={styles.emptyStateTitle}>
-            {language === 'de'
-              ? 'Noch keine Insights'
-              : 'No insights yet'}
+            {wr.weeklyReview || 'No insights yet'}
           </Text>
           <Text style={styles.emptyStateText}>
-            {language === 'de'
-              ? 'Wir haben für diese Woche noch keine ausreichenden Daten gefunden.'
-              : 'We don’t have enough data for this week yet.'}
+            {wr.weeklyReview || 'We don’t have enough data for this week yet.'}
           </Text>
         </View>
       </View>
@@ -399,21 +390,19 @@ export default function WeeklyReviewScreen() {
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       <Stack.Screen
         options={{
-          title: language === 'de' ? 'Wochenrückblick' : 'Weekly Review',
+          title: wr.weeklyReview || 'Weekly Review',
           headerShown: true,
-          headerBackTitle: language === 'de' ? 'Zurück' : 'Back',
+          headerBackTitle: '',
         }}
       />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <LinearGradient colors={['#5B72ED', '#3B54C7']} style={styles.header}>
           <Text style={styles.headerTitle}>
-            {language === 'de' ? 'Wochenrückblick 📊' : 'Weekly Review 📊'}
+            {wr.weeklyReview || 'Weekly Review 📊'}
           </Text>
           <Text style={styles.headerSubtitle}>
-            {language === 'de'
-              ? 'Performance der letzten 7 Tage'
-              : 'Performance from the last 7 days'}
+            {wr.weeklyReview || 'Performance from the last 7 days'}
           </Text>
           <Text style={styles.headerDate}>
             {formatDateRange(weeklyData.weekStart, weeklyData.weekEnd)}
@@ -423,14 +412,12 @@ export default function WeeklyReviewScreen() {
         {/* PERFORMANCE HIGHLIGHTS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {language === 'de'
-              ? 'Performance-Highlights'
-              : 'Performance Highlights'}
+            {wr.weeklyReview || 'Performance Highlights'}
           </Text>
 
           <View style={styles.statsGrid}>
             <StatCard
-              title={language === 'de' ? 'Gesamtreichweite' : 'Total Reach'}
+              title={wr.weeklyReview || 'Total Reach'}
               value={formatNumber(weeklyData.totalReach ?? 0)}
               change={comparison.reach.change ?? 0}
               changePercent={comparison.reach.changePercent ?? 0}
@@ -438,7 +425,7 @@ export default function WeeklyReviewScreen() {
               color="#3B82F6"
             />
             <StatCard
-              title={language === 'de' ? 'Engagement' : 'Engagement'}
+              title={wr.weeklyReview || 'Engagement'}
               value={formatNumber(weeklyData.totalEngagement ?? 0)}
               change={comparison.engagement.change ?? 0}
               changePercent={comparison.engagement.changePercent ?? 0}
@@ -446,7 +433,7 @@ export default function WeeklyReviewScreen() {
               color="#EF4444"
             />
             <StatCard
-              title={language === 'de' ? 'Neue Follower' : 'New Followers'}
+              title={wr.weeklyReview || 'New Followers'}
               value={formatNumber(weeklyData.newFollowers ?? 0)}
               change={comparison.followers.change ?? 0}
               changePercent={comparison.followers.changePercent ?? 0}
@@ -455,9 +442,7 @@ export default function WeeklyReviewScreen() {
             />
             <StatCard
               title={
-                language === 'de'
-                  ? 'Posts veröffentlicht'
-                  : 'Posts Published'
+                wr.weeklyReview || 'Posts Published'
               }
               value={(weeklyData.postsPublished ?? 0).toString()}
               change={comparison.posts.change ?? 0}
@@ -471,9 +456,7 @@ export default function WeeklyReviewScreen() {
         {/* TOP POSTS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {language === 'de'
-              ? 'Meistgesehene Inhalte'
-              : 'Top Performing Posts'}
+            {wr.weeklyReview || 'Top Performing Posts'}
           </Text>
           {(weeklyData.topPerformingPosts ?? []).map((post) => (
             <PostCard key={post.id} post={post} />
@@ -481,9 +464,7 @@ export default function WeeklyReviewScreen() {
           {(!weeklyData.topPerformingPosts ||
             weeklyData.topPerformingPosts.length === 0) && (
             <Text style={styles.emptySubText}>
-              {language === 'de'
-                ? 'Keine Top-Posts für diese Woche vorhanden.'
-                : 'No top posts for this week.'}
+              {wr.weeklyReview || 'No top posts for this week.'}
             </Text>
           )}
         </View>
@@ -491,7 +472,7 @@ export default function WeeklyReviewScreen() {
         {/* PLATFORM PERFORMANCE */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {language === 'de' ? 'Platform Performance' : 'Platform Performance'}
+            {wr.weeklyReview || 'Platform Performance'}
           </Text>
           <View style={styles.platformGrid}>
             {(weeklyData.platformPerformance ?? []).map((platform, index) => (
@@ -514,7 +495,7 @@ export default function WeeklyReviewScreen() {
                 <View style={styles.platformStats}>
                   <View style={styles.platformStat}>
                     <Text style={styles.platformStatLabel}>
-                      {language === 'de' ? 'Reichweite' : 'Reach'}
+                      {wr.weeklyReview || 'Reach'}
                     </Text>
                     <Text style={styles.platformStatValue}>
                       {formatNumber(platform.reach ?? 0)}
@@ -522,7 +503,7 @@ export default function WeeklyReviewScreen() {
                   </View>
                   <View style={styles.platformStat}>
                     <Text style={styles.platformStatLabel}>
-                      {language === 'de' ? 'Engagement' : 'Engagement'}
+                      {wr.weeklyReview || 'Engagement'}
                     </Text>
                     <Text style={styles.platformStatValue}>
                       {formatNumber(platform.engagement ?? 0)}
@@ -530,9 +511,7 @@ export default function WeeklyReviewScreen() {
                   </View>
                   <View style={styles.platformStat}>
                     <Text style={styles.platformStatLabel}>
-                      {language === 'de'
-                        ? 'Engagement-Rate'
-                        : 'Engagement Rate'}
+                      {wr.weeklyReview || 'Engagement Rate'}
                     </Text>
                     <Text style={styles.platformStatValue}>
                       {(platform.averageEngagementRate ?? 0).toFixed(1)}%
@@ -547,16 +526,14 @@ export default function WeeklyReviewScreen() {
         {/* INSIGHTS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {language === 'de' ? 'Insights' : 'Insights'}
+            {wr.weeklyReview || 'Insights'}
           </Text>
           {(weeklyData.insights ?? []).map((insight, index) => (
             <InsightCard key={index} insight={insight} />
           ))}
           {(!weeklyData.insights || weeklyData.insights.length === 0) && (
             <Text style={styles.emptySubText}>
-              {language === 'de'
-                ? 'Noch keine automatischen Insights verfügbar.'
-                : 'No automatic insights available yet.'}
+              {wr.weeklyReview || 'No automatic insights available yet.'}
             </Text>
           )}
         </View>
@@ -564,7 +541,7 @@ export default function WeeklyReviewScreen() {
         {/* RECOMMENDATIONS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {language === 'de' ? 'Empfehlungen' : 'Recommendations'}
+            {wr.weeklyReview || 'Recommendations'}
           </Text>
           {(weeklyData.recommendations ?? []).map((recommendation, index) => {
             const handleActionPress = () => {
@@ -591,9 +568,7 @@ export default function WeeklyReviewScreen() {
           {(!weeklyData.recommendations ||
             weeklyData.recommendations.length === 0) && (
             <Text style={styles.emptySubText}>
-              {language === 'de'
-                ? 'Noch keine konkreten Empfehlungen.'
-                : 'No concrete recommendations yet.'}
+              {wr.weeklyReview || 'No concrete recommendations yet.'}
             </Text>
           )}
         </View>
@@ -606,9 +581,7 @@ export default function WeeklyReviewScreen() {
           >
             <BarChart3 size={20} color="white" />
             <Text style={styles.primaryButtonText}>
-              {language === 'de'
-                ? 'Vollständige Analytics anzeigen'
-                : 'View Full Analytics'}
+              {wr.weeklyReview || 'View Full Analytics'}
             </Text>
           </TouchableOpacity>
 
@@ -618,7 +591,7 @@ export default function WeeklyReviewScreen() {
               onPress={() => router.push('/(tabs)/(create)')}
             >
               <Text style={styles.secondaryButtonText}>
-                {language === 'de' ? 'Content erstellen' : 'Create Content'}
+                {wr.weeklyReview || 'Create Content'}
               </Text>
             </TouchableOpacity>
 
@@ -627,7 +600,7 @@ export default function WeeklyReviewScreen() {
               onPress={() => router.push('/(tabs)/(calendar)')}
             >
               <Text style={styles.secondaryButtonText}>
-                {language === 'de' ? 'Post planen' : 'Schedule Post'}
+                {wr.weeklyReview || 'Schedule Post'}
               </Text>
             </TouchableOpacity>
           </View>
