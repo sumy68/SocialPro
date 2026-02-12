@@ -74,6 +74,7 @@ export default function Index() {
     );
   }
 
+  console.log('[Index] isSignedIn:', isSignedIn, 'hasSelectedLanguage:', hasSelectedLanguage, 'hasSeenWelcome:', hasSeenWelcome, 'hasCompletedOnboarding:', hasCompletedOnboarding, 'trialExpired:', trialExpired);
   // ✅ 1. LANGUAGE SELECTION ZUERST
   if (!hasSelectedLanguage) {
     return <Redirect href="/language-selection" />;
@@ -85,7 +86,33 @@ export default function Index() {
   }
 
   // ✅ 3. SIGN IN / REGISTER (jetzt erst anmelden!)
-  if (!isSignedIn) {
+  // Double-check: if Clerk says not signed in, verify there's no stored JWT
+  const [jwtCheck, setJwtCheck] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!isSignedIn && isLoaded) {
+      AsyncStorage.getItem('__clerk_client_jwt').then(jwt => {
+        if (jwt) {
+          console.log('[Index] JWT exists but isSignedIn=false, waiting...');
+          // JWT exists, Clerk is still loading - wait
+          const timer = setTimeout(() => setJwtCheck(false), 2000);
+          return () => clearTimeout(timer);
+        }
+        setJwtCheck(false);
+      });
+    } else if (isSignedIn) {
+      setJwtCheck(true);
+    }
+  }, [isSignedIn, isLoaded]);
+
+  if (jwtCheck === null && !isSignedIn) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+        <ActivityIndicator size="large" color="#EF4444" />
+      </View>
+    );
+  }
+
+  if (!isSignedIn && jwtCheck === false) {
     return <Redirect href="/(auth)/sign-in" />;
   }
 
