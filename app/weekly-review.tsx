@@ -313,9 +313,8 @@ export default function WeeklyReviewScreen() {
             title: wr.weeklyReview || 'Weekly Review',
             headerShown: true,
             headerLeft: () => (
-              <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <ChevronLeft size={20} color="#EF4444" />
-                <Text style={{ color: '#EF4444', fontSize: 16 }}>Dashboard</Text>
+              <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 4 }}>
+                <Text style={{ color: '#EF4444', fontSize: 16 }}>{'‹ Dashboard'}</Text>
               </TouchableOpacity>
             ),
           }}
@@ -339,9 +338,8 @@ export default function WeeklyReviewScreen() {
             title: wr.weeklyReview || 'Weekly Review',
             headerShown: true,
             headerLeft: () => (
-              <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <ChevronLeft size={20} color="#EF4444" />
-                <Text style={{ color: '#EF4444', fontSize: 16 }}>Dashboard</Text>
+              <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 4 }}>
+                <Text style={{ color: '#EF4444', fontSize: 16 }}>{'‹ Dashboard'}</Text>
               </TouchableOpacity>
             ),
           }}
@@ -375,9 +373,8 @@ export default function WeeklyReviewScreen() {
             title: wr.weeklyReview || 'Weekly Review',
             headerShown: true,
             headerLeft: () => (
-              <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <ChevronLeft size={20} color="#EF4444" />
-                <Text style={{ color: '#EF4444', fontSize: 16 }}>Dashboard</Text>
+              <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 4 }}>
+                <Text style={{ color: '#EF4444', fontSize: 16 }}>{'‹ Dashboard'}</Text>
               </TouchableOpacity>
             ),
           }}
@@ -408,9 +405,8 @@ export default function WeeklyReviewScreen() {
           title: wr.weeklyReview || 'Weekly Review',
           headerShown: true,
           headerLeft: () => (
-              <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <ChevronLeft size={20} color="#EF4444" />
-                <Text style={{ color: '#EF4444', fontSize: 16 }}>Dashboard</Text>
+              <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 4 }}>
+                <Text style={{ color: '#EF4444', fontSize: 16 }}>{'‹ Dashboard'}</Text>
               </TouchableOpacity>
             ),
         }}
