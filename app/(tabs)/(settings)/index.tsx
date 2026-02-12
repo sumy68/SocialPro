@@ -50,7 +50,7 @@ export default function SettingsScreen() {
 
   const handleLogout = async () => {
     try {
-      await signOut();
+      await signOut(); router.replace("/(auth)/sign-in"); return;
       // Clear onboarding state so fresh start
       const AsyncStorage = require('@react-native-async-storage/async-storage').default;
       await AsyncStorage.multiRemove(['@socialpro:welcomeSeen', '@trial_start_date']);
