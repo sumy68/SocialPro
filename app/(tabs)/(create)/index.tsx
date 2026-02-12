@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { ImageIcon, Upload, Wand2, Link2, X, Calendar, Clock, Send } from 'lucide-react-native';
 
 import { useApp } from '@/contexts/AppContext';
+import { translations } from '@/constants/translations';
+import type { Language } from '@/constants/translations';
 import { Platform } from '@/constants/types';
 import { Stack } from 'expo-router';
 import { generateText } from '@/lib/toolkit';
@@ -46,7 +48,7 @@ function CreateScreenInner() {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (permissionResult.status !== 'granted') {
         setIsUploadingImage(false);
-        Alert.alert('Berechtigung erforderlich', 'Bitte Galerie-Zugriff erlauben.', [{ text: 'OK' }]);
+        Alert.alert(cr.title, cr.title, [{ text: 'OK' }]);
         return;
       }
       
@@ -72,10 +74,10 @@ function CreateScreenInner() {
         // ✅ AUTOMATISCH contentType setzen basierend auf Medium
         if (videos.length > 0) {
           setContentType('reel');
-          Alert.alert('📹 Video hochgeladen', 'Content-Typ automatisch auf "Reel" gesetzt');
+          Alert.alert('📹', cr.videoDetected);
         } else if (images.length > 0) {
           setContentType('post');
-          Alert.alert('🖼️ Bild hochgeladen', 'Content-Typ automatisch auf "Post" gesetzt');
+          Alert.alert('🖼️', cr.imageDetected);
         }
 
         const total = images.length + videos.length;
@@ -83,7 +85,7 @@ function CreateScreenInner() {
       }
     } catch (e) {
       console.error('[Image Picker] Error:', e);
-      Alert.alert('Fehler', 'Bilder konnten nicht geladen werden.');
+      Alert.alert('Error', 'Error');
     } finally {
       setIsUploadingImage(false);
     }
@@ -109,7 +111,7 @@ function CreateScreenInner() {
     if (isGenerating) return;
 
     if (selectedImages.length === 0 && selectedVideos.length === 0) {
-      Alert.alert('Keine Medien', 'Bitte lade zuerst Bilder oder Videos hoch.');
+      Alert.alert('!', cr.uploadMedia);
       return;
     }
 
@@ -141,16 +143,21 @@ function CreateScreenInner() {
       ).then(arr => arr.filter(Boolean) as { type: 'image'; image: string }[]);
 
       const hasVideos = selectedVideos.length > 0;
-      const systemMsg =
-        'Du bist ein deutschsprachiger Social-Media-Copywriter. ' +
-        'Analysiere die gelieferten Bilder visuell (Objekte, Farben, Stimmung, Setting, Perspektive). ' +
-        'Schreibe eine kurze Caption (1–2 Sätze, 2–3 Emojis, freundlicher Profi-Ton). ' +
-        'Erzeuge 4–7 relevante, konkrete Hashtags (ohne #SocialMedia o.ä.). ' +
-        'Antworte NUR als JSON: {"caption":"…","hashtags":["#…","…"]}';
+      const langMap: Record<string, string> = {
+          de: 'Du bist ein deutschsprachiger Social-Media-Copywriter. Schreibe auf Deutsch.',
+          en: 'You are a social media copywriter. Write in English.',
+          es: 'Eres un copywriter de redes sociales. Escribe en español.',
+          tr: 'Sen bir sosyal medya metin yazarısın. Türkçe yaz.',
+        };
+        const systemMsg =
+          (langMap[language] || langMap['en']) + ' ' +
+          'Analyze the provided images visually (objects, colors, mood, setting, perspective). ' +
+          'Write a short caption (1-2 sentences, 2-3 emojis, friendly professional tone). ' +
+          'Generate 4-7 relevant, specific hashtags (no generic ones like #SocialMedia). ' +
+          'Respond ONLY as JSON: {"caption":"…","hashtags":["#…","…"]}';
 
       const userText =
-        `Erzeuge eine zum Inhalt passende Caption.${hasVideos ? ' Es kann auch Video enthalten.' : ''} ` +
-        'Keine Erklärungen, nur JSON.';
+        `Generate a matching caption for this content.${hasVideos ? ' May contain video.' : ''} No explanations, only JSON.`;
 
       let aiRaw = '';
       try {
@@ -182,7 +189,7 @@ function CreateScreenInner() {
       if (!parsed) {
         setShowAiFallbackInfo(true);
         parsed = {
-          caption: '✨ Beispiel-Caption: Lass deiner Kreativität freien Lauf! 🚀',
+          caption: language === 'de' ? '✨ Lass deiner Kreativität freien Lauf! 🚀' : language === 'es' ? '✨ ¡Da rienda suelta a tu creatividad! 🚀' : language === 'tr' ? '✨ Yaratıcılığını serbest bırak! 🚀' : '✨ Let your creativity shine! 🚀',
           hashtags: ['#Inspiration', '#Motivation', '#Creativity', '#Design', '#DailyVibes'],
         };
       }
@@ -193,13 +200,13 @@ function CreateScreenInner() {
         .filter(h => /^#[\wäöüÄÖÜß]+$/i.test(h))
         .slice(0, 7);
 
-      if (!cleanCaption) throw new Error('Leere Caption vom Modell');
+      if (!cleanCaption) throw new Error('Empty caption');
 
       setCaption(cleanCaption);
       setHashtags(cleanTags.join(' '));
     } catch (error: any) {
       console.error('[AI] failed:', error);
-      Alert.alert('KI-Generator Fehler', error?.message || 'Konnte keine Caption erzeugen.');
+      Alert.alert('AI Error', error?.message || 'Error');
     } finally {
       setIsGenerating(false);
     }
@@ -214,7 +221,7 @@ function CreateScreenInner() {
       newDate.setMonth(selectedDate.getMonth());
       newDate.setDate(selectedDate.getDate());
       if (newDate < now) {
-        Alert.alert('Ungültige Zeit', 'Bitte Datum in der Zukunft wählen.');
+        Alert.alert('!', cr.date);
         return;
       }
       setScheduledDate(newDate);
@@ -229,7 +236,7 @@ function CreateScreenInner() {
       newDate.setHours(selectedTime.getHours());
       newDate.setMinutes(selectedTime.getMinutes());
       if (newDate <= now) {
-        Alert.alert('Ungültige Zeit', 'Bitte Uhrzeit in der Zukunft wählen.');
+        Alert.alert('!', cr.time);
         return;
       }
       setScheduledDate(newDate);
@@ -238,11 +245,11 @@ function CreateScreenInner() {
 
   const handleSchedulePost = async () => {
     if (selectedPlatforms.length === 0) {
-      Alert.alert('Fehler', 'Bitte mindestens eine Plattform auswählen');
+      Alert.alert('!', cr.selectPlatforms);
       return;
     }
     if (!caption.trim() && selectedImages.length === 0 && selectedVideos.length === 0) {
-      Alert.alert('Fehler', 'Bitte Caption oder Medien hinzufügen');
+      Alert.alert('!', cr.caption);
       return;
     }
     const now = new Date();
@@ -276,7 +283,7 @@ function CreateScreenInner() {
       });
   
       if (connectedSelectedPlatforms.length === 0) {
-        Alert.alert('Keine verbundenen Plattformen', 'Bitte zuerst Plattformen verbinden.');
+        Alert.alert('!', cr.notConnected);
         return;
       }
   
@@ -288,14 +295,14 @@ function CreateScreenInner() {
       });
   
       if (result.successfulPlatforms.length > 0) {
-        const successMsg = `Erfolgreich auf: ${result.successfulPlatforms.join(', ')}`;
+        const successMsg = `Success: ${result.successfulPlatforms.join(', ')}`;
         const failMsg =
           result.failedPlatforms.length > 0
             ? `\n\nFehlgeschlagen: ${result.failedPlatforms
                 .map(p => `${p} (${result.errors[p]})`)
                 .join(', ')}`
             : '';
-        Alert.alert(result.failedPlatforms.length ? 'Teilweise erfolgreich' : 'Erfolg!', successMsg + failMsg);
+        Alert.alert(result.failedPlatforms.length ? 'Partial success' : 'Success!', successMsg + failMsg);
       } else {
         Alert.alert(
           'Veröffentlichung fehlgeschlagen',
@@ -332,7 +339,7 @@ function CreateScreenInner() {
             });
   
             if (!result.ok) {
-              throw new Error(`Backend Fehler für ${platform}`);
+              throw new Error(`Backend error for ${platform}`);
             }
   
             return { platform, success: true };
@@ -348,15 +355,15 @@ function CreateScreenInner() {
           Alert.alert(
             'Post geplant!',
             `Wird automatisch am ${dateStr} um ${timeStr} auf ${successful.join(', ')} veröffentlicht!` +
-            (failed.length > 0 ? `\n\nFehler: ${failed.length} Plattform(en)` : '')
+            (failed.length > 0 ? `\n\nErrors: ${failed.length} platform(s)` : '')
           );
         } else {
-          Alert.alert('Fehler', 'Konnte Posts nicht planen. Bitte später versuchen.');
+          Alert.alert('Error', cr.errorScheduling);
           return;
         }
       } catch (error: any) {
         console.error('[Schedule] Error:', error);
-        Alert.alert('Fehler', error.message || 'Konnte Posts nicht planen');
+        Alert.alert('Error', error.message || cr.errorScheduling);
         return;
       }
     }
@@ -374,14 +381,14 @@ function CreateScreenInner() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Erstellen' }} />
+      <Stack.Screen options={{ title: cr.title }} />
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Medien Hochladen</Text>
+          <Text style={styles.sectionTitle}>{cr.uploadMedia}</Text>
           <View style={styles.mediaButtonsRow}>
             <TouchableOpacity style={styles.mediaButton} onPress={pickImage} disabled={isUploadingImage}>
               {isUploadingImage ? <ActivityIndicator size="small" color="#EF4444" /> : <ImageIcon size={24} color="#EF4444" />}
-              <Text style={styles.mediaButtonText}>{isUploadingImage ? 'Lädt...' : 'Aus Galerie'}</Text>
+              <Text style={styles.mediaButtonText}>{isUploadingImage ? 'Lädt...' : cr.fromGallery}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.mediaButton} onPress={pickImage} disabled={isUploadingImage}>
               <Upload size={24} color="#EF4444" />
@@ -444,14 +451,14 @@ function CreateScreenInner() {
           )}
           <TouchableOpacity style={styles.generateButton} onPress={handleGenerateCaption} disabled={isGenerating}>
             <Wand2 size={18} color="#FFFFFF" />
-            <Text style={styles.generateButtonText}>{isGenerating ? 'Generiere...' : 'Captions & Hashtags Generieren'}</Text>
+            <Text style={styles.generateButtonText}>{isGenerating ? cr.generating : cr.generateCaption}</Text>
           </TouchableOpacity>
         </View>
 
         {!!caption.trim() && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Caption</Text>
-            <TextInput style={styles.captionInput} value={caption} onChangeText={setCaption} multiline placeholder="Deine Caption hier..." placeholderTextColor="#999" />
+            <TextInput style={styles.captionInput} value={caption} onChangeText={setCaption} multiline placeholder={cr.captionPlaceholder} placeholderTextColor="#999" />
           </View>
         )}
 
@@ -463,13 +470,13 @@ function CreateScreenInner() {
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Veröffentlichungsart</Text>
+          <Text style={styles.sectionTitle}>{cr.publishType}</Text>
           <Text style={styles.sectionDescription}>
             {selectedVideos.length > 0 
-              ? '📹 Video erkannt - wird als Reel gepostet' 
+              ? cr.videoDetected 
               : selectedImages.length > 0 
-              ? '🖼️ Bild erkannt - wird als Post gepostet'
-              : 'Lade Medien hoch um den Typ zu sehen'}
+              ? cr.imageDetected
+              : cr.uploadToSeeType}
           </Text>
           <View style={styles.contentTypeRow}>
             <TouchableOpacity 
@@ -500,7 +507,7 @@ function CreateScreenInner() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Plattformen Auswählen</Text>
+          <Text style={styles.sectionTitle}>{cr.selectPlatforms}</Text>
           {connectedPlatforms.map(({ platform, connected }) => (
             <TouchableOpacity
               key={platform}
@@ -519,7 +526,7 @@ function CreateScreenInner() {
                   {!connected && (
                     <View style={styles.notConnectedBadge}>
                       <Link2 size={12} color="#EF4444" />
-                      <Text style={styles.notConnectedText}>Nicht verbunden</Text>
+                      <Text style={styles.notConnectedText}>{cr.notConnected}</Text>
                     </View>
                   )}
                 </View>
@@ -536,7 +543,7 @@ function CreateScreenInner() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Zeitplanung</Text>
+          <Text style={styles.sectionTitle}>{cr.scheduling}</Text>
           <View style={styles.schedulingCard}>
             <View style={styles.dateTimeRow}>
               <View style={styles.dateTimeColumn}>
@@ -557,7 +564,7 @@ function CreateScreenInner() {
 
             <View style={styles.autoPostRow}>
               <View style={styles.autoPostInfo}>
-                <Text style={styles.autoPostTitle}>Automatisch posten</Text>
+                <Text style={styles.autoPostTitle}>{cr.autoPost}</Text>
                 <Text style={styles.autoPostDescription}>Post wird automatisch zur geplanten Zeit auf allen ausgewählten Plattformen veröffentlicht</Text>
               </View>
               <TouchableOpacity style={[styles.autoPostToggle, autoPost && styles.autoPostToggleActive]} onPress={() => setAutoPost(!autoPost)}>
@@ -578,7 +585,7 @@ function CreateScreenInner() {
         >
           {isPublishing() ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Send size={20} color="#FFFFFF" />}
           <Text style={styles.scheduleButtonText}>
-            {isPublishing() ? 'Wird veröffentlicht...' : autoPost ? 'Post Planen & Automatisch Posten' : 'Als Entwurf Speichern'}
+            {isPublishing() ? cr.publishing : autoPost ? cr.scheduleAndPost : cr.saveAsDraft}
           </Text>
         </TouchableOpacity>
       </ScrollView>

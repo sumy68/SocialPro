@@ -55,19 +55,19 @@ export default function SubscriptionManageScreen() {
         
         // Check ob Premium aktiviert
         if (typeof purchaserInfo.entitlements.active['premium'] !== 'undefined') {
-          Alert.alert('Erfolg!', 'Premium-Abo erfolgreich aktiviert!');
+          Alert.alert('✅', 'Premium activated!');
           // Optional: App Context updaten
           if (typeof app.checkSubscription === 'function') {
             await app.checkSubscription();
           }
         }
       } else {
-        Alert.alert('Fehler', 'Keine Abo-Optionen verfügbar');
+        Alert.alert('Error', 'No options available');
       }
     } catch (e: any) {
       if (!e.userCancelled) {
         console.error('[Premium Upgrade]', e);
-        Alert.alert('Fehler', 'Abo-Kauf fehlgeschlagen. Bitte versuche es erneut.');
+        Alert.alert('Error', 'Purchase failed');
       }
     }
   };
@@ -90,8 +90,8 @@ export default function SubscriptionManageScreen() {
     <>
       <Stack.Screen
         options={{
-          title: "Abo verwalten",
-          headerBackTitle: t.back ?? "Zurück",
+          title: st.manageSubscription,
+          headerBackTitle: '',
         }}
       />
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -122,7 +122,7 @@ export default function SubscriptionManageScreen() {
 
         {/* Support-Block */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Support kontaktieren</Text>
+          <Text style={styles.sectionTitle}>Support</Text>
           <Text style={styles.sectionText}>
             Bei Fragen zu deinem SocialPro-Abo oder Problemen in der App kannst
             du uns jederzeit direkt kontaktieren:
@@ -132,7 +132,7 @@ export default function SubscriptionManageScreen() {
 
         {/* App-Store-Zahlungslogik (wichtig für Apple) */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Zahlungen & Verwaltung</Text>
+          <Text style={styles.sectionTitle}>Payments</Text>
           <Text style={styles.sectionText}>
             SocialPro-Abos werden vollständig über den Apple App Store
             verwaltet. Die Abrechnung, Verlängerung und Kündigung deines Abos
@@ -152,7 +152,7 @@ export default function SubscriptionManageScreen() {
               onPress={handleUpgradeToPremium}
             >
               <Text style={styles.buttonPrimaryText}>
-                🚀 Jetzt Premium Upgraden
+                🚀 Premium Upgrade
               </Text>
             </TouchableOpacity>
           )}
@@ -163,7 +163,7 @@ export default function SubscriptionManageScreen() {
             onPress={handleOpenStoreSubscriptions}
           >
             <Text style={styles.buttonPrimaryText}>
-              Abo im App Store verwalten
+              Manage in App Store
             </Text>
           </TouchableOpacity>
 
@@ -173,7 +173,7 @@ export default function SubscriptionManageScreen() {
             onPress={() => router.back()}
           >
             <Text style={styles.buttonGhostText}>
-              Zurück zu den Einstellungen
+              ← Back
             </Text>
           </TouchableOpacity>
         </View>

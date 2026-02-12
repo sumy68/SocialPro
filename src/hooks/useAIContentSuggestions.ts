@@ -14,7 +14,7 @@ interface AIContentSuggestion {
 const API_URL = process.env.EXPO_PUBLIC_APP_URL || 'https://socialpro-fnvo.onrender.com';
 
 export function useAIContentSuggestions() {
-  const { accountType, userProfile, companyInfo, connectedPlatforms } = useApp();
+  const { accountType, userProfile, companyInfo, connectedPlatforms, language } = useApp();
   const [suggestions, setSuggestions] = useState<AIContentSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +25,6 @@ export function useAIContentSuggestions() {
     const fetchSuggestions = async () => {
       setLoading(true);
       setError(null);
-
       try {
         const response = await fetch(`${API_URL}/api/ai/content-suggestions`, {
           method: 'POST',
@@ -37,6 +36,7 @@ export function useAIContentSuggestions() {
             userProfile,
             companyInfo,
             connectedPlatforms,
+            language,
           }),
         });
 

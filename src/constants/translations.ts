@@ -1,614 +1,653 @@
 export type Language = 'de' | 'en' | 'es' | 'tr';
 
-type TranslationKey = 
-  | 'welcome'
-  | 'getStarted'
-  | 'dashboard'
-  | 'create'
-  | 'calendar'
-  | 'settings'
-  | 'profile'
-  | 'subscription'
-  | 'logout'
-  | 'language'
-  | 'connectedPlatforms'
-  | 'notConnected'
-  | 'connect'
-  | 'disconnect'
-  | 'post'
-  | 'reel'
-  | 'schedule'
-  | 'autoPost'
-  | 'platforms'
-  | 'selectPlatforms'
-  | 'caption'
-  | 'hashtags'
-  | 'uploadMedia'
-  | 'fromGallery'
-  | 'files'
-  | 'aiGenerator'
-  | 'generateCaption'
-  | 'generating'
-  | 'saveAsDraft'
-  | 'planAndPost'
-  | 'overview'
-  | 'totalFollowers'
-  | 'engagementRate'
-  | 'postsThisWeek'
-  | 'reach'
-  | 'weeklyReview'
-  | 'thisWeek'
-  | 'totalReach'
-  | 'totalInteractions'
-  | 'newFollowers'
-  | 'bestPlatform'
-  | 'topInsights'
-  | 'recommendations'
-  | 'reachDetails'
-  | 'organicReach'
-  | 'paidReach'
-  | 'viralReach'
-  | 'storyReach'
-  | 'engagementDetails'
-  | 'likes'
-  | 'comments'
-  | 'shares'
-  | 'saves';
-
-type Translations = {
-  [key in TranslationKey]: {
-    de: string;
-    en: string;
-    es: string;
-    tr: string;
-  };
-};
-
-export const translations: Translations = {
-  welcome: {
-    de: 'Willkommen',
-    en: 'Welcome',
-    es: 'Bienvenido',
-    tr: 'Hoş geldiniz',
-  },
-  getStarted: {
-    de: 'Los geht\'s',
-    en: 'Get Started',
-    es: 'Empezar',
-    tr: 'Başlayalım',
-  },
-  dashboard: {
-    de: 'Dashboard',
-    en: 'Dashboard',
-    es: 'Panel',
-    tr: 'Panel',
-  },
-  create: {
-    de: 'Erstellen',
-    en: 'Create',
-    es: 'Crear',
-    tr: 'Oluştur',
-  },
-  calendar: {
-    de: 'Kalender',
-    en: 'Calendar',
-    es: 'Calendario',
-    tr: 'Takvim',
-  },
-  settings: {
-    de: 'Einstellungen',
-    en: 'Settings',
-    es: 'Configuración',
-    tr: 'Ayarlar',
-  },
-  profile: {
-    de: 'Profil',
-    en: 'Profile',
-    es: 'Perfil',
-    tr: 'Profil',
-  },
-  subscription: {
-    de: 'Abonnement',
-    en: 'Subscription',
-    es: 'Suscripción',
-    tr: 'Abonelik',
-  },
-  logout: {
-    de: 'Abmelden',
-    en: 'Logout',
-    es: 'Cerrar sesión',
-    tr: 'Çıkış yap',
-  },
-  language: {
-    de: 'Sprache',
-    en: 'Language',
-    es: 'Idioma',
-    tr: 'Dil',
-  },
-  connectedPlatforms: {
-    de: 'Verbundene Plattformen',
-    en: 'Connected Platforms',
-    es: 'Plataformas conectadas',
-    tr: 'Bağlı platformlar',
-  },
-  notConnected: {
-    de: 'Nicht verbunden',
-    en: 'Not connected',
-    es: 'No conectado',
-    tr: 'Bağlı değil',
-  },
-  connect: {
-    de: 'Verbinden',
-    en: 'Connect',
-    es: 'Conectar',
-    tr: 'Bağlan',
-  },
-  disconnect: {
-    de: 'Trennen',
-    en: 'Disconnect',
-    es: 'Desconectar',
-    tr: 'Bağlantıyı kes',
-  },
-  post: {
-    de: 'Post',
-    en: 'Post',
-    es: 'Publicación',
-    tr: 'Gönderi',
-  },
-  reel: {
-    de: 'Reel',
-    en: 'Reel',
-    es: 'Reel',
-    tr: 'Reel',
-  },
-  schedule: {
-    de: 'Planen',
-    en: 'Schedule',
-    es: 'Programar',
-    tr: 'Planla',
-  },
-  autoPost: {
-    de: 'Automatisch posten',
-    en: 'Auto post',
-    es: 'Publicar automáticamente',
-    tr: 'Otomatik gönder',
-  },
-  platforms: {
-    de: 'Plattformen',
-    en: 'Platforms',
-    es: 'Plataformas',
-    tr: 'Platformlar',
-  },
-  selectPlatforms: {
-    de: 'Plattformen auswählen',
-    en: 'Select platforms',
-    es: 'Seleccionar plataformas',
-    tr: 'Platform seç',
-  },
-  caption: {
-    de: 'Caption',
-    en: 'Caption',
-    es: 'Descripción',
-    tr: 'Açıklama',
-  },
-  hashtags: {
-    de: 'Hashtags',
-    en: 'Hashtags',
-    es: 'Hashtags',
-    tr: 'Hashtag\'ler',
-  },
-  uploadMedia: {
-    de: 'Medien hochladen',
-    en: 'Upload media',
-    es: 'Subir medios',
-    tr: 'Medya yükle',
-  },
-  fromGallery: {
-    de: 'Aus Galerie',
-    en: 'From gallery',
-    es: 'Desde galería',
-    tr: 'Galeriden',
-  },
-  files: {
-    de: 'Dateien',
-    en: 'Files',
-    es: 'Archivos',
-    tr: 'Dosyalar',
-  },
-  aiGenerator: {
-    de: 'KI Content Generator',
-    en: 'AI Content Generator',
-    es: 'Generador de contenido IA',
-    tr: 'Yapay Zeka İçerik Oluşturucu',
-  },
-  generateCaption: {
-    de: 'Caption generieren',
-    en: 'Generate caption',
-    es: 'Generar descripción',
-    tr: 'Açıklama oluştur',
-  },
-  generating: {
-    de: 'Generiere...',
-    en: 'Generating...',
-    es: 'Generando...',
-    tr: 'Oluşturuluyor...',
-  },
-  saveAsDraft: {
-    de: 'Als Entwurf speichern',
-    en: 'Save as draft',
-    es: 'Guardar como borrador',
-    tr: 'Taslak olarak kaydet',
-  },
-  planAndPost: {
-    de: 'Planen & Posten',
-    en: 'Plan & Post',
-    es: 'Planificar y publicar',
-    tr: 'Planla ve gönder',
-  },
-  overview: {
-    de: 'Übersicht',
-    en: 'Overview',
-    es: 'Resumen',
-    tr: 'Genel bakış',
-  },
-  totalFollowers: {
-    de: 'Gesamte Follower',
-    en: 'Total followers',
-    es: 'Seguidores totales',
-    tr: 'Toplam takipçi',
-  },
-  engagementRate: {
-    de: 'Engagement-Rate',
-    en: 'Engagement rate',
-    es: 'Tasa de interacción',
-    tr: 'Etkileşim oranı',
-  },
-  postsThisWeek: {
-    de: 'Posts diese Woche',
-    en: 'Posts this week',
-    es: 'Publicaciones esta semana',
-    tr: 'Bu hafta gönderiler',
-  },
-  reach: {
-    de: 'Reichweite',
-    en: 'Reach',
-    es: 'Alcance',
-    tr: 'Erişim',
-  },
-  weeklyReview: {
-    de: 'Wochenrückblick',
-    en: 'Weekly review',
-    es: 'Resumen semanal',
-    tr: 'Haftalık özet',
-  },
-  thisWeek: {
-    de: 'Diese Woche',
-    en: 'This week',
-    es: 'Esta semana',
-    tr: 'Bu hafta',
-  },
-  totalReach: {
-    de: 'Gesamtreichweite',
-    en: 'Total reach',
-    es: 'Alcance total',
-    tr: 'Toplam erişim',
-  },
-  totalInteractions: {
-    de: 'Gesamte Interaktionen',
-    en: 'Total interactions',
-    es: 'Interacciones totales',
-    tr: 'Toplam etkileşim',
-  },
-  newFollowers: {
-    de: 'Neue Follower',
-    en: 'New followers',
-    es: 'Nuevos seguidores',
-    tr: 'Yeni takipçiler',
-  },
-  bestPlatform: {
-    de: 'Beste Plattform',
-    en: 'Best platform',
-    es: 'Mejor plataforma',
-    tr: 'En iyi platform',
-  },
-  topInsights: {
-    de: 'Wichtigste Erkenntnisse',
-    en: 'Top insights',
-    es: 'Principales perspectivas',
-    tr: 'Önemli bilgiler',
-  },
-  recommendations: {
-    de: 'Empfehlungen',
-    en: 'Recommendations',
-    es: 'Recomendaciones',
-    tr: 'Öneriler',
-  },
-  reachDetails: {
-    de: 'Reichweite im Detail',
-    en: 'Reach details',
-    es: 'Detalles de alcance',
-    tr: 'Erişim detayları',
-  },
-  organicReach: {
-    de: 'Organische Reichweite',
-    en: 'Organic reach',
-    es: 'Alcance orgánico',
-    tr: 'Organik erişim',
-  },
-  paidReach: {
-    de: 'Bezahlte Reichweite',
-    en: 'Paid reach',
-    es: 'Alcance pagado',
-    tr: 'Ücretli erişim',
-  },
-  viralReach: {
-    de: 'Virale Reichweite',
-    en: 'Viral reach',
-    es: 'Alcance viral',
-    tr: 'Viral erişim',
-  },
-  storyReach: {
-    de: 'Story-Reichweite',
-    en: 'Story reach',
-    es: 'Alcance de historias',
-    tr: 'Hikaye erişimi',
-  },
-  engagementDetails: {
-    de: 'Engagement-Details',
-    en: 'Engagement details',
-    es: 'Detalles de interacción',
-    tr: 'Etkileşim detayları',
-  },
-  likes: {
-    de: 'Likes',
-    en: 'Likes',
-    es: 'Me gusta',
-    tr: 'Beğeniler',
-  },
-  comments: {
-    de: 'Kommentare',
-    en: 'Comments',
-    es: 'Comentarios',
-    tr: 'Yorumlar',
-  },
-  shares: {
-    de: 'Shares',
-    en: 'Shares',
-    es: 'Compartidos',
-    tr: 'Paylaşımlar',
-  },
-  saves: {
-    de: 'Speichern',
-    en: 'Saves',
-    es: 'Guardados',
-    tr: 'Kaydetmeler',
-  },
-};
-
-export const t = (key: TranslationKey, lang: Language): string => {
-  return translations[key][lang] || translations[key]['en'];
-};
-
-// ✅ ONBOARDING TRANSLATIONS
-export const onboardingTranslations = {
+export const translations: Record<Language, any> = {
   de: {
-    welcome: {
-      title: 'Willkommen bei SocialPro',
-      subtitle: 'Deine All-in-One Social Media Management Plattform',
-      getStarted: 'Los geht\'s',
+    welcome: 'Willkommen bei SocialPro',
+    getStarted: 'Los geht\'s',
+    next: 'Weiter',
+    back: 'Zurück',
+    skip: 'Überspringen',
+    done: 'Fertig',
+    save: 'Speichern',
+    cancel: 'Abbrechen',
+    delete: 'Löschen',
+    edit: 'Bearbeiten',
+    createButton: 'Erstellen',
+
+    onboarding: {
+      welcome: {
+        title: 'Willkommen bei SocialPro',
+        subtitle: 'Automatisieren Sie Ihre Social Media Posts auf LinkedIn, Instagram, TikTok & YouTube',
+        description: 'Erstellen, planen und posten Sie Ihre Inhalte automatisch. KI-gestützte Captions und Hashtags inklusive.',
+        cta: 'Jetzt starten',
+      },
+      companyInfo: {
+        title: 'Über Ihr Unternehmen',
+        subtitle: 'Helfen Sie uns, Ihre perfekte Content-Strategie zu erstellen',
+        companyName: 'Firmenname',
+        companyNamePlaceholder: 'Ihr Firmenname',
+        industry: 'Branche',
+        industryPlaceholder: 'z.B. Technologie, Mode, Gesundheit',
+        targetAudience: 'Zielgruppe',
+        targetAudiencePlaceholder: 'z.B. B2B Entscheider, Gen Z, Eltern',
+        contentGoals: 'Content-Ziele',
+        contentGoalsPlaceholder: 'z.B. Brand Awareness, Lead Generation',
+        postingFrequency: 'Posting-Frequenz',
+        daily: 'Täglich',
+        weekly: '3-4x pro Woche',
+        biweekly: '1-2x pro Woche',
+        tone: 'Tonalität',
+        toneOptions: {
+          casual: 'locker', serious: 'seriös', inspiring: 'inspirierend', professional: 'professionell',
+          friendly: 'freundlich', educational: 'lehrend', authoritative: 'autoritativ', playful: 'verspielt', empathetic: 'empathisch',
+        },
+      },
+      platforms: {
+        title: 'Plattformen verbinden',
+        subtitle: 'Verbinden Sie Ihre Social Media Accounts',
+        description: 'Sie können Plattformen jetzt verbinden oder später in den Einstellungen.',
+        connectLater: 'Später verbinden',
+        connect: 'Verbinden',
+        connected: 'Verbunden',
+      },
     },
+
+    subscription: {
+      title: 'Wählen Sie Ihren Plan',
+      subtitle: '3 Tage kostenlos testen, jederzeit kündbar',
+      trialBadge: '3 Tage Gratis',
+      monthly: 'Monatlich',
+      yearly: 'Jährlich',
+      monthlyPrice: '29,99€',
+      yearlyPrice: '300€',
+      perMonth: '/Monat',
+      perYear: '/Jahr',
+      saveYearly: '40€ sparen',
+      featuresTitle: 'Alle Pläne beinhalten:',
+      features: {
+        unlimited: 'Unbegrenzte Posts', scheduling: 'Post-Planung & Automatisierung', aiCaptions: 'KI-generierte Captions & Hashtags',
+        analytics: 'Detaillierte Analytics', contentSuggestions: 'KI-Content-Vorschläge', weeklyReports: 'Wöchentliche Performance-Reports', support: 'Premium Support',
+      },
+      startTrial: '3-Tage-Testversion starten',
+      restore: 'Käufe wiederherstellen',
+      terms: 'Nach der Testphase wird Ihr Abonnement automatisch verlängert. Jederzeit kündbar in den iPhone-Einstellungen.',
+    },
+
+    tabs: { dashboard: 'Dashboard', calendar: 'Kalender', create: 'Erstellen', reports: 'Reports', settings: 'Einstellungen' },
+
+    dashboard: {
+      title: 'Dashboard', welcome: 'Willkommen zurück!', overview: 'Übersicht', scheduledPosts: 'Geplante Posts',
+      totalReach: 'Gesamtreichweite', engagement: 'Engagement', followers: 'Follower', totalFollowers: 'Gesamte Follower',
+      engagementRate: 'Engagement-Rate', postsThisWeek: 'Posts diese Woche', reach: 'Reichweite',
+      quickActions: 'Schnellaktionen', createPost: 'Post erstellen', viewCalendar: 'Kalender ansehen', viewReports: 'Reports ansehen',
+      upcomingPosts: 'Anstehende Posts', today: 'Heute', noPosts: 'Keine Posts geplant',
+      topPerforming: 'Top-Performer', aiSuggestions: 'KI-Vorschläge', aiContentSuggestion: '🎯 KI-Content-Vorschlag',
+      createNow: 'Jetzt erstellen', weeklyReview: 'Wochenrückblick', thisWeek: 'Diese Woche',
+      totalInteractions: 'Gesamte Interaktionen', newFollowers: 'Neue Follower', bestPlatform: 'Beste Plattform',
+      topInsights: '💡 Wichtigste Erkenntnisse', recommendations: '🎯 Empfehlungen',
+      highPriority: 'Hohe Priorität', mediumPriority: 'Mittlere Priorität',
+      createMoreVideo: 'Mehr Video-Content erstellen', createMoreVideoDesc: 'Video-Posts sind Ihre Top-Performer. Erstellen Sie diese Woche 2-3 weitere Reels.',
+      createReels: 'Reels erstellen', optimizeSchedule: 'Posting-Zeitplan optimieren',
+      optimizeScheduleDesc: 'Planen Sie mehr Posts zwischen 14-16 Uhr für maximale Sichtbarkeit.', schedulePosts: 'Posts planen',
+      reachDetails: '👁️ Reichweite im Detail', organicReach: 'Organische Reichweite', paidReach: 'Bezahlte Reichweite',
+      viralReach: 'Virale Reichweite', storyReach: 'Story-Reichweite',
+      engagementDetails: '❤️ Engagement-Details', likes: 'Likes', comments: 'Kommentare', shares: 'Shares', saves: 'Speichern',
+      noPlatforms: 'Keine Plattformen verbunden', noPlatformsDesc: 'Verbinde deine Social-Media-Konten in den Einstellungen, um Analytics zu sehen.',
+      connectPlatforms: 'Plattformen verbinden', platforms: 'Plattformen',
+    },
+
+    calendar: {
+      title: 'Content-Kalender', today: 'Heute', week: 'Woche', month: 'Monat',
+      filterByPlatform: 'Nach Plattform filtern', all: 'Alle',
+      noPostsScheduled: 'Keine Posts für diesen Tag geplant', schedulePost: 'Post planen',
+      weekDays: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
+      months: ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'],
+      scheduled: 'Geplant', posted: 'Gepostet', draft: 'Entwurf',
+      postsOn: 'Posts am',
+    },
+
+    create: {
+      title: 'Erstellen', selectPlatforms: 'Plattformen Auswählen', uploadMedia: 'Medien Hochladen',
+      uploadImage: 'Bild hochladen', uploadVideo: 'Video hochladen',
+      caption: 'Caption', captionPlaceholder: 'Deine Caption hier...', generateCaption: 'Captions & Hashtags Generieren',
+      hashtags: 'Hashtags', hashtagsPlaceholder: '#Hashtags',
+      scheduleFor: 'Planen für', postNow: 'Jetzt posten', schedule: 'Planen',
+      generating: 'Generiere...', aiPowered: 'KI-gestützt',
+      fromGallery: 'Aus Galerie', files: 'Dateien',
+      aiGenerator: 'KI Content Generator', aiGeneratorDesc: 'Lass die KI ansprechende Inhalte basierend auf Trends und deiner Marke erstellen',
+      aiFallback: '💡 KI-API nicht verfügbar. Beispiel-Caption erstellt.',
+      publishType: 'Veröffentlichungsart',
+      videoDetected: '📹 Video erkannt - wird als Reel gepostet',
+      imageDetected: '🖼️ Bild erkannt - wird als Post gepostet',
+      uploadToSeeType: 'Lade Medien hoch um den Typ zu sehen',
+      postPhoto: 'Post (Foto)', reelVideo: 'Reel (Video)',
+      notConnected: 'Nicht verbunden',
+      scheduling: 'Zeitplanung', date: 'Datum', time: 'Uhrzeit',
+      autoPost: 'Automatisch posten', autoPostDesc: 'Post wird automatisch zur geplanten Zeit auf allen ausgewählten Plattformen veröffentlicht',
+      publishing: 'Wird veröffentlicht...', scheduleAndPost: 'Post Planen & Automatisch Posten', saveAsDraft: 'Als Entwurf Speichern',
+      selectDate: 'Datum wählen', selectTime: 'Uhrzeit wählen',
+      imageSelected: 'Bild', imagesSelected: 'Bilder', videoSelected: 'Video', videosSelected: 'Videos', selected: 'ausgewählt',
+      postScheduled: 'Post geplant!', postScheduledDesc: 'Wird automatisch am {date} um {time} auf {platforms} veröffentlicht!',
+      errorScheduling: 'Konnte Posts nicht planen. Bitte später versuchen.',
+      errorPlatforms: 'Fehler: {count} Plattform(en)',
+    },
+
+    reports: {
+      title: 'Analytics', weeklyReport: 'Wöchentlicher Report',
+      thisWeek: 'Diese Woche', lastWeek: 'Letzte Woche', performance: 'Performance',
+      bestPost: 'Bester Post', worstPost: 'Schwächster Post',
+      recommendations: 'Empfehlungen', contentSuggestions: 'Content-Vorschläge',
+      optimalTimes: 'Beste Posting-Zeiten', trendingTopics: 'Trending Topics', generateReport: 'Report generieren',
+      overview: 'Übersicht', reach: 'Reichweite', engagement: 'Engagement', impressions: 'Impressionen', likes: 'Likes',
+      platformComparison: 'Plattform-Vergleich', topPosts: 'Top Beiträge',
+      bestPerforming: 'Bestperformende Plattform', engagementRate: 'Engagement-Rate', reachGrowth: 'Reichweiten-Wachstum',
+      followers: 'Follower', noData: 'Noch keine Daten für einen Plattform-Vergleich.',
+      noPosts: 'Keine Beiträge im ausgewählten Zeitraum.', noText: 'Kein Text',
+      platform: 'Plattform', platforms: 'Plattformen',
+      days7: '7 Tage', days30: '30 Tage', days90: '90 Tage',
+      vsLast7: 'vs. letzte 7 Tage', vsLast30: 'vs. letzter Monat', vsLast90: 'vs. letzte 90 Tage',
+      connectFirst: 'Verbinde zuerst mindestens eine Plattform, damit wir deine Analytics aus echten Insights berechnen können.',
+    },
+
+    settings: {
+      title: 'Einstellungen', account: 'Account', profile: 'Profil', accountType: 'Account-Typ',
+      connectedPlatforms: 'Verbundene Plattformen', connectPlatform: 'Plattform verbinden',
+      language: 'Sprache', german: 'Deutsch', english: 'English', spanish: 'Español', turkish: 'Türkçe',
+      subscription: 'Abonnement', manageSubscription: 'Abonnement verwalten', currentPlan: 'Aktueller Plan',
+      cancelSubscription: 'Abo kündigen',
+      legal: 'Rechtliches', privacyPolicy: 'Datenschutz', termsOfService: 'Nutzungsbedingungen',
+      support: 'Support', contactSupport: 'Support kontaktieren',
+      logout: 'Abmelden', preferences: 'Einstellungen',
+      business: 'Unternehmen', creator: 'Creator', both: 'Beides', notSet: 'Nicht festgelegt',
+      monthly: 'Monatlich', yearly: 'Jährlich', noPlan: 'Kein Plan', status: 'Status', trial: 'Testphase',
+    },
+
+    platforms: { linkedin: 'LinkedIn', instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube Shorts' },
+
+    errors: { generic: 'Ein Fehler ist aufgetreten', noInternet: 'Keine Internetverbindung', uploadFailed: 'Upload fehlgeschlagen', subscriptionFailed: 'Abonnement konnte nicht abgeschlossen werden' },
+  },
+
+  en: {
+    welcome: 'Welcome to SocialPro',
+    getStarted: 'Get Started',
+    next: 'Next',
+    back: 'Back',
+    skip: 'Skip',
+    done: 'Done',
+    save: 'Save',
+    cancel: 'Cancel',
+    delete: 'Delete',
+    edit: 'Edit',
+    createButton: 'Create',
+
+    onboarding: {
+      welcome: { title: 'Welcome to SocialPro', subtitle: 'Automate your social media posts on LinkedIn, Instagram, TikTok & YouTube', cta: 'Get Started' },
+      companyInfo: {
+        title: 'About Your Company', subtitle: 'Help us create your perfect content strategy',
+        companyName: 'Company Name', industry: 'Industry', industryPlaceholder: 'e.g. Technology, Fashion, Health',
+        targetAudience: 'Target Audience', targetAudiencePlaceholder: 'e.g. B2B Decision Makers, Gen Z, Parents',
+        contentGoals: 'Content Goals', contentGoalsPlaceholder: 'e.g. Brand Awareness, Lead Generation',
+        postingFrequency: 'Posting Frequency', daily: 'Daily', weekly: '3-4x per week', biweekly: '1-2x per week',
+        tone: 'Tone of Voice',
+        toneOptions: { casual: 'casual', serious: 'serious', inspiring: 'inspiring', professional: 'professional', friendly: 'friendly', educational: 'educational', authoritative: 'authoritative', playful: 'playful', empathetic: 'empathetic' },
+      },
+      platforms: { title: 'Connect Platforms', subtitle: 'Select the platforms you want to post on', connectLater: 'Connect Later' },
+    },
+
+    subscription: {
+      title: 'Choose Your Plan', subtitle: '3 days free trial, cancel anytime', trialBadge: '3 Days Free',
+      monthly: 'Monthly', yearly: 'Yearly', monthlyPrice: '€29.99', yearlyPrice: '€300', perMonth: '/month', perYear: '/year', saveYearly: 'Save €40',
+      featuresTitle: 'All Plans Include:',
+      features: { unlimited: 'Unlimited Posts', scheduling: 'Post Scheduling & Automation', aiCaptions: 'AI-generated Captions & Hashtags', analytics: 'Detailed Analytics', contentSuggestions: 'AI Content Suggestions', weeklyReports: 'Weekly Performance Reports', support: 'Premium Support' },
+      startTrial: 'Start 3-Day Trial', restore: 'Restore Purchases', terms: 'After trial, your subscription will automatically renew. Cancel anytime in iPhone Settings.',
+    },
+
+    tabs: { dashboard: 'Dashboard', calendar: 'Calendar', create: 'Create', reports: 'Reports', settings: 'Settings' },
+
+    dashboard: {
+      title: 'Dashboard', welcome: 'Welcome back!', overview: 'Overview', scheduledPosts: 'Scheduled Posts',
+      totalReach: 'Total Reach', engagement: 'Engagement', followers: 'Followers', totalFollowers: 'Total Followers',
+      engagementRate: 'Engagement Rate', postsThisWeek: 'Posts this Week', reach: 'Reach',
+      quickActions: 'Quick Actions', createPost: 'Create Post', viewCalendar: 'View Calendar', viewReports: 'View Reports',
+      upcomingPosts: 'Upcoming Posts', today: 'Today', noPosts: 'No posts scheduled',
+      topPerforming: 'Top Performing', aiSuggestions: 'AI Suggestions', aiContentSuggestion: '🎯 AI Content Suggestion',
+      createNow: 'Create Now', weeklyReview: 'Weekly Review', thisWeek: 'This week',
+      totalInteractions: 'Total Interactions', newFollowers: 'New Followers', bestPlatform: 'Best Platform',
+      topInsights: '💡 Top Insights', recommendations: '🎯 Recommendations',
+      highPriority: 'High Priority', mediumPriority: 'Medium Priority',
+      createMoreVideo: 'Create More Video Content', createMoreVideoDesc: 'Video posts are your top performers. Create 2-3 more Reels this week.',
+      createReels: 'Create Reels', optimizeSchedule: 'Optimize Posting Schedule',
+      optimizeScheduleDesc: 'Schedule more posts between 2-4 PM for maximum visibility.', schedulePosts: 'Schedule Posts',
+      reachDetails: '👁️ Reach Details', organicReach: 'Organic Reach', paidReach: 'Paid Reach',
+      viralReach: 'Viral Reach', storyReach: 'Story Reach',
+      engagementDetails: '❤️ Engagement Details', likes: 'Likes', comments: 'Comments', shares: 'Shares', saves: 'Saves',
+      noPlatforms: 'No Platforms Connected', noPlatformsDesc: 'Connect your social media accounts in settings to see analytics.',
+      connectPlatforms: 'Connect Platforms', platforms: 'Platforms',
+    },
+
+    calendar: {
+      title: 'Content Calendar', today: 'Today', week: 'Week', month: 'Month',
+      filterByPlatform: 'Filter by Platform', all: 'All',
+      noPostsScheduled: 'No posts scheduled for this day', schedulePost: 'Schedule Post',
+      weekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+      scheduled: 'Scheduled', posted: 'Posted', draft: 'Draft',
+      postsOn: 'Posts on',
+    },
+
+    create: {
+      title: 'Create', selectPlatforms: 'Select Platforms', uploadMedia: 'Upload Media',
+      uploadImage: 'Upload Image', uploadVideo: 'Upload Video',
+      caption: 'Caption', captionPlaceholder: 'Your caption here...', generateCaption: 'Generate Captions & Hashtags',
+      hashtags: 'Hashtags', hashtagsPlaceholder: '#Hashtags',
+      scheduleFor: 'Schedule for', postNow: 'Post Now', schedule: 'Schedule',
+      generating: 'Generating...', aiPowered: 'AI-powered',
+      fromGallery: 'From Gallery', files: 'Files',
+      aiGenerator: 'AI Content Generator', aiGeneratorDesc: 'Let AI create engaging content based on trends and your brand',
+      aiFallback: '💡 AI API not available. Sample caption created.',
+      publishType: 'Publish Type',
+      videoDetected: '📹 Video detected - will be posted as Reel',
+      imageDetected: '🖼️ Image detected - will be posted as Post',
+      uploadToSeeType: 'Upload media to see the type',
+      postPhoto: 'Post (Photo)', reelVideo: 'Reel (Video)',
+      notConnected: 'Not connected',
+      scheduling: 'Scheduling', date: 'Date', time: 'Time',
+      autoPost: 'Auto post', autoPostDesc: 'Post will be automatically published at the scheduled time on all selected platforms',
+      publishing: 'Publishing...', scheduleAndPost: 'Schedule & Auto Post', saveAsDraft: 'Save as Draft',
+      selectDate: 'Select Date', selectTime: 'Select Time',
+      imageSelected: 'image', imagesSelected: 'images', videoSelected: 'video', videosSelected: 'videos', selected: 'selected',
+      postScheduled: 'Post scheduled!', postScheduledDesc: 'Will be automatically published on {date} at {time} on {platforms}!',
+      errorScheduling: 'Could not schedule posts. Please try again later.',
+      errorPlatforms: 'Error: {count} platform(s)',
+    },
+
+    reports: {
+      title: 'Analytics', weeklyReport: 'Weekly Report',
+      thisWeek: 'This Week', lastWeek: 'Last Week', performance: 'Performance',
+      bestPost: 'Best Post', worstPost: 'Weakest Post',
+      recommendations: 'Recommendations', contentSuggestions: 'Content Suggestions',
+      optimalTimes: 'Optimal Posting Times', trendingTopics: 'Trending Topics', generateReport: 'Generate Report',
+      overview: 'Overview', reach: 'Reach', engagement: 'Engagement', impressions: 'Impressions', likes: 'Likes',
+      platformComparison: 'Platform Comparison', topPosts: 'Top Posts',
+      bestPerforming: 'Best Performing Platform', engagementRate: 'Engagement Rate', reachGrowth: 'Reach Growth',
+      followers: 'Followers', noData: 'No data available for platform comparison yet.',
+      noPosts: 'No posts in the selected period.', noText: 'No text',
+      platform: 'platform', platforms: 'platforms',
+      days7: '7 days', days30: '30 days', days90: '90 days',
+      vsLast7: 'vs. last 7 days', vsLast30: 'vs. last 30 days', vsLast90: 'vs. last 90 days',
+      connectFirst: 'Connect at least one platform so we can calculate analytics from your real insights.',
+    },
+
+    settings: {
+      title: 'Settings', account: 'Account', profile: 'Profile', accountType: 'Account Type',
+      connectedPlatforms: 'Connected Platforms', connectPlatform: 'Connect Platform',
+      language: 'Language', german: 'Deutsch', english: 'English', spanish: 'Español', turkish: 'Türkçe',
+      subscription: 'Subscription', manageSubscription: 'Manage Subscription', currentPlan: 'Current Plan',
+      cancelSubscription: 'Cancel Subscription',
+      legal: 'Legal', privacyPolicy: 'Privacy Policy', termsOfService: 'Terms of Service',
+      support: 'Support', contactSupport: 'Contact Support',
+      logout: 'Logout', preferences: 'Preferences',
+      business: 'Business', creator: 'Creator', both: 'Both', notSet: 'Not set',
+      monthly: 'Monthly', yearly: 'Yearly', noPlan: 'No Plan', status: 'Status', trial: 'Trial',
+    },
+
+    platforms: { linkedin: 'LinkedIn', instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube Shorts' },
+
+    errors: { generic: 'An error occurred', noInternet: 'No internet connection', uploadFailed: 'Upload failed', subscriptionFailed: 'Subscription could not be completed' },
+  },
+
+  es: {
+    welcome: 'Bienvenido a SocialPro',
+    getStarted: 'Empezar',
+    next: 'Siguiente',
+    back: 'Atrás',
+    skip: 'Saltar',
+    done: 'Listo',
+    save: 'Guardar',
+    cancel: 'Cancelar',
+    delete: 'Eliminar',
+    edit: 'Editar',
+    createButton: 'Crear',
+
+    onboarding: {
+      welcome: { title: 'Bienvenido a SocialPro', subtitle: 'Automatiza tus publicaciones en LinkedIn, Instagram, TikTok y YouTube', cta: 'Empezar' },
+      companyInfo: {
+        title: 'Sobre tu empresa', subtitle: 'Ayúdanos a crear tu estrategia de contenido perfecta',
+        companyName: 'Nombre de empresa', industry: 'Industria', industryPlaceholder: 'ej. Tecnología, Moda, Salud',
+        targetAudience: 'Público objetivo', targetAudiencePlaceholder: 'ej. B2B, Gen Z, Padres',
+        contentGoals: 'Objetivos de contenido', contentGoalsPlaceholder: 'ej. Brand Awareness, Generación de leads',
+        postingFrequency: 'Frecuencia de publicación', daily: 'Diario', weekly: '3-4x por semana', biweekly: '1-2x por semana',
+        tone: 'Tono',
+        toneOptions: { casual: 'casual', serious: 'serio', inspiring: 'inspirador', professional: 'profesional', friendly: 'amigable', educational: 'educativo', authoritative: 'autoritativo', playful: 'juguetón', empathetic: 'empático' },
+      },
+      platforms: { title: 'Conectar plataformas', subtitle: 'Conecta tus cuentas de redes sociales', connectLater: 'Conectar después' },
+    },
+
+    subscription: {
+      title: 'Elige tu plan', subtitle: '3 días gratis, cancela en cualquier momento', trialBadge: '3 Días Gratis',
+      monthly: 'Mensual', yearly: 'Anual', monthlyPrice: '€29,99', yearlyPrice: '€300', perMonth: '/mes', perYear: '/año', saveYearly: 'Ahorra €40',
+      featuresTitle: 'Todos los planes incluyen:',
+      features: { unlimited: 'Posts ilimitados', scheduling: 'Programación y automatización', aiCaptions: 'Captions y hashtags con IA', analytics: 'Analytics detallados', contentSuggestions: 'Sugerencias de contenido IA', weeklyReports: 'Informes semanales', support: 'Soporte Premium' },
+      startTrial: 'Iniciar prueba de 3 días', restore: 'Restaurar compras', terms: 'Después de la prueba, tu suscripción se renovará automáticamente. Cancela en cualquier momento.',
+    },
+
+    tabs: { dashboard: 'Panel', calendar: 'Calendario', create: 'Crear', reports: 'Informes', settings: 'Ajustes' },
+
+    dashboard: {
+      title: 'Panel', welcome: '¡Bienvenido de nuevo!', overview: 'Resumen', scheduledPosts: 'Posts programados',
+      totalReach: 'Alcance total', engagement: 'Interacción', followers: 'Seguidores', totalFollowers: 'Seguidores totales',
+      engagementRate: 'Tasa de interacción', postsThisWeek: 'Posts esta semana', reach: 'Alcance',
+      quickActions: 'Acciones rápidas', createPost: 'Crear post', viewCalendar: 'Ver calendario', viewReports: 'Ver informes',
+      upcomingPosts: 'Próximos posts', today: 'Hoy', noPosts: 'Sin posts programados',
+      topPerforming: 'Mejor rendimiento', aiSuggestions: 'Sugerencias IA', aiContentSuggestion: '🎯 Sugerencia de contenido IA',
+      createNow: 'Crear ahora', weeklyReview: 'Resumen semanal', thisWeek: 'Esta semana',
+      totalInteractions: 'Interacciones totales', newFollowers: 'Nuevos seguidores', bestPlatform: 'Mejor plataforma',
+      topInsights: '💡 Principales insights', recommendations: '🎯 Recomendaciones',
+      highPriority: 'Alta prioridad', mediumPriority: 'Prioridad media',
+      createMoreVideo: 'Crear más contenido de video', createMoreVideoDesc: 'Los videos son tu mejor contenido. Crea 2-3 Reels más esta semana.',
+      createReels: 'Crear Reels', optimizeSchedule: 'Optimizar horario de publicación',
+      optimizeScheduleDesc: 'Programa más posts entre 14-16h para máxima visibilidad.', schedulePosts: 'Programar posts',
+      reachDetails: '👁️ Detalles de alcance', organicReach: 'Alcance orgánico', paidReach: 'Alcance de pago',
+      viralReach: 'Alcance viral', storyReach: 'Alcance de historias',
+      engagementDetails: '❤️ Detalles de interacción', likes: 'Me gusta', comments: 'Comentarios', shares: 'Compartidos', saves: 'Guardados',
+      noPlatforms: 'Sin plataformas conectadas', noPlatformsDesc: 'Conecta tus cuentas de redes sociales en ajustes para ver analytics.',
+      connectPlatforms: 'Conectar plataformas', platforms: 'Plataformas',
+    },
+
+    calendar: {
+      title: 'Calendario de contenido', today: 'Hoy', week: 'Semana', month: 'Mes',
+      filterByPlatform: 'Filtrar por plataforma', all: 'Todos',
+      noPostsScheduled: 'Sin posts programados para este día', schedulePost: 'Programar post',
+      weekDays: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+      months: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+      scheduled: 'Programado', posted: 'Publicado', draft: 'Borrador',
+      postsOn: 'Posts el',
+    },
+
+    create: {
+      title: 'Crear', selectPlatforms: 'Seleccionar plataformas', uploadMedia: 'Subir medios',
+      uploadImage: 'Subir imagen', uploadVideo: 'Subir video',
+      caption: 'Descripción', captionPlaceholder: 'Tu descripción aquí...', generateCaption: 'Generar descripciones y hashtags',
+      hashtags: 'Hashtags', hashtagsPlaceholder: '#Hashtags',
+      scheduleFor: 'Programar para', postNow: 'Publicar ahora', schedule: 'Programar',
+      generating: 'Generando...', aiPowered: 'Con IA',
+      fromGallery: 'Desde galería', files: 'Archivos',
+      aiGenerator: 'Generador de contenido IA', aiGeneratorDesc: 'Deja que la IA cree contenido atractivo basado en tendencias y tu marca',
+      aiFallback: '💡 API de IA no disponible. Descripción de ejemplo creada.',
+      publishType: 'Tipo de publicación',
+      videoDetected: '📹 Video detectado - se publicará como Reel',
+      imageDetected: '🖼️ Imagen detectada - se publicará como Post',
+      uploadToSeeType: 'Sube medios para ver el tipo',
+      postPhoto: 'Post (Foto)', reelVideo: 'Reel (Video)',
+      notConnected: 'No conectado',
+      scheduling: 'Programación', date: 'Fecha', time: 'Hora',
+      autoPost: 'Publicar automáticamente', autoPostDesc: 'El post se publicará automáticamente a la hora programada en todas las plataformas seleccionadas',
+      publishing: 'Publicando...', scheduleAndPost: 'Programar y publicar', saveAsDraft: 'Guardar como borrador',
+      selectDate: 'Seleccionar fecha', selectTime: 'Seleccionar hora',
+      imageSelected: 'imagen', imagesSelected: 'imágenes', videoSelected: 'video', videosSelected: 'videos', selected: 'seleccionado',
+      postScheduled: '¡Post programado!', postScheduledDesc: 'Se publicará automáticamente el {date} a las {time} en {platforms}!',
+      errorScheduling: 'No se pudieron programar los posts. Inténtalo más tarde.',
+      errorPlatforms: 'Error: {count} plataforma(s)',
+    },
+
+    reports: {
+      title: 'Analytics', weeklyReport: 'Informe semanal',
+      thisWeek: 'Esta semana', lastWeek: 'Semana pasada', performance: 'Rendimiento',
+      bestPost: 'Mejor post', worstPost: 'Peor post',
+      recommendations: 'Recomendaciones', contentSuggestions: 'Sugerencias de contenido',
+      optimalTimes: 'Mejores horarios', trendingTopics: 'Temas tendencia', generateReport: 'Generar informe',
+      overview: 'Resumen', reach: 'Alcance', engagement: 'Interacción', impressions: 'Impresiones', likes: 'Me gusta',
+      platformComparison: 'Comparación de plataformas', topPosts: 'Mejores posts',
+      bestPerforming: 'Mejor plataforma', engagementRate: 'Tasa de interacción', reachGrowth: 'Crecimiento de alcance',
+      followers: 'Seguidores', noData: 'Aún no hay datos para comparación de plataformas.',
+      noPosts: 'Sin posts en el período seleccionado.', noText: 'Sin texto',
+      platform: 'plataforma', platforms: 'plataformas',
+      days7: '7 días', days30: '30 días', days90: '90 días',
+      vsLast7: 'vs. últimos 7 días', vsLast30: 'vs. último mes', vsLast90: 'vs. últimos 90 días',
+      connectFirst: 'Conecta al menos una plataforma para que podamos calcular analytics de tus insights reales.',
+    },
+
+    settings: {
+      title: 'Ajustes', account: 'Cuenta', profile: 'Perfil', accountType: 'Tipo de cuenta',
+      connectedPlatforms: 'Plataformas conectadas', connectPlatform: 'Conectar plataforma',
+      language: 'Idioma', german: 'Deutsch', english: 'English', spanish: 'Español', turkish: 'Türkçe',
+      subscription: 'Suscripción', manageSubscription: 'Gestionar suscripción', currentPlan: 'Plan actual',
+      cancelSubscription: 'Cancelar suscripción',
+      legal: 'Legal', privacyPolicy: 'Política de privacidad', termsOfService: 'Términos de servicio',
+      support: 'Soporte', contactSupport: 'Contactar soporte',
+      logout: 'Cerrar sesión', preferences: 'Preferencias',
+      business: 'Empresa', creator: 'Creador', both: 'Ambos', notSet: 'No establecido',
+      monthly: 'Mensual', yearly: 'Anual', noPlan: 'Sin plan', status: 'Estado', trial: 'Prueba',
+    },
+
+    platforms: { linkedin: 'LinkedIn', instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube Shorts' },
+
+    errors: { generic: 'Ha ocurrido un error', noInternet: 'Sin conexión a internet', uploadFailed: 'Error al subir', subscriptionFailed: 'No se pudo completar la suscripción' },
+  },
+
+  tr: {
+    welcome: 'SocialPro\'ya Hoş Geldiniz',
+    getStarted: 'Başlayalım',
+    next: 'İleri',
+    back: 'Geri',
+    skip: 'Atla',
+    done: 'Tamam',
+    save: 'Kaydet',
+    cancel: 'İptal',
+    delete: 'Sil',
+    edit: 'Düzenle',
+    createButton: 'Oluştur',
+
+    onboarding: {
+      welcome: { title: 'SocialPro\'ya Hoş Geldiniz', subtitle: 'LinkedIn, Instagram, TikTok ve YouTube\'da paylaşımlarınızı otomatikleştirin', cta: 'Başlayalım' },
+      companyInfo: {
+        title: 'Şirketiniz hakkında', subtitle: 'Mükemmel içerik stratejinizi oluşturmamıza yardımcı olun',
+        companyName: 'Şirket Adı', industry: 'Sektör', industryPlaceholder: 'örn. Teknoloji, Moda, Sağlık',
+        targetAudience: 'Hedef Kitle', targetAudiencePlaceholder: 'örn. B2B, Gen Z, Ebeveynler',
+        contentGoals: 'İçerik Hedefleri', contentGoalsPlaceholder: 'örn. Marka Bilinirliği, Lead Oluşturma',
+        postingFrequency: 'Paylaşım Sıklığı', daily: 'Günlük', weekly: 'Haftada 3-4x', biweekly: 'Haftada 1-2x',
+        tone: 'Ton',
+        toneOptions: { casual: 'rahat', serious: 'ciddi', inspiring: 'ilham verici', professional: 'profesyonel', friendly: 'samimi', educational: 'eğitici', authoritative: 'otoriter', playful: 'eğlenceli', empathetic: 'empatik' },
+      },
+      platforms: { title: 'Platformları bağla', subtitle: 'Sosyal medya hesaplarınızı bağlayın', connectLater: 'Sonra bağla' },
+    },
+
+    subscription: {
+      title: 'Planını seç', subtitle: '3 gün ücretsiz dene, istediğin zaman iptal et', trialBadge: '3 Gün Ücretsiz',
+      monthly: 'Aylık', yearly: 'Yıllık', monthlyPrice: '€29,99', yearlyPrice: '€300', perMonth: '/ay', perYear: '/yıl', saveYearly: '€40 tasarruf',
+      featuresTitle: 'Tüm planlar şunları içerir:',
+      features: { unlimited: 'Sınırsız paylaşım', scheduling: 'Planlama ve otomasyon', aiCaptions: 'Yapay zeka ile açıklama ve hashtag', analytics: 'Detaylı analitik', contentSuggestions: 'Yapay zeka içerik önerileri', weeklyReports: 'Haftalık raporlar', support: 'Premium destek' },
+      startTrial: '3 günlük denemeyi başlat', restore: 'Satın almaları geri yükle', terms: 'Deneme süresinden sonra aboneliğiniz otomatik olarak yenilenir. İstediğiniz zaman iptal edebilirsiniz.',
+    },
+
+    tabs: { dashboard: 'Panel', calendar: 'Takvim', create: 'Oluştur', reports: 'Raporlar', settings: 'Ayarlar' },
+
+    dashboard: {
+      title: 'Panel', welcome: 'Tekrar hoş geldiniz!', overview: 'Genel Bakış', scheduledPosts: 'Planlanan Paylaşımlar',
+      totalReach: 'Toplam Erişim', engagement: 'Etkileşim', followers: 'Takipçiler', totalFollowers: 'Toplam Takipçiler',
+      engagementRate: 'Etkileşim Oranı', postsThisWeek: 'Bu Hafta Paylaşımlar', reach: 'Erişim',
+      quickActions: 'Hızlı İşlemler', createPost: 'Paylaşım oluştur', viewCalendar: 'Takvimi gör', viewReports: 'Raporları gör',
+      upcomingPosts: 'Yaklaşan Paylaşımlar', today: 'Bugün', noPosts: 'Planlanmış paylaşım yok',
+      topPerforming: 'En İyi Performans', aiSuggestions: 'Yapay Zeka Önerileri', aiContentSuggestion: '🎯 Yapay Zeka İçerik Önerisi',
+      createNow: 'Şimdi oluştur', weeklyReview: 'Haftalık Özet', thisWeek: 'Bu hafta',
+      totalInteractions: 'Toplam Etkileşim', newFollowers: 'Yeni Takipçiler', bestPlatform: 'En İyi Platform',
+      topInsights: '💡 Önemli Bilgiler', recommendations: '🎯 Öneriler',
+      highPriority: 'Yüksek Öncelik', mediumPriority: 'Orta Öncelik',
+      createMoreVideo: 'Daha fazla video içerik oluştur', createMoreVideoDesc: 'Video paylaşımlar en iyi performansı gösteriyor. Bu hafta 2-3 Reel daha oluşturun.',
+      createReels: 'Reel oluştur', optimizeSchedule: 'Paylaşım zamanlamasını optimize et',
+      optimizeScheduleDesc: 'Maksimum görünürlük için 14-16 arası daha fazla paylaşım planlayın.', schedulePosts: 'Paylaşım planla',
+      reachDetails: '👁️ Erişim Detayları', organicReach: 'Organik Erişim', paidReach: 'Ücretli Erişim',
+      viralReach: 'Viral Erişim', storyReach: 'Hikaye Erişimi',
+      engagementDetails: '❤️ Etkileşim Detayları', likes: 'Beğeniler', comments: 'Yorumlar', shares: 'Paylaşımlar', saves: 'Kaydetmeler',
+      noPlatforms: 'Bağlı platform yok', noPlatformsDesc: 'Analytics görmek için ayarlarda sosyal medya hesaplarınızı bağlayın.',
+      connectPlatforms: 'Platformları bağla', platforms: 'Platformlar',
+    },
+
+    calendar: {
+      title: 'İçerik Takvimi', today: 'Bugün', week: 'Hafta', month: 'Ay',
+      filterByPlatform: 'Platforma göre filtrele', all: 'Tümü',
+      noPostsScheduled: 'Bu gün için planlanmış paylaşım yok', schedulePost: 'Paylaşım planla',
+      weekDays: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
+      months: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'],
+      scheduled: 'Planlandı', posted: 'Yayınlandı', draft: 'Taslak',
+      postsOn: 'Paylaşımlar',
+    },
+
+    create: {
+      title: 'Oluştur', selectPlatforms: 'Platform Seç', uploadMedia: 'Medya Yükle',
+      uploadImage: 'Resim yükle', uploadVideo: 'Video yükle',
+      caption: 'Açıklama', captionPlaceholder: 'Açıklaman buraya...', generateCaption: 'Açıklama ve Hashtag Oluştur',
+      hashtags: 'Hashtagler', hashtagsPlaceholder: '#Hashtag',
+      scheduleFor: 'Planla', postNow: 'Şimdi paylaş', schedule: 'Planla',
+      generating: 'Oluşturuluyor...', aiPowered: 'Yapay zeka destekli',
+      fromGallery: 'Galeriden', files: 'Dosyalar',
+      aiGenerator: 'Yapay Zeka İçerik Oluşturucu', aiGeneratorDesc: 'Yapay zekanın trendlere ve markanıza göre çekici içerik oluşturmasına izin verin',
+      aiFallback: '💡 Yapay zeka API\'si kullanılamıyor. Örnek açıklama oluşturuldu.',
+      publishType: 'Yayın Türü',
+      videoDetected: '📹 Video algılandı - Reel olarak paylaşılacak',
+      imageDetected: '🖼️ Resim algılandı - Post olarak paylaşılacak',
+      uploadToSeeType: 'Türü görmek için medya yükle',
+      postPhoto: 'Post (Fotoğraf)', reelVideo: 'Reel (Video)',
+      notConnected: 'Bağlı değil',
+      scheduling: 'Zamanlama', date: 'Tarih', time: 'Saat',
+      autoPost: 'Otomatik paylaş', autoPostDesc: 'Paylaşım, planlanan saatte tüm seçili platformlarda otomatik olarak yayınlanacak',
+      publishing: 'Yayınlanıyor...', scheduleAndPost: 'Planla ve Otomatik Paylaş', saveAsDraft: 'Taslak Olarak Kaydet',
+      selectDate: 'Tarih seç', selectTime: 'Saat seç',
+      imageSelected: 'resim', imagesSelected: 'resim', videoSelected: 'video', videosSelected: 'video', selected: 'seçildi',
+      postScheduled: 'Paylaşım planlandı!', postScheduledDesc: '{date} tarihinde {time} saatinde {platforms} üzerinde otomatik yayınlanacak!',
+      errorScheduling: 'Paylaşımlar planlanamadı. Lütfen daha sonra tekrar deneyin.',
+      errorPlatforms: 'Hata: {count} platform',
+    },
+
+    reports: {
+      title: 'Analitik', weeklyReport: 'Haftalık Rapor',
+      thisWeek: 'Bu Hafta', lastWeek: 'Geçen Hafta', performance: 'Performans',
+      bestPost: 'En İyi Paylaşım', worstPost: 'En Zayıf Paylaşım',
+      recommendations: 'Öneriler', contentSuggestions: 'İçerik Önerileri',
+      optimalTimes: 'En İyi Paylaşım Zamanları', trendingTopics: 'Trend Konular', generateReport: 'Rapor oluştur',
+      overview: 'Genel Bakış', reach: 'Erişim', engagement: 'Etkileşim', impressions: 'Gösterimler', likes: 'Beğeniler',
+      platformComparison: 'Platform Karşılaştırması', topPosts: 'En İyi Paylaşımlar',
+      bestPerforming: 'En İyi Performans Gösteren Platform', engagementRate: 'Etkileşim Oranı', reachGrowth: 'Erişim Büyümesi',
+      followers: 'Takipçiler', noData: 'Platform karşılaştırması için henüz veri yok.',
+      noPosts: 'Seçilen dönemde paylaşım yok.', noText: 'Metin yok',
+      platform: 'platform', platforms: 'platform',
+      days7: '7 gün', days30: '30 gün', days90: '90 gün',
+      vsLast7: 'vs. son 7 gün', vsLast30: 'vs. geçen ay', vsLast90: 'vs. son 90 gün',
+      connectFirst: 'Gerçek verilerinizden analitik hesaplayabilmemiz için en az bir platform bağlayın.',
+    },
+
+    settings: {
+      title: 'Ayarlar', account: 'Hesap', profile: 'Profil', accountType: 'Hesap Türü',
+      connectedPlatforms: 'Bağlı Platformlar', connectPlatform: 'Platform bağla',
+      language: 'Dil', german: 'Deutsch', english: 'English', spanish: 'Español', turkish: 'Türkçe',
+      subscription: 'Abonelik', manageSubscription: 'Aboneliği yönet', currentPlan: 'Mevcut Plan',
+      cancelSubscription: 'Aboneliği iptal et',
+      legal: 'Yasal', privacyPolicy: 'Gizlilik Politikası', termsOfService: 'Kullanım Şartları',
+      support: 'Destek', contactSupport: 'Destek ile iletişim',
+      logout: 'Çıkış yap', preferences: 'Tercihler',
+      business: 'İşletme', creator: 'İçerik Üreticisi', both: 'Her İkisi', notSet: 'Belirlenmedi',
+      monthly: 'Aylık', yearly: 'Yıllık', noPlan: 'Plan yok', status: 'Durum', trial: 'Deneme',
+    },
+
+    platforms: { linkedin: 'LinkedIn', instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube Shorts' },
+
+    errors: { generic: 'Bir hata oluştu', noInternet: 'İnternet bağlantısı yok', uploadFailed: 'Yükleme başarısız', subscriptionFailed: 'Abonelik tamamlanamadı' },
+  },
+};
+
+export type TranslationKeys = typeof translations.de;
+
+export const onboardingTranslations: Record<string, any> = {
+  de: {
+    welcome: { title: 'Willkommen bei SocialPro', subtitle: 'Deine All-in-One Social Media Plattform', cta: "Los geht's" },
     companyInfo: {
-      accountTypeTitle: 'Wähle deinen Account-Typ',
-      accountTypeSubtitle: 'Wähle den Typ, der am besten zu dir passt',
-      business: 'Unternehmen',
-      businessDesc: 'Für Unternehmen und Marken',
-      creator: 'Creator',
-      creatorDesc: 'Für Content Creators und Influencer',
-      both: 'Beides',
-      bothDesc: 'Für beide Zwecke',
-      continue: 'Weiter',
-      profileTitle: 'Vervollständige dein Profil',
-      profileSubtitle: 'Hilf uns, personalisierte Empfehlungen zu erstellen',
-      name: 'Name',
-      namePlaceholder: 'Dein Name',
-      industry: 'Branche',
-      industryPlaceholder: 'z.B. Mode, Technologie, Food',
-      niche: 'Nische',
-      nichePlaceholder: 'z.B. Reisen, Fitness, Beauty',
-      targetAudience: 'Zielgruppe',
-      targetAudiencePlaceholder: 'z.B. 18-35, Frauen, Urban',
-      contentGoals: 'Content-Ziele',
-      contentGoalsPlaceholder: 'z.B. Mehr Engagement, Follower-Wachstum',
-      complete: 'Abschließen',
+      accountTypeTitle: 'Waehle deinen Account-Typ',
+      accountTypeSubtitle: 'Waehle den Typ, der am besten zu dir passt',
+      business: 'Unternehmen', businessDesc: 'Fuer Firmen, Marken und Business-Accounts',
+      creator: 'Creator', creatorDesc: 'Fuer Influencer, Content Creator und Personal Brands',
+      both: 'Beides', bothDesc: 'Fuer Unternehmer mit Personal Brand',
+      title: 'Ueber Ihr Unternehmen', subtitle: 'Helfen Sie uns, Ihre Content-Strategie zu erstellen',
+      businessTitle: 'Ueber dein Unternehmen', creatorTitle: 'Ueber dich', bothTitle: 'Dein Profil',
+      companyName: 'Firmenname', companyNamePlaceholder: 'Ihr Firmenname',
+      name: 'Dein Name / Creator Name', namePlaceholder: 'Dein Name',
+      industry: 'Branche', industryPlaceholder: 'z.B. Technologie, Mode, Gesundheit',
+      niche: 'Nische', nichePlaceholder: 'z.B. Reisen, Fitness, Beauty',
+      targetAudience: 'Zielgruppe', targetAudiencePlaceholder: 'z.B. 18-35, Frauen, Urban',
+      contentGoals: 'Content-Ziele', contentGoalsPlaceholder: 'z.B. Mehr Engagement, Follower-Wachstum',
+      postingFrequency: 'Posting-Frequenz', daily: 'Taeglich', weekly: 'Woechentlich', biweekly: '2x pro Monat',
+      tone: 'Ton / Schreibstil',
+      toneOptions: { casual: 'Locker', serious: 'Serioes', inspiring: 'Inspirierend', professional: 'Professionell', friendly: 'Freundlich', educational: 'Lehrreich', authoritative: 'Autoritaer', playful: 'Verspielt', empathetic: 'Einfuehlsam' },
+      complete: 'Weiter',
     },
-    platforms: {
-      title: 'Plattformen verbinden',
-      subtitle: 'Verbinde deine Social Media Accounts',
-      skip: 'Überspringen',
-      connectNow: 'Jetzt verbinden',
-    },
+    platforms: { title: 'Plattformen verbinden', subtitle: 'Verbinde Instagram, LinkedIn oder TikTok', skip: 'Ueberspringen', back: 'Zurueck', connect: 'Verbinden' },
   },
   en: {
-    welcome: {
-      title: 'Welcome to SocialPro',
-      subtitle: 'Your All-in-One Social Media Management Platform',
-      getStarted: 'Get Started',
-    },
+    welcome: { title: 'Welcome to SocialPro', subtitle: 'Your All-in-One Social Media Platform', cta: 'Get Started' },
     companyInfo: {
-      accountTypeTitle: 'Choose Your Account Type',
-      accountTypeSubtitle: 'Select the type that best fits you',
-      business: 'Business',
-      businessDesc: 'For companies and brands',
-      creator: 'Creator',
-      creatorDesc: 'For content creators and influencers',
-      both: 'Both',
-      bothDesc: 'For both purposes',
-      continue: 'Continue',
-      profileTitle: 'Complete Your Profile',
-      profileSubtitle: 'Help us create personalized recommendations',
-      name: 'Name',
-      namePlaceholder: 'Your name',
-      industry: 'Industry',
-      industryPlaceholder: 'e.g. Fashion, Technology, Food',
-      niche: 'Niche',
-      nichePlaceholder: 'e.g. Travel, Fitness, Beauty',
-      targetAudience: 'Target Audience',
-      targetAudiencePlaceholder: 'e.g. 18-35, Women, Urban',
-      contentGoals: 'Content Goals',
-      contentGoalsPlaceholder: 'e.g. More engagement, Follower growth',
-      complete: 'Complete',
+      accountTypeTitle: 'Choose your Account Type',
+      accountTypeSubtitle: 'Choose the type that best fits you',
+      business: 'Business', businessDesc: 'For companies, brands and business accounts',
+      creator: 'Creator', creatorDesc: 'For influencers, content creators and personal brands',
+      both: 'Both', bothDesc: 'For entrepreneurs with personal brand',
+      title: 'About Your Business', subtitle: 'Help us create your content strategy',
+      businessTitle: 'About your business', creatorTitle: 'About you', bothTitle: 'Your Profile',
+      companyName: 'Company Name', companyNamePlaceholder: 'Your company name',
+      name: 'Your Name / Creator Name', namePlaceholder: 'Your name',
+      industry: 'Industry', industryPlaceholder: 'e.g. Technology, Fashion, Health',
+      niche: 'Niche', nichePlaceholder: 'e.g. Travel, Fitness, Beauty',
+      targetAudience: 'Target Audience', targetAudiencePlaceholder: 'e.g. 18-35, Women, Urban',
+      contentGoals: 'Content Goals', contentGoalsPlaceholder: 'e.g. More engagement, follower growth',
+      postingFrequency: 'Posting Frequency', daily: 'Daily', weekly: 'Weekly', biweekly: 'Bi-weekly',
+      tone: 'Tone / Writing Style',
+      toneOptions: { casual: 'Casual', serious: 'Serious', inspiring: 'Inspiring', professional: 'Professional', friendly: 'Friendly', educational: 'Educational', authoritative: 'Authoritative', playful: 'Playful', empathetic: 'Empathetic' },
+      complete: 'Continue',
     },
-    platforms: {
-      title: 'Connect Platforms',
-      subtitle: 'Connect your social media accounts',
-      skip: 'Skip',
-      connectNow: 'Connect Now',
-    },
+    platforms: { title: 'Connect Platforms', subtitle: 'Connect Instagram, LinkedIn or TikTok', skip: 'Skip', back: 'Back', connect: 'Connect' },
   },
   es: {
-    welcome: {
-      title: 'Bienvenido a SocialPro',
-      subtitle: 'Tu plataforma todo en uno de gestión de redes sociales',
-      getStarted: 'Empezar',
-    },
+    welcome: { title: 'Bienvenido a SocialPro', subtitle: 'Tu plataforma todo en uno', cta: 'Empezar' },
     companyInfo: {
       accountTypeTitle: 'Elige tu tipo de cuenta',
-      accountTypeSubtitle: 'Selecciona el tipo que mejor se adapte a ti',
-      business: 'Empresa',
-      businessDesc: 'Para empresas y marcas',
-      creator: 'Creador',
-      creatorDesc: 'Para creadores de contenido e influencers',
-      both: 'Ambos',
-      bothDesc: 'Para ambos propósitos',
-      continue: 'Continuar',
-      profileTitle: 'Completa tu perfil',
-      profileSubtitle: 'Ayúdanos a crear recomendaciones personalizadas',
-      name: 'Nombre',
-      namePlaceholder: 'Tu nombre',
-      industry: 'Industria',
-      industryPlaceholder: 'ej. Moda, Tecnología, Comida',
-      niche: 'Nicho',
-      nichePlaceholder: 'ej. Viajes, Fitness, Belleza',
-      targetAudience: 'Audiencia objetivo',
-      targetAudiencePlaceholder: 'ej. 18-35, Mujeres, Urbano',
-      contentGoals: 'Objetivos de contenido',
-      contentGoalsPlaceholder: 'ej. Más engagement, Crecimiento de seguidores',
-      complete: 'Completar',
+      accountTypeSubtitle: 'Elige el tipo que mejor se adapte a ti',
+      business: 'Empresa', businessDesc: 'Para empresas, marcas y cuentas de negocio',
+      creator: 'Creador', creatorDesc: 'Para influencers, creadores de contenido y marcas personales',
+      both: 'Ambos', bothDesc: 'Para emprendedores con marca personal',
+      title: 'Sobre tu empresa', subtitle: 'Ayudanos a crear tu estrategia de contenido',
+      businessTitle: 'Sobre tu empresa', creatorTitle: 'Sobre ti', bothTitle: 'Tu Perfil',
+      companyName: 'Nombre de empresa', companyNamePlaceholder: 'Nombre de tu empresa',
+      name: 'Tu nombre / Nombre de creador', namePlaceholder: 'Tu nombre',
+      industry: 'Industria', industryPlaceholder: 'ej. Tecnologia, Moda, Salud',
+      niche: 'Nicho', nichePlaceholder: 'ej. Viajes, Fitness, Belleza',
+      targetAudience: 'Audiencia objetivo', targetAudiencePlaceholder: 'ej. 18-35, Mujeres, Urbano',
+      contentGoals: 'Objetivos de contenido', contentGoalsPlaceholder: 'ej. Mas engagement, crecimiento',
+      postingFrequency: 'Frecuencia', daily: 'Diario', weekly: 'Semanal', biweekly: 'Quincenal',
+      tone: 'Tono / Estilo',
+      toneOptions: { casual: 'Casual', serious: 'Serio', inspiring: 'Inspirador', professional: 'Profesional', friendly: 'Amigable', educational: 'Educativo', authoritative: 'Autoritario', playful: 'Jugueton', empathetic: 'Empatico' },
+      complete: 'Continuar',
     },
-    platforms: {
-      title: 'Conectar plataformas',
-      subtitle: 'Conecta tus cuentas de redes sociales',
-      skip: 'Saltar',
-      connectNow: 'Conectar ahora',
-    },
+    platforms: { title: 'Conectar plataformas', subtitle: 'Conecta Instagram, LinkedIn o TikTok', skip: 'Omitir', back: 'Atras', connect: 'Conectar' },
   },
   tr: {
-    welcome: {
-      title: 'SocialPro\'ya Hoş Geldiniz',
-      subtitle: 'Hepsi Bir Arada Sosyal Medya Yönetim Platformu',
-      getStarted: 'Başlayalım',
-    },
+    welcome: { title: "SocialPro'ya Hos Geldiniz", subtitle: 'Hepsi bir arada platform', cta: 'Basla' },
     companyInfo: {
-      accountTypeTitle: 'Hesap Türünü Seç',
-      accountTypeSubtitle: 'Size en uygun türü seçin',
-      business: 'İşletme',
-      businessDesc: 'Şirketler ve markalar için',
-      creator: 'İçerik Üreticisi',
-      creatorDesc: 'İçerik üreticileri ve influencer\'lar için',
-      both: 'Her İkisi',
-      bothDesc: 'Her iki amaç için',
-      continue: 'Devam Et',
-      profileTitle: 'Profilini Tamamla',
-      profileSubtitle: 'Kişiselleştirilmiş öneriler oluşturmamıza yardımcı ol',
-      name: 'İsim',
-      namePlaceholder: 'Adınız',
-      industry: 'Sektör',
-      industryPlaceholder: 'örn. Moda, Teknoloji, Yemek',
-      niche: 'Niş',
-      nichePlaceholder: 'örn. Seyahat, Fitness, Güzellik',
-      targetAudience: 'Hedef Kitle',
-      targetAudiencePlaceholder: 'örn. 18-35, Kadınlar, Şehir',
-      contentGoals: 'İçerik Hedefleri',
-      contentGoalsPlaceholder: 'örn. Daha fazla etkileşim, Takipçi artışı',
-      complete: 'Tamamla',
+      accountTypeTitle: 'Hesap Tipini Sec',
+      accountTypeSubtitle: 'Sana en uygun tipi sec',
+      business: 'Isletme', businessDesc: 'Sirketler, markalar ve is hesaplari icin',
+      creator: 'Icerik Uretici', creatorDesc: 'Influencerlar ve icerik ureticileri icin',
+      both: 'Her Ikisi', bothDesc: 'Kisisel markasi olan girisimciler icin',
+      title: 'Isletmeniz Hakkinda', subtitle: 'Stratejinizi olusturmamiza yardimci olun',
+      businessTitle: 'Isletmeniz hakkinda', creatorTitle: 'Senin hakkinda', bothTitle: 'Profilin',
+      companyName: 'Sirket Adi', companyNamePlaceholder: 'Sirket adiniz',
+      name: 'Adin / Icerik Uretici Adi', namePlaceholder: 'Adin',
+      industry: 'Sektor', industryPlaceholder: 'orn. Teknoloji, Moda, Saglik',
+      niche: 'Nis', nichePlaceholder: 'orn. Seyahat, Fitness, Guzellik',
+      targetAudience: 'Hedef Kitle', targetAudiencePlaceholder: 'orn. 18-35, Kadinlar',
+      contentGoals: 'Icerik Hedefleri', contentGoalsPlaceholder: 'orn. Daha fazla etkilesim',
+      postingFrequency: 'Paylasim Sikligi', daily: 'Gunluk', weekly: 'Haftalik', biweekly: '2 Haftada Bir',
+      tone: 'Ton / Yazim Tarzi',
+      toneOptions: { casual: 'Rahat', serious: 'Ciddi', inspiring: 'Ilham Verici', professional: 'Profesyonel', friendly: 'Samimi', educational: 'Egitici', authoritative: 'Otoriter', playful: 'Eglenceli', empathetic: 'Empatik' },
+      complete: 'Devam',
     },
-    platforms: {
-      title: 'Platformları Bağla',
-      subtitle: 'Sosyal medya hesaplarınızı bağlayın',
-      skip: 'Atla',
-      connectNow: 'Şimdi Bağla',
-    },
-  },
-};
-
-// ✅ PLATFORM NAMES für connect-platforms screen
-export const platformNames = {
-  de: {
-    linkedin: 'LinkedIn',
-    instagram: 'Instagram',
-    tiktok: 'TikTok',
-  },
-  en: {
-    linkedin: 'LinkedIn',
-    instagram: 'Instagram',
-    tiktok: 'TikTok',
-  },
-  es: {
-    linkedin: 'LinkedIn',
-    instagram: 'Instagram',
-    tiktok: 'TikTok',
-  },
-  tr: {
-    linkedin: 'LinkedIn',
-    instagram: 'Instagram',
-    tiktok: 'TikTok',
-  },
-};
-
-// ✅ SETTINGS TRANSLATIONS
-export const settingsTranslations = {
-  de: {
-    title: 'Einstellungen',
-    profile: 'Profil',
-    accountType: 'Account-Typ',
-    connectedPlatforms: 'Verbundene Plattformen',
-    language: 'Sprache',
-    subscription: 'Abonnement',
-    privacy: 'Datenschutz',
-    help: 'Hilfe',
-    logout: 'Abmelden',
-  },
-  en: {
-    title: 'Settings',
-    profile: 'Profile',
-    accountType: 'Account Type',
-    connectedPlatforms: 'Connected Platforms',
-    language: 'Language',
-    subscription: 'Subscription',
-    privacy: 'Privacy',
-    help: 'Help',
-    logout: 'Logout',
-  },
-  es: {
-    title: 'Configuración',
-    profile: 'Perfil',
-    accountType: 'Tipo de cuenta',
-    connectedPlatforms: 'Plataformas conectadas',
-    language: 'Idioma',
-    subscription: 'Suscripción',
-    privacy: 'Privacidad',
-    help: 'Ayuda',
-    logout: 'Cerrar sesión',
-  },
-  tr: {
-    title: 'Ayarlar',
-    profile: 'Profil',
-    accountType: 'Hesap Türü',
-    connectedPlatforms: 'Bağlı Platformlar',
-    language: 'Dil',
-    subscription: 'Abonelik',
-    privacy: 'Gizlilik',
-    help: 'Yardım',
-    logout: 'Çıkış',
+    platforms: { title: 'Platformlari Bagla', subtitle: 'Instagram, LinkedIn veya TikTok bagla', skip: 'Atla', back: 'Geri', connect: 'Bagla' },
   },
 };

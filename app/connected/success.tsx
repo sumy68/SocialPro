@@ -122,7 +122,7 @@ export default function ConnectedSuccess() {
       } catch (e: any) {
         const msg =
           e?.name === "AbortError"
-            ? "Zeitüberschreitung beim Verbinden. Bitte erneut versuchen."
+            ? "Connection timeout. Please try again."
             : e?.message || "exchange_failed";
         setErr(msg);
       } finally {
@@ -144,7 +144,7 @@ export default function ConnectedSuccess() {
         try {
           // 🔹 TikTok: dauerhaft speichern (wie bei LinkedIn & Instagram)
           if (provider === "tiktok") {
-            Alert.alert("TikTok", "Erfolgreich verbunden ✅");
+            Alert.alert("TikTok", "Connected ✅");
             router.replace("/(tabs)/(dashboard)");
             return;
           }
@@ -157,7 +157,7 @@ export default function ConnectedSuccess() {
               liUser?.name ?? "LinkedIn User",
               liUser?.email ?? ""
             );
-            Alert.alert("LinkedIn", "Erfolgreich verbunden ✅");
+            Alert.alert("LinkedIn", "Connected ✅");
             router.replace("/(tabs)/(dashboard)");
             return;
           }
@@ -168,11 +168,11 @@ export default function ConnectedSuccess() {
             "Instagram Business",
             igUserId
           );
-          Alert.alert("Instagram", "Erfolgreich verbunden ✅");
+          Alert.alert("Instagram", "Connected ✅");
           router.replace("/(tabs)/(dashboard)");
       
         } catch (e: any) {
-          Alert.alert("Fehler", e?.message ?? "Konnte nicht speichern");
+          Alert.alert("Error", e?.message ?? "Could not save");
         }
       };
     
@@ -182,7 +182,7 @@ export default function ConnectedSuccess() {
   return (
     <View style={{ flex: 1, justifyContent: "center", padding: 20, gap: 12 }}>
       <Text style={{ fontSize: 22, fontWeight: "700" }}>
-        {ok ? "Erfolgreich verbunden ✅" : loading ? "Verbinde…" : "Verbindung fehlgeschlagen ❌"}
+        {ok ? "Connected ✅" : loading ? "Connecting…" : "Connection failed ❌"}
       </Text>
 
       {loading ? (
@@ -192,7 +192,7 @@ export default function ConnectedSuccess() {
           <>
             <Text style={{ fontSize: 16 }}>Name: {liUser?.name ?? "-"}</Text>
             <Text style={{ fontSize: 16 }}>E-Mail: {liUser?.email ?? "-"}</Text>
-            <Button title="Speichern & weiter" onPress={handleSave} />
+            <Button title="Save & continue" onPress={handleSave} />
             <Button
               title="Später"
               onPress={() => router.replace("/(tabs)/(dashboard)")}
@@ -201,7 +201,7 @@ export default function ConnectedSuccess() {
         ) : provider === "tiktok" ? (
           <>
             <Text style={{ fontSize: 16 }}>TikTok erfolgreich verbunden 🎉</Text>
-            <Button title="Speichern & weiter" onPress={handleSave} />
+            <Button title="Save & continue" onPress={handleSave} />
             <Button
               title="Später"
               onPress={() => router.replace("/(tabs)/(dashboard)")}
@@ -211,7 +211,7 @@ export default function ConnectedSuccess() {
           <>
             <Text style={{ fontSize: 16 }}>Page ID: {pageId}</Text>
             <Text style={{ fontSize: 16 }}>IG User ID: {igUserId}</Text>
-            <Button title="Speichern & weiter" onPress={handleSave} />
+            <Button title="Save & continue" onPress={handleSave} />
             <Button
               title="Später"
               onPress={() => router.replace("/(tabs)/(dashboard)")}
@@ -222,11 +222,11 @@ export default function ConnectedSuccess() {
         <>
           {showErr && (
             <Text style={{ fontSize: 14, color: "crimson" }}>
-              {err ? decodeURIComponent(err) : "Unbekannter Fehler beim Verbinden"}
+              {err ? decodeURIComponent(err) : "Unknown connection error"}
             </Text>
           )}
           <Button
-            title="Zurück"
+            title="Back"
             onPress={() => router.replace("/onboarding/connect-platforms")}
           />
         </>

@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { Stack } from 'expo-router';
 import { Clock, Instagram, Linkedin, ChevronLeft, ChevronRight, Music2 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
+import { translations } from '@/constants/translations';
+import type { Language } from '@/constants/translations';
 import { Platform } from '@/constants/types';
 
 type CalendarDay = {
@@ -25,14 +27,14 @@ export default function CalendarScreen() {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
   };
 
-  const weekDays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+  const weekDays = cal.weekDays;
   const calendarDays = generateCalendarDays(currentMonth, posts);
 
   return (
     <>
       <Stack.Screen
         options={{
-          title: 'Kalender',
+          title: cal.title,
         }}
       />
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -88,7 +90,7 @@ export default function CalendarScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Geplante Posts</Text>
+          <Text style={styles.sectionTitle}>{cal.postsOn}</Text>
           {posts.filter(p => p.status === 'scheduled').map((post) => (
             <View key={post.id} style={styles.postCard}>
               <View style={styles.postHeader}>

@@ -13,11 +13,12 @@ export default function WelcomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { language } = useApp();
+  const wt = (translations[language as Language] ?? translations.de);
   const t = onboardingTranslations[language] ?? onboardingTranslations.de;
 
   const handleStart = async () => {
     await AsyncStorage.setItem(WELCOME_SEEN_KEY, 'true');
-    router.push('/(auth)/sign-in' as any);
+    router.replace('/(auth)/sign-up' as any);
   };
 
   return (

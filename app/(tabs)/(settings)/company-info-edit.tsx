@@ -80,8 +80,8 @@ export default function CompanyInfoEditScreen() {
     <>
       <Stack.Screen
         options={{
-          title: "Profil & Strategie bearbeiten",
-          headerBackTitle: t.back ?? "Zurück",
+          title: t.edit + ' ' + t.settings?.profile,
+          headerBackTitle: t.back,
         }}
       />
       <ScrollView
@@ -92,28 +92,28 @@ export default function CompanyInfoEditScreen() {
           <View style={styles.iconCircle}>
             <Building2 size={32} color="#EF4444" strokeWidth={2} />
           </View>
-          <Text style={styles.title}>Profil & Strategie bearbeiten</Text>
+          <Text style={styles.title}>{t.edit} {t.settings?.profile}</Text>
           <Text style={styles.subtitle}>
-            Passe hier die Infos an, die du beim ersten Start eingegeben hast.
+            {t.onboarding?.companyInfo?.subtitle || 'Update your profile'}
           </Text>
         </View>
 
         <View style={styles.form}>
           {/* Kontaktperson */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Kontaktperson</Text>
+            <Text style={styles.label}>{t.onboarding?.companyInfo?.name || 'Contact'}</Text>
             <TextInput
               style={styles.input}
               value={contactName}
               onChangeText={setContactName}
-              placeholder="Dein Name"
+              placeholder={t.onboarding?.companyInfo?.namePlaceholder || 'Your name'}
               placeholderTextColor="#999"
             />
           </View>
 
           {/* E-Mail */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Kontakt-E-Mail</Text>
+            <Text style={styles.label}>{'Email'}</Text>
             <TextInput
               style={styles.input}
               value={email}

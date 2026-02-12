@@ -3,12 +3,15 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { Stack } from 'expo-router';
 import { Eye, Heart, Users, TrendingUp, TrendingDown, BarChart3, MessageCircle, Share2 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
+import { translations } from '@/constants/translations';
+import type { Language } from '@/constants/translations';
 import { Platform as SocialPlatform } from '@/constants/types';
 
 type TimePeriod = '7' | '30' | '90';
 
 export default function ReportsScreen() {
   const { posts, connectedPlatforms, language } = useApp();
+  const rp = (translations[language as Language] ?? translations.de).reports;
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('30');
 
   const periodDays = selectedPeriod === '7' ? 7 : selectedPeriod === '30' ? 30 : 90;
@@ -95,16 +98,10 @@ export default function ReportsScreen() {
 
     const label =
       selectedPeriod === '7'
-        ? language === 'de'
-          ? 'vs. letzte 7 Tage'
-          : 'vs. last 7 days'
+        ? rp.vsLast7
         : selectedPeriod === '30'
-        ? language === 'de'
-          ? 'vs. letzter Monat'
-          : 'vs. last 30 days'
-        : language === 'de'
-        ? 'vs. letzte 90 Tage'
-        : 'vs. last 90 days';
+        ? rp.vsLast30
+        : rp.vsLast90;
 
     const formatChange = (val: number) =>
       `${val > 0 ? '+' : ''}${val.toFixed(1)}%`;
@@ -113,7 +110,7 @@ export default function ReportsScreen() {
       {
         id: '1',
         icon: 'eye',
-        label: language === 'de' ? 'Reichweite' : 'Reach',
+        label: rp.reach,
         value: formatNumber(currentReach),
         change: formatChange(reachChange),
         changePercent: reachChange,
@@ -123,7 +120,7 @@ export default function ReportsScreen() {
       {
         id: '2',
         icon: 'heart',
-        label: language === 'de' ? 'Engagement' : 'Engagement',
+        label: rp.engagement,
         value: formatNumber(currentEngagement),
         change: formatChange(engagementChange),
         changePercent: engagementChange,
@@ -133,7 +130,7 @@ export default function ReportsScreen() {
       {
         id: '3',
         icon: 'users',
-        label: language === 'de' ? 'Impressionen' : 'Impressions',
+        label: rp.impressions,
         value: formatNumber(currentImpressions),
         change: formatChange(impressionsChange),
         changePercent: impressionsChange,
@@ -143,7 +140,7 @@ export default function ReportsScreen() {
       {
         id: '4',
         icon: 'trending-up',
-        label: language === 'de' ? 'Likes' : 'Likes',
+        label: rp.likes,
         value: formatNumber(currentLikes),
         change: formatChange(likesChange),
         changePercent: likesChange,
@@ -220,9 +217,7 @@ export default function ReportsScreen() {
     if (!bestPlatform) {
       return (
         <Text style={{ color: '#666', fontSize: 13 }}>
-          {language === 'de'
-            ? 'Noch keine Daten für einen Plattform-Vergleich.'
-            : 'No data available for platform comparison yet.'}
+          {rp.noData}
         </Text>
       );
     }
@@ -241,9 +236,7 @@ export default function ReportsScreen() {
             </View>
             <View style={styles.bestPlatformInfo}>
               <Text style={styles.bestPlatformLabel}>
-                {language === 'de'
-                  ? 'Bestperformende Plattform'
-                  : 'Best Performing Platform'}
+                {rp.bestPerforming}
               </Text>
               <Text
                 style={[styles.bestPlatformName, { color: bestPlatform.color }]}
@@ -258,7 +251,7 @@ export default function ReportsScreen() {
                 {formatNumber(bestPlatform.reach)}
               </Text>
               <Text style={styles.bestPlatformStatLabel}>
-                {language === 'de' ? 'Reichweite' : 'Reach'}
+                {rp.reach}
               </Text>
             </View>
             <View style={styles.bestPlatformStat}>
@@ -266,7 +259,7 @@ export default function ReportsScreen() {
                 {bestPlatform.engagement.toFixed(1)}%
               </Text>
               <Text style={styles.bestPlatformStatLabel}>
-                {language === 'de' ? 'Engagement-Rate' : 'Engagement rate'}
+                {rp.engagementRate}
               </Text>
             </View>
             <View style={styles.bestPlatformStat}>
@@ -274,7 +267,7 @@ export default function ReportsScreen() {
                 {bestPlatform.change}
               </Text>
               <Text style={styles.bestPlatformStatLabel}>
-                {language === 'de' ? 'Reichweiten-Wachstum' : 'Reach growth'}
+                {rp.reachGrowth}
               </Text>
             </View>
           </View>
@@ -320,7 +313,7 @@ export default function ReportsScreen() {
                 <View style={styles.platformStats}>
                   <View style={styles.platformStatItem}>
                     <Text style={styles.platformStatLabel}>
-                      {language === 'de' ? 'Follower' : 'Followers'}
+                      {rp.followers}
                     </Text>
                     <Text style={styles.platformStatValue}>
                       {formatNumber(platform.followers)}
@@ -328,7 +321,7 @@ export default function ReportsScreen() {
                   </View>
                   <View style={styles.platformStatItem}>
                     <Text style={styles.platformStatLabel}>
-                      {language === 'de' ? 'Reichweite' : 'Reach'}
+                      {rp.reach}
                     </Text>
                     <Text style={styles.platformStatValue}>
                       {formatNumber(platform.reach)}
@@ -336,7 +329,7 @@ export default function ReportsScreen() {
                   </View>
                   <View style={styles.platformStatItem}>
                     <Text style={styles.platformStatLabel}>
-                      {language === 'de' ? 'Engagement-Rate' : 'Eng. rate'}
+                      {rp.engagementRate}
                     </Text>
                     <Text style={styles.platformStatValue}>
                       {platform.engagement.toFixed(1)}%
@@ -369,7 +362,7 @@ export default function ReportsScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Analytics',
+          title: 'Analytics', headerShown: false,
         }}
       />
       <ScrollView
@@ -378,7 +371,7 @@ export default function ReportsScreen() {
       >
         <View style={styles.header}>
           <Text style={styles.headerTitle}>
-            {language === 'de' ? 'Analytics' : 'Analytics'}
+            {rp.title}
           </Text>
           <View style={styles.periodSelector}>
             <TouchableOpacity
@@ -435,9 +428,7 @@ export default function ReportsScreen() {
         {!hasActivePlatforms && (
           <View style={{ paddingHorizontal: 16, marginTop: 24 }}>
             <Text style={{ fontSize: 15, color: '#666', lineHeight: 20 }}>
-              {language === 'de'
-                ? 'Verbinde zuerst mindestens eine Plattform, damit wir deine Analytics aus echten Insights berechnen können.'
-                : 'Connect at least one platform so we can calculate analytics from your real insights.'}
+              {rp.connectFirst}
             </Text>
           </View>
         )}
@@ -446,7 +437,7 @@ export default function ReportsScreen() {
           <>
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>
-                {language === 'de' ? 'Übersicht' : 'Overview'}
+                {rp.overview}
               </Text>
               <View style={styles.metricsGrid}>
                 {performanceHighlights.map((metric) => {
@@ -489,22 +480,18 @@ export default function ReportsScreen() {
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>
-                {language === 'de'
-                  ? 'Plattform-Vergleich'
-                  : 'Platform comparison'}
+                {rp.platformComparison}
               </Text>
               {renderPlatformComparison()}
             </View>
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>
-                {language === 'de' ? 'Top Beiträge' : 'Top posts'}
+                {rp.topPosts}
               </Text>
               {topPostsForPeriod.length === 0 && (
                 <Text style={{ fontSize: 13, color: '#666' }}>
-                  {language === 'de'
-                    ? 'Keine Beiträge im ausgewählten Zeitraum.'
-                    : 'No posts in the selected period.'}
+                  {rp.noPosts}
                 </Text>
               )}
               {topPostsForPeriod.map((post) => {
@@ -535,11 +522,7 @@ export default function ReportsScreen() {
                       <View style={styles.postPlatformBadge}>
                         <Text style={styles.postPlatformText}>
                           {post.platforms.length}{' '}
-                          {language === 'de'
-                            ? post.platforms.length === 1
-                              ? 'Plattform'
-                              : 'Plattformen'
-                            : post.platforms.length === 1
+                          {post.platforms.length === 1
                             ? 'platform'
                             : 'platforms'}
                         </Text>
@@ -547,7 +530,7 @@ export default function ReportsScreen() {
                     </View>
                     <Text style={styles.postTitle} numberOfLines={2}>
                       {post.caption ||
-                        (language === 'de' ? 'Kein Text' : 'No text')}
+                        (rp.noText)}
                     </Text>
                     <View style={styles.postStats}>
                       <View style={styles.postStat}>

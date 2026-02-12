@@ -57,6 +57,7 @@ export default function ConnectPlatformsScreen() {
   const router = useRouter();
   const t = useTranslation();
   const { connectedPlatforms, connectPlatform, disconnectPlatform } = useApp();
+  const pt = (onboardingTranslations[language] ?? onboardingTranslations.de).platforms ?? {};
   const [connecting, setConnecting] = useState<Platform | null>(null);
   const [igConnected, setIgConnected] = useState(false);
 
@@ -68,11 +69,11 @@ export default function ConnectPlatformsScreen() {
           await AsyncStorage.setItem("ig_connected", "1");
           setIgConnected(true);
           await connectPlatform("instagram", "Instagram Business", q.ig_user_id ?? "");
-          Alert.alert("Instagram", "Erfolgreich verbunden ✅");
+          Alert.alert("Instagram", "Connected ✅");
         } else {
           await AsyncStorage.removeItem("ig_connected");
           setIgConnected(false);
-          if (q.error) Alert.alert("Instagram", `Fehler: ${q.error}`);
+          if (q.error) Alert.alert("Instagram", `Error: ${q.error}`);
         }
       }
     };
@@ -118,7 +119,7 @@ export default function ConnectPlatformsScreen() {
         }
 
         await connectPlatform("linkedin", "LinkedIn", data?.email ?? "");
-        Alert.alert("LinkedIn", "Erfolgreich verbunden ✅");
+        Alert.alert("LinkedIn", "Connected ✅");
         return;
       }
 
@@ -133,7 +134,7 @@ export default function ConnectPlatformsScreen() {
 
         if (res.type === "success") {
           await connectPlatform("tiktok", "TikTok", "");
-          Alert.alert("TikTok", "Erfolgreich verbunden ✅");
+          Alert.alert("TikTok", "Connected ✅");
         }
 
         return;
@@ -163,7 +164,7 @@ export default function ConnectPlatformsScreen() {
           return;
         }
 
-        Alert.alert("Instagram", "Unbekanntes Ergebnis. Bitte erneut versuchen.");
+        Alert.alert("Instagram", "Unknown result. Please try again.");
         return;
       }
 
@@ -213,7 +214,7 @@ export default function ConnectPlatformsScreen() {
     <>
       <Stack.Screen
         options={{
-          title: "Plattformen verbinden",
+          title: pt.title || "Connect Platforms",
         }}
       />
 
@@ -227,7 +228,7 @@ export default function ConnectPlatformsScreen() {
             style={styles.backButton}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text style={styles.backButtonText}>← Zurück</Text>
+            <Text style={styles.backButtonText}>{pt.back || "Back"}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -235,13 +236,13 @@ export default function ConnectPlatformsScreen() {
             style={styles.skipButtonTop}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text style={styles.skipButtonTopText}>Überspringen</Text>
+            <Text style={styles.skipButtonTopText}>{pt.skip || "Skip"}</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.header}>
-          <Text style={styles.title}>Plattformen verbinden</Text>
-          <Text style={styles.subtitle}>Verbinde Instagram, LinkedIn oder TikTok</Text>
+          <Text style={styles.title}>{pt.title || "Connect Platforms"}</Text>
+          <Text style={styles.subtitle}>{pt.subtitle || "Connect Instagram, LinkedIn or TikTok"}</Text>
         </View>
 
         <View style={styles.platforms}>

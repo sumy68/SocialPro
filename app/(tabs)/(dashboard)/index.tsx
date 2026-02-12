@@ -12,19 +12,24 @@ import {
   Lightbulb,
 } from 'lucide-react-native';
 import { Colors } from '@/constants/colors';
+import { translations } from '@/constants/translations';
+import type { Language } from '@/constants/translations';
 import { platformPerformance } from '@/mocks/analytics';
 import React, { useMemo } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '@/contexts/AppContext';
 import { useDashboardInsights } from '@/hooks/useDashboardInsights';
 import { useAIContentSuggestions } from '@/hooks/useAIContentSuggestions';
+import { useWeeklyTips } from '@/hooks/useWeeklyTips';
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const { language, connectedPlatforms, posts, companyInfo, accountType, userProfile } = useApp();
   const router = useRouter();
   const { data: insights } = useDashboardInsights();
+  const d = (translations[language as Language] ?? translations.de).dashboard;
   const { suggestions: aiSuggestions, loading: aiLoading } = useAIContentSuggestions();
+  const { tips: weeklyTips, loading: tipsLoading } = useWeeklyTips();
 
   const connectedPlatformData = useMemo(() => {
     return platformPerformance.filter(platform =>
@@ -55,12 +60,9 @@ export default function DashboardScreen() {
     };
   }, [connectedPlatformData, posts]);
 
-  const userName = companyInfo?.companyName || (language === 'de' ? 'dort' : 'there');
-  const greeting = language === 'de' ? `Guten Tag, ${userName}! 👋` : `Good Day, ${userName}! 👋`;
-  const subtitle =
-    language === 'de'
-      ? 'Bereit, großartigen Content zu erstellen?'
-      : 'Ready to create great content?';
+  const userName = companyInfo?.companyName || '';
+  const greeting = `${d.welcome}, ${userName}! 👋`;
+  const subtitle = d.overview;
 
   const formatK = (value?: number) => {
     if (!value || value === 0) return '0';
@@ -92,7 +94,7 @@ export default function DashboardScreen() {
     };
 
     if (!insights) {
-      const t = (de: string, en: string) => (language === 'de' ? de : en);
+      const t = (de: string, en: string) => language === 'de' ? de : language === 'es' ? en : language === 'tr' ? en : en;
       const cards: InsightCard[] = [
         {
           id: 'fallback-1',
@@ -128,7 +130,7 @@ export default function DashboardScreen() {
       return cards;
     }
 
-    const t = (de: string, en: string) => (language === 'de' ? de : en);
+    const t = (de: string, en: string) => language === 'de' ? de : language === 'es' ? en : language === 'tr' ? en : en;
     const eb = insights.engagementBreakdown;
     const rb = insights.reachBreakdown;
     const summary = insights.weeklySummary;
@@ -189,37 +191,25 @@ export default function DashboardScreen() {
           `${topEngLabel} are your strongest engagement driver`,
         ),
         description:
-          language === 'de'
-            ? `Der größte Teil deiner Interaktionen kommt aktuell über ${topEngLabel}.`
-            : `Most of your interactions currently come from ${topEngLabel}.`,
+          language === 'de' ? `Interaktionen über ${topEngLabel}` : language === 'es' ? `Interacciones via ${topEngLabel}` : language === 'tr' ? `${topEngLabel} üzerinden etkileşim` : `Interactions via ${topEngLabel}`,
         badge: formatK(engagementMap[topEngKey]),
       },
       {
         id: 'reach-top',
         icon: 'clock',
         title:
-          language === 'de'
-            ? `Fokus auf ${topReachLabel}`
-            : `Double down on your ${topReachLabel}`,
+          language === 'de' ? `Fokus auf ${topReachLabel}` : language === 'es' ? `Enfócate en ${topReachLabel}` : language === 'tr' ? `${topReachLabel} odaklan` : `Focus on ${topReachLabel}`,
         description:
-          language === 'de'
-            ? `Der größte Anteil deiner Reichweite stammt derzeit aus ${topReachLabel}.`
-            : `The biggest share of your reach currently comes from ${topReachLabel}.`,
+          language === 'de' ? `Reichweite über ${topReachLabel}` : language === 'es' ? `Alcance via ${topReachLabel}` : language === 'tr' ? `${topReachLabel} erişim` : `Reach via ${topReachLabel}`,
         badge: formatK(reachMap[topReachKey]),
       },
       {
         id: 'engagement-rate',
         icon: 'lightbulb',
         title:
-          language === 'de'
-            ? 'Aktuelle Engagement-Rate'
-            : 'Current Engagement Rate',
+          d.engagementRate,
         description:
-          language === 'de'
-            ? `Deine Interaktionen im Verhältnis zur Reichweite liegen bei etwa ${engagementRate.toFixed(
-                1,
-              )}%.`
-            : `Your interactions relative to reach are around ${engagementRate.toFixed(1)}%.`,
+          language === 'de' ? `Engagement-Rate: ${engagementRate.toFixed(1)}%` : `Engagement rate: ${engagementRate.toFixed(1)}%`,
         badge: `${engagementRate.toFixed(1)}%`,
       },
     ];
@@ -275,10 +265,10 @@ export default function DashboardScreen() {
             </View>
             <View style={styles.weeklyReviewTitleContainer}>
               <Text style={styles.weeklyReviewTitle}>
-                {language === 'de' ? 'Wochenrückblick' : 'Weekly Review'}
+                {d.weeklyReview}
               </Text>
               <Text style={styles.weeklyReviewDate}>
-                {insights?.weekLabel || (language === 'de' ? 'Diese Woche' : 'This week')}
+                {insights?.weekLabel || (d.thisWeek)}
               </Text>
             </View>
             <ChevronRight size={24} color="#FFFFFF" strokeWidth={2.5} />
@@ -290,7 +280,7 @@ export default function DashboardScreen() {
                 {insights?.weeklySummary ? formatK(insights.weeklySummary.totalReach) : '—'}
               </Text>
               <Text style={styles.weeklyReviewStatLabel}>
-                {language === 'de' ? 'Gesamtreichweite' : 'Total Reach'}
+                {d.totalReach}
               </Text>
             </View>
             <View style={styles.weeklyReviewStat}>
@@ -300,7 +290,7 @@ export default function DashboardScreen() {
                   : '—'}
               </Text>
               <Text style={styles.weeklyReviewStatLabel}>
-                {language === 'de' ? 'Gesamte Interaktionen' : 'Total Interactions'}
+                {d.totalInteractions}
               </Text>
             </View>
             <View style={styles.weeklyReviewStat}>
@@ -308,7 +298,7 @@ export default function DashboardScreen() {
                 {insights?.weeklySummary ? `+${insights.weeklySummary.newFollowers}` : '+0'}
               </Text>
               <Text style={styles.weeklyReviewStatLabel}>
-                {language === 'de' ? 'Neue Follower' : 'New Followers'}
+                {d.newFollowers}
               </Text>
             </View>
           </View>
@@ -320,7 +310,7 @@ export default function DashboardScreen() {
               <Text style={styles.bestPlatformEmoji}>👑</Text>
               <View style={styles.bestPlatformTextContainer}>
                 <Text style={styles.bestPlatformTitle}>
-                  {language === 'de' ? 'Beste Plattform' : 'Best Platform'}
+                  {d.bestPlatform}
                 </Text>
                 <Text style={styles.bestPlatformName}>
                   {bestPlatform.platform === 'instagram' ? 'Instagram' : 
@@ -328,7 +318,7 @@ export default function DashboardScreen() {
                 </Text>
               </View>
               <Text style={styles.bestPlatformStat}>
-                {bestPlatform.engagement}% {language === 'de' ? 'Engagement' : 'Engagement'}
+                {bestPlatform.engagement}% {'Engagement'}
               </Text>
             </View>
           </View>
@@ -342,7 +332,7 @@ export default function DashboardScreen() {
               </View>
               <View style={styles.aiContentTextContainer}>
                 <Text style={styles.aiContentTitle}>
-                  {language === 'de' ? '🎯 KI-Content-Vorschlag' : '🎯 AI Content Suggestion'}
+                  {d.aiContentSuggestion}
                 </Text>
                 <Text style={styles.aiContentDescription}>
                   {aiSuggestions[0].description}
@@ -355,7 +345,7 @@ export default function DashboardScreen() {
               onPress={() => router.push('/(tabs)/(create)')}
             >
               <Text style={styles.aiContentButtonText}>
-                {language === 'de' ? 'Jetzt erstellen' : 'Create Now'}
+                {d.createNow}
               </Text>
             </TouchableOpacity>
           </View>
@@ -364,7 +354,7 @@ export default function DashboardScreen() {
         {/* Übersicht mit dynamischen lila Changes */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {language === 'de' ? 'Übersicht' : 'Overview'}
+            {d.overview}
           </Text>
           <View style={styles.metricsGrid}>
             <View style={styles.metricCard}>
@@ -380,7 +370,7 @@ export default function DashboardScreen() {
                   : totalMetrics.followers || 0}
               </Text>
               <Text style={styles.metricLabel}>
-                {language === 'de' ? 'Gesamte Follower' : 'Total Followers'}
+                {d.totalFollowers}
               </Text>
             </View>
 
@@ -393,7 +383,7 @@ export default function DashboardScreen() {
               </View>
               <Text style={styles.metricValue}>{totalMetrics.engagement || 0}%</Text>
               <Text style={styles.metricLabel}>
-                {language === 'de' ? 'Engagement-Rate' : 'Engagement Rate'}
+                {d.engagementRate}
               </Text>
             </View>
 
@@ -406,7 +396,7 @@ export default function DashboardScreen() {
               </View>
               <Text style={styles.metricValue}>{totalMetrics.postsCount || 0}</Text>
               <Text style={styles.metricLabel}>
-                {language === 'de' ? 'Posts diese Woche' : 'Posts this Week'}
+                {d.postsThisWeek}
               </Text>
             </View>
 
@@ -423,7 +413,7 @@ export default function DashboardScreen() {
                   : totalMetrics.reach || 0}
               </Text>
               <Text style={styles.metricLabel}>
-                {language === 'de' ? 'Reichweite' : 'Reach'}
+                {d.reach}
               </Text>
             </View>
           </View>
@@ -432,7 +422,7 @@ export default function DashboardScreen() {
         {connectedPlatformData.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              {language === 'de' ? 'Plattformen' : 'Platforms'}
+              {d.platforms}
             </Text>
             <View style={styles.platformList}>
               {connectedPlatformData.map(platform => (
@@ -449,12 +439,10 @@ export default function DashboardScreen() {
                 <Rocket size={48} color={Colors.accent} strokeWidth={2} />
               </View>
               <Text style={styles.emptyStateTitle}>
-                {language === 'de' ? 'Keine Plattformen verbunden' : 'No Platforms Connected'}
+                {d.noPlatforms}
               </Text>
               <Text style={styles.emptyStateDescription}>
-                {language === 'de'
-                  ? 'Verbinde deine Social-Media-Konten in den Einstellungen, um Analytics zu sehen.'
-                  : 'Connect your social media accounts in settings to see analytics.'}
+                {d.noPlatformsDesc}
               </Text>
               <TouchableOpacity
                 style={styles.emptyStateButton}
@@ -462,7 +450,7 @@ export default function DashboardScreen() {
                 onPress={() => router.push('/(tabs)/(settings)')}
               >
                 <Text style={styles.emptyStateButtonText}>
-                  {language === 'de' ? 'Plattformen verbinden' : 'Connect Platforms'}
+                  {d.connectPlatforms}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -471,7 +459,7 @@ export default function DashboardScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {language === 'de' ? '💡 Wichtigste Erkenntnisse' : '💡 Top Insights'}
+            {d.topInsights}
           </Text>
           <View style={styles.insightsContainer}>
             {generatedInsights.map(card => (
@@ -508,73 +496,43 @@ export default function DashboardScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {language === 'de' ? '🎯 Empfehlungen' : '🎯 Recommendations'}
+            {d.recommendations}
           </Text>
           <View style={styles.recommendationsContainer}>
-            <TouchableOpacity
-              style={styles.recommendationCard}
-              activeOpacity={0.7}
-              onPress={() => router.push('/(tabs)/(create)')}
-            >
-              <View style={styles.recommendationPriority}>
-                <View style={[styles.priorityDot, { backgroundColor: Colors.accent }]} />
-                <Text style={styles.priorityText}>
-                  {language === 'de' ? 'Hohe Priorität' : 'High Priority'}
-                </Text>
-              </View>
-              <Text style={styles.recommendationTitle}>
-                {language === 'de' ? 'Mehr Video-Content erstellen' : 'Create More Video Content'}
-              </Text>
-              <Text style={styles.recommendationDescription}>
-                {language === 'de'
-                  ? 'Video-Posts sind Ihre Top-Performer. Erstellen Sie diese Woche 2-3 weitere Reels.'
-                  : 'Video posts are your top performers. Create 2-3 more Reels this week.'}
-              </Text>
-              <View style={styles.recommendationAction}>
-                <Text style={styles.recommendationActionText}>
-                  {language === 'de' ? 'Reels erstellen' : 'Create Reels'}
-                </Text>
-                <ChevronRight size={16} color={Colors.accent} strokeWidth={2.5} />
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.recommendationCard}
-              activeOpacity={0.7}
-              onPress={() => router.push('/(tabs)/(calendar)')}
-            >
-              <View style={styles.recommendationPriority}>
-                <View style={[styles.priorityDot, { backgroundColor: Colors.warning }]} />
-                <Text style={styles.priorityText}>
-                  {language === 'de' ? 'Mittlere Priorität' : 'Medium Priority'}
-                </Text>
-              </View>
-              <Text style={styles.recommendationTitle}>
-                {language === 'de' ? 'Posting-Zeitplan optimieren' : 'Optimize Posting Schedule'}
-              </Text>
-              <Text style={styles.recommendationDescription}>
-                {language === 'de'
-                  ? 'Planen Sie mehr Posts zwischen 14-16 Uhr für maximale Sichtbarkeit.'
-                  : 'Schedule more posts between 2-4 PM for maximum visibility.'}
-              </Text>
-              <View style={styles.recommendationAction}>
-                <Text style={styles.recommendationActionText}>
-                  {language === 'de' ? 'Posts planen' : 'Schedule Posts'}
-                </Text>
-                <ChevronRight size={16} color={Colors.warning} strokeWidth={2.5} />
-              </View>
-            </TouchableOpacity>
+            {weeklyTips.length > 0 ? weeklyTips.map((tip) => (
+              <TouchableOpacity
+                key={tip.id}
+                style={styles.recommendationCard}
+                activeOpacity={0.7}
+                onPress={() => router.push(tip.actionRoute as any)}
+              >
+                <View style={styles.recommendationPriority}>
+                  <View style={[styles.priorityDot, { backgroundColor: tip.priority === 'high' ? Colors.accent : tip.priority === 'medium' ? Colors.warning : Colors.success }]} />
+                  <Text style={styles.priorityText}>
+                    {tip.priority === 'high' ? d.highPriority : tip.priority === 'medium' ? d.mediumPriority : 'Low'}
+                  </Text>
+                </View>
+                <Text style={styles.recommendationTitle}>{tip.title}</Text>
+                <Text style={styles.recommendationDescription}>{tip.description}</Text>
+                <View style={styles.recommendationAction}>
+                  <Text style={styles.recommendationActionText}>{tip.actionLabel}</Text>
+                  <ChevronRight size={16} color={tip.priority === 'high' ? Colors.accent : Colors.warning} strokeWidth={2.5} />
+                </View>
+              </TouchableOpacity>
+            )) : (
+              <Text style={{ color: '#999', fontSize: 14 }}>{tipsLoading ? '...' : d.overview}</Text>
+            )}
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {language === 'de' ? '👁️ Reichweite im Detail' : '👁️ Reach Details'}
+            {d.reachDetails}
           </Text>
           <View style={styles.detailsCard}>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>
-                {language === 'de' ? 'Organische Reichweite' : 'Organic Reach'}
+                {d.organicReach}
               </Text>
               <Text style={styles.detailValue}>
                 {insights ? formatK(insights.reachBreakdown.organic) : '0'}
@@ -582,7 +540,7 @@ export default function DashboardScreen() {
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>
-                {language === 'de' ? 'Bezahlte Reichweite' : 'Paid Reach'}
+                {d.paidReach}
               </Text>
               <Text style={styles.detailValue}>
                 {insights ? formatK(insights.reachBreakdown.paid) : '0'}
@@ -590,7 +548,7 @@ export default function DashboardScreen() {
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>
-                {language === 'de' ? 'Virale Reichweite' : 'Viral Reach'}
+                {d.viralReach}
               </Text>
               <Text style={styles.detailValue}>
                 {insights ? formatK(insights.reachBreakdown.viral) : '0'}
@@ -598,7 +556,7 @@ export default function DashboardScreen() {
             </View>
             <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
               <Text style={styles.detailLabel}>
-                {language === 'de' ? 'Story-Reichweite' : 'Story Reach'}
+                {d.storyReach}
               </Text>
               <Text style={styles.detailValue}>
                 {insights ? formatK(insights.reachBreakdown.stories) : '0'}
@@ -609,13 +567,13 @@ export default function DashboardScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {language === 'de' ? '❤️ Engagement-Details' : '❤️ Engagement Details'}
+            {d.engagementDetails}
           </Text>
           <View style={styles.engagementGrid}>
             <View style={styles.engagementCard}>
               <Text style={styles.engagementValue}>{formatK(eb?.likes)}</Text>
               <Text style={styles.engagementLabel}>
-                {language === 'de' ? 'Likes' : 'Likes'}
+                {d.likes}
               </Text>
               <Text style={styles.engagementChange}>
                 {formatPercent(eb?.likesChange)}
@@ -624,7 +582,7 @@ export default function DashboardScreen() {
             <View style={styles.engagementCard}>
               <Text style={styles.engagementValue}>{formatK(eb?.comments)}</Text>
               <Text style={styles.engagementLabel}>
-                {language === 'de' ? 'Kommentare' : 'Comments'}
+                {d.comments}
               </Text>
               <Text style={styles.engagementChange}>
                 {formatPercent(eb?.commentsChange)}
@@ -633,7 +591,7 @@ export default function DashboardScreen() {
             <View style={styles.engagementCard}>
               <Text style={styles.engagementValue}>{formatK(eb?.shares)}</Text>
               <Text style={styles.engagementLabel}>
-                {language === 'de' ? 'Shares' : 'Shares'}
+                {d.shares}
               </Text>
               <Text style={styles.engagementChange}>
                 {formatPercent(eb?.sharesChange)}
@@ -642,7 +600,7 @@ export default function DashboardScreen() {
             <View style={styles.engagementCard}>
               <Text style={styles.engagementValue}>{formatK(eb?.saves)}</Text>
               <Text style={styles.engagementLabel}>
-                {language === 'de' ? 'Speichern' : 'Saves'}
+                {d.saves}
               </Text>
               <Text style={styles.engagementChange}>
                 {formatPercent(eb?.savesChange)}
@@ -674,7 +632,7 @@ function PlatformCard({
             <Text style={styles.platformName}>{platformName}</Text>
             <Text style={styles.platformFollowers}>
               {Number((platform as any).followers ?? 0).toLocaleString()}{' '}
-              {language === 'de' ? 'Follower' : 'Followers'}
+              {d.followers}
             </Text>
           </View>
         </View>
@@ -683,13 +641,13 @@ function PlatformCard({
       <View style={styles.platformStats}>
         <View style={styles.platformStat}>
           <Text style={styles.platformStatLabel}>
-            {language === 'de' ? 'Engagement' : 'Engagement'}
+            {'Engagement'}
           </Text>
           <Text style={styles.platformStatValue}>{platform.engagement}%</Text>
         </View>
         <View style={styles.platformStat}>
           <Text style={styles.platformStatLabel}>
-            {language === 'de' ? 'Reichweite' : 'Reach'}
+            {d.reach}
           </Text>
           <Text style={styles.platformStatValue}>{(platform.reach / 1000).toFixed(1)}K</Text>
         </View>

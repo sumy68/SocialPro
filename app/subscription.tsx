@@ -32,7 +32,7 @@ export default function SubscriptionScreen() {
       }
     } catch (e) {
       console.warn("[RevenueCat] load failed", e);
-      Alert.alert("Fehler", "Abos konnten nicht geladen werden. Bitte versuche es später erneut.");
+      Alert.alert("Error", "Could not load subscriptions");
     } finally {
       setLoading(false);
     }
@@ -49,14 +49,14 @@ export default function SubscriptionScreen() {
       setInfo(updated);
 
       if (isPro(updated)) {
-        Alert.alert("Willkommen bei Premium! 🎉", "Dein Premium-Zugang ist jetzt aktiv.");
+        Alert.alert("Welcome to Premium! ��", "Your premium access is now active.");
       }
     } catch (e: any) {
       const msg = String(e?.message ?? e);
       if (msg.toLowerCase().includes("cancel")) return;
 
       console.warn("[RevenueCat] purchase failed", e);
-      Alert.alert("Kauf fehlgeschlagen", "Bitte versuche es erneut.");
+      Alert.alert("Error", "Please try again");
     } finally {
       setPurchasingId(null);
     }
@@ -69,13 +69,13 @@ export default function SubscriptionScreen() {
       setInfo(restored);
 
       if (isPro(restored)) {
-        Alert.alert("Erfolgreich wiederhergestellt", "Dein Premium-Zugang ist aktiv.");
+        Alert.alert("✅", "Restored successfully");
       } else {
-        Alert.alert("Keine Käufe gefunden", "Es wurden keine aktiven Abonnements gefunden.");
+        Alert.alert("!", "No active subscriptions found");
       }
     } catch (e) {
       console.warn("[RevenueCat] restore failed", e);
-      Alert.alert("Wiederherstellung fehlgeschlagen", "Bitte versuche es erneut.");
+      Alert.alert("Error", "Please try again");
     } finally {
       setLoading(false);
     }
@@ -128,7 +128,7 @@ export default function SubscriptionScreen() {
             Premium-Abos nicht verfügbar
           </Text>
           <Text style={{ fontSize: 14, opacity: 0.7, marginBottom: 24, textAlign: "center" }}>
-            Bitte versuche es später erneut.
+            Please try again later.
           </Text>
 
           <Pressable

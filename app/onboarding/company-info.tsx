@@ -84,7 +84,7 @@ export default function CompanyInfoScreen() {
             style={styles.backButton}
           >
             <ChevronLeft size={20} color="#EF4444" />
-            <Text style={styles.backButtonText}>Zurück</Text>
+            <Text style={styles.backButtonText}>{c.complete === 'Continue' ? 'Back' : c.complete === 'Continuar' ? 'Atras' : c.complete === 'Devam' ? 'Geri' : 'Zurueck'}</Text>
           </TouchableOpacity>
 
           <View style={styles.header}>
@@ -146,8 +146,7 @@ export default function CompanyInfoScreen() {
     <>
       <Stack.Screen
         options={{
-          title: accountType === 'business' ? 'Über dein Unternehmen' : 
-                 accountType === 'creator' ? 'Über dich' : 'Dein Profil',
+          title: accountType === 'business' ? (c.businessTitle || 'About your business') : accountType === 'creator' ? (c.creatorTitle || 'About you') : (c.bothTitle || 'Your Profile'),
           headerShown: false,
         }}
       />
