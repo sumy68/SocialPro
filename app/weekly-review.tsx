@@ -312,7 +312,7 @@ export default function WeeklyReviewScreen() {
           options={{
             title: wr.weeklyReview || 'Weekly Review',
             headerShown: true,
-            headerBackTitle: '',
+            headerBackTitle: wr.backToDashboard || 'Dashboard',
           }}
         />
         <View style={styles.loadingContainer}>
@@ -333,7 +333,7 @@ export default function WeeklyReviewScreen() {
           options={{
             title: wr.weeklyReview || 'Weekly Review',
             headerShown: true,
-            headerBackTitle: '',
+            headerBackTitle: wr.backToDashboard || 'Dashboard',
           }}
         />
         <View style={styles.emptyStateWrapper}>
@@ -364,7 +364,7 @@ export default function WeeklyReviewScreen() {
           options={{
             title: wr.weeklyReview || 'Weekly Review',
             headerShown: true,
-            headerBackTitle: '',
+            headerBackTitle: wr.backToDashboard || 'Dashboard',
           }}
         />
         <View style={styles.emptyStateWrapper}>
@@ -392,7 +392,7 @@ export default function WeeklyReviewScreen() {
         options={{
           title: wr.weeklyReview || 'Weekly Review',
           headerShown: true,
-          headerBackTitle: '',
+          headerBackTitle: wr.backToDashboard || 'Dashboard',
         }}
       />
 
