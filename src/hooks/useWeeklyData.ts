@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { translations } from '@/constants/translations';
+import type { Language } from '@/constants/translations';
 import { useQuery } from "@tanstack/react-query";
 import { fetchWeeklyInsights } from "@/lib/insights";
 import type { Platform } from "@/types/insights";
@@ -117,26 +119,25 @@ export function useWeeklyData(params: {
       shares: tp.shares,
     }));
 
-    // einfache statische Insights/Empfehlungen (können später auch aus API kommen)
+        const d = (translations[language as Language] ?? translations.de).dashboard;
+    const insightValue = cmp.engagement.changePercent >= 0 ? `+${cmp.engagement.changePercent.toFixed(1)}%` : `${cmp.engagement.changePercent.toFixed(1)}%`;
+        const d = (translations[language as Language] ?? translations.de).dashboard;
+    const insightValue = cmp.engagement.changePercent >= 0 ? `+${cmp.engagement.changePercent.toFixed(1)}%` : `${cmp.engagement.changePercent.toFixed(1)}%`;
     const insights = [
       {
-        title: language === 'de' ? 'Beste Performance am Nachmittag' : 'Best Performance in Afternoon',
-        description: language === 'de'
-          ? 'Posts zwischen 14–16 Uhr erreichen mehr Engagement'
-          : 'Posts between 2–4 PM get more engagement',
-        value: cmp.engagement.changePercent >= 0 ? `+${cmp.engagement.changePercent.toFixed(1)}%` : `${cmp.engagement.changePercent.toFixed(1)}%`,
-        trend: cmp.engagement.change >= 0 ? 'up' : 'down',
+        title: d.bestPostingTime || 'Best Posting Time',
+        description: d.bestPostingTimeDesc || 'Posts in the afternoon get more engagement',
+        value: insightValue,
+        trend: (cmp.engagement.change >= 0 ? 'up' : 'down') as 'up'|'down',
         color: cmp.engagement.change >= 0 ? '#10B981' : '#EF4444',
       },
     ];
 
     const recommendations = [
       {
-        title: language === 'de' ? 'Mehr Video-Content erstellen' : 'Create More Video Content',
-        description: language === 'de'
-          ? 'Videos erzielen oft bessere Ergebnisse. Plane 3–4 Videos pro Woche ein.'
-          : 'Videos often perform better. Plan 3–4 videos per week.',
-        action: language === 'de' ? 'Video planen' : 'Plan Video',
+        title: d.createMoreVideo || 'Create More Video Content',
+        description: d.createMoreVideoDesc || 'Videos often perform better. Plan 3-4 videos per week.',
+        action: d.createReels || 'Plan Video',
         priority: 'high' as const,
         color: '#EF4444',
       },

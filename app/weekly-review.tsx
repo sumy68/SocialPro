@@ -290,7 +290,7 @@ export default function WeeklyReviewScreen() {
 
   const formatDateRange = (start: Date, end: Date): string => {
     const formatDate = (date: Date) =>
-      date.toLocaleDateString('de-DE', {
+      date.toLocaleDateString(language === 'de' ? 'de-DE' : language === 'es' ? 'es-ES' : language === 'tr' ? 'tr-TR' : 'en-US', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -316,9 +316,9 @@ export default function WeeklyReviewScreen() {
           }}
         />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3B82F6" />
+          <ActivityIndicator size="large" color="#EF4444" />
           <Text style={styles.loadingText}>
-            {wr.weeklyReview || 'Loading Weekly Review...'}
+            {(wr.weeklyReview || 'Weekly Review') + '...'}
           </Text>
         </View>
       </View>
@@ -338,17 +338,17 @@ export default function WeeklyReviewScreen() {
         />
         <View style={styles.emptyStateWrapper}>
           <Text style={styles.emptyStateTitle}>
-            {wr.weeklyReview || 'No data available yet'}
+            {wr.weeklyReview || 'Weekly Review'}
           </Text>
           <Text style={styles.emptyStateText}>
-            {wr.weeklyReview || 'Connect at least one platform so we can generate a weekly review from your real insights.'}
+            {wr.connectFirst || 'Connect at least one platform so we can generate your weekly review.'}
           </Text>
           <TouchableOpacity
             style={styles.emptyStateButton}
             onPress={() => router.push('/(tabs)/(settings)')}
           >
             <Text style={styles.emptyStateButtonText}>
-              {wr.weeklyReview || 'Connect platforms'}
+              {wr.connectPlatforms || 'Connect platforms'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -369,10 +369,10 @@ export default function WeeklyReviewScreen() {
         />
         <View style={styles.emptyStateWrapper}>
           <Text style={styles.emptyStateTitle}>
-            {wr.weeklyReview || 'No insights yet'}
+            {wr.weeklyReview || 'Weekly Review'}
           </Text>
           <Text style={styles.emptyStateText}>
-            {wr.weeklyReview || 'We don’t have enough data for this week yet.'}
+            {wr.noData || 'We don’t have enough data for this week yet.'}
           </Text>
         </View>
       </View>
@@ -402,7 +402,7 @@ export default function WeeklyReviewScreen() {
             {wr.weeklyReview || 'Weekly Review 📊'}
           </Text>
           <Text style={styles.headerSubtitle}>
-            {wr.weeklyReview || 'Performance from the last 7 days'}
+            {wr.overview || 'Performance from the last 7 days'}
           </Text>
           <Text style={styles.headerDate}>
             {formatDateRange(weeklyData.weekStart, weeklyData.weekEnd)}
@@ -412,20 +412,20 @@ export default function WeeklyReviewScreen() {
         {/* PERFORMANCE HIGHLIGHTS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {wr.weeklyReview || 'Performance Highlights'}
+            {wr.highlights || 'Performance Highlights'}
           </Text>
 
           <View style={styles.statsGrid}>
             <StatCard
-              title={wr.weeklyReview || 'Total Reach'}
+              title={wr.reach || 'Total Reach'}
               value={formatNumber(weeklyData.totalReach ?? 0)}
               change={comparison.reach.change ?? 0}
               changePercent={comparison.reach.changePercent ?? 0}
-              icon={<Eye size={24} color="#3B82F6" />}
-              color="#3B82F6"
+              icon={<Eye size={24} color="#EF4444" />}
+              color="#EF4444"
             />
             <StatCard
-              title={wr.weeklyReview || 'Engagement'}
+              title={wr.engagement || 'Engagement'}
               value={formatNumber(weeklyData.totalEngagement ?? 0)}
               change={comparison.engagement.change ?? 0}
               changePercent={comparison.engagement.changePercent ?? 0}
@@ -433,7 +433,7 @@ export default function WeeklyReviewScreen() {
               color="#EF4444"
             />
             <StatCard
-              title={wr.weeklyReview || 'New Followers'}
+              title={wr.followers || 'New Followers'}
               value={formatNumber(weeklyData.newFollowers ?? 0)}
               change={comparison.followers.change ?? 0}
               changePercent={comparison.followers.changePercent ?? 0}
@@ -442,7 +442,7 @@ export default function WeeklyReviewScreen() {
             />
             <StatCard
               title={
-                wr.weeklyReview || 'Posts Published'
+                wr.postsPublished || 'Posts Published'
               }
               value={(weeklyData.postsPublished ?? 0).toString()}
               change={comparison.posts.change ?? 0}
@@ -456,7 +456,7 @@ export default function WeeklyReviewScreen() {
         {/* TOP POSTS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {wr.weeklyReview || 'Top Performing Posts'}
+            {wr.topPosts || 'Top Performing Posts'}
           </Text>
           {(weeklyData.topPerformingPosts ?? []).map((post) => (
             <PostCard key={post.id} post={post} />
@@ -464,7 +464,7 @@ export default function WeeklyReviewScreen() {
           {(!weeklyData.topPerformingPosts ||
             weeklyData.topPerformingPosts.length === 0) && (
             <Text style={styles.emptySubText}>
-              {wr.weeklyReview || 'No top posts for this week.'}
+              {wr.noPosts || 'No top posts this week.'}
             </Text>
           )}
         </View>
@@ -472,7 +472,7 @@ export default function WeeklyReviewScreen() {
         {/* PLATFORM PERFORMANCE */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {wr.weeklyReview || 'Platform Performance'}
+            {wr.platformPerformance || 'Platform Performance'}
           </Text>
           <View style={styles.platformGrid}>
             {(weeklyData.platformPerformance ?? []).map((platform, index) => (
@@ -495,7 +495,7 @@ export default function WeeklyReviewScreen() {
                 <View style={styles.platformStats}>
                   <View style={styles.platformStat}>
                     <Text style={styles.platformStatLabel}>
-                      {wr.weeklyReview || 'Reach'}
+                      {wr.reach || 'Reach'}
                     </Text>
                     <Text style={styles.platformStatValue}>
                       {formatNumber(platform.reach ?? 0)}
@@ -503,7 +503,7 @@ export default function WeeklyReviewScreen() {
                   </View>
                   <View style={styles.platformStat}>
                     <Text style={styles.platformStatLabel}>
-                      {wr.weeklyReview || 'Engagement'}
+                      {wr.engagement || 'Engagement'}
                     </Text>
                     <Text style={styles.platformStatValue}>
                       {formatNumber(platform.engagement ?? 0)}
@@ -511,7 +511,7 @@ export default function WeeklyReviewScreen() {
                   </View>
                   <View style={styles.platformStat}>
                     <Text style={styles.platformStatLabel}>
-                      {wr.weeklyReview || 'Engagement Rate'}
+                      {wr.engagementRate || 'Engagement Rate'}
                     </Text>
                     <Text style={styles.platformStatValue}>
                       {(platform.averageEngagementRate ?? 0).toFixed(1)}%
@@ -526,14 +526,14 @@ export default function WeeklyReviewScreen() {
         {/* INSIGHTS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {wr.weeklyReview || 'Insights'}
+            {wr.insights || 'Insights'}
           </Text>
           {(weeklyData.insights ?? []).map((insight, index) => (
             <InsightCard key={index} insight={insight} />
           ))}
           {(!weeklyData.insights || weeklyData.insights.length === 0) && (
             <Text style={styles.emptySubText}>
-              {wr.weeklyReview || 'No automatic insights available yet.'}
+              {wr.noData || 'No insights available yet.'}
             </Text>
           )}
         </View>
@@ -541,7 +541,7 @@ export default function WeeklyReviewScreen() {
         {/* RECOMMENDATIONS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {wr.weeklyReview || 'Recommendations'}
+            {wr.recommendations || 'Recommendations'}
           </Text>
           {(weeklyData.recommendations ?? []).map((recommendation, index) => {
             const handleActionPress = () => {
@@ -568,7 +568,7 @@ export default function WeeklyReviewScreen() {
           {(!weeklyData.recommendations ||
             weeklyData.recommendations.length === 0) && (
             <Text style={styles.emptySubText}>
-              {wr.weeklyReview || 'No concrete recommendations yet.'}
+              {wr.noData || 'No recommendations yet.'}
             </Text>
           )}
         </View>
@@ -581,7 +581,7 @@ export default function WeeklyReviewScreen() {
           >
             <BarChart3 size={20} color="white" />
             <Text style={styles.primaryButtonText}>
-              {wr.weeklyReview || 'View Full Analytics'}
+              {wr.viewAnalytics || 'View Full Analytics'}
             </Text>
           </TouchableOpacity>
 
@@ -591,7 +591,7 @@ export default function WeeklyReviewScreen() {
               onPress={() => router.push('/(tabs)/(create)')}
             >
               <Text style={styles.secondaryButtonText}>
-                {wr.weeklyReview || 'Create Content'}
+                {wr.createContent || 'Create Content'}
               </Text>
             </TouchableOpacity>
 
@@ -600,7 +600,7 @@ export default function WeeklyReviewScreen() {
               onPress={() => router.push('/(tabs)/(calendar)')}
             >
               <Text style={styles.secondaryButtonText}>
-                {wr.weeklyReview || 'Schedule Post'}
+                {wr.schedulePost || 'Schedule Post'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -742,7 +742,7 @@ const styles = StyleSheet.create({
   postPlatform: {
     fontSize: 14,
     fontWeight: '600' as const,
-    color: '#3B82F6',
+    color: '#EF4444',
   },
   postType: {
     fontSize: 12,
