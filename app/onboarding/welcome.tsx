@@ -5,7 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Sparkles, Calendar, TrendingUp, Zap, Instagram, Linkedin, Music2 } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '@/contexts/AppContext';
-import { onboardingTranslations } from '@/constants/translations';
+import { translations, onboardingTranslations } from '@/constants/translations';
+import type { Language } from '@/constants/translations';
 
 const WELCOME_SEEN_KEY = '@socialpro:welcomeSeen';
 
