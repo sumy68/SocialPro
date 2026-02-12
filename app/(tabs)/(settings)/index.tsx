@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import {
   User,
@@ -191,6 +192,22 @@ export default function SettingsScreen() {
           />
         </View>
 
+
+        {/* SMY Agency Branding */}
+        <View style={{ alignItems: 'center', marginTop: 32, marginBottom: 8 }}>
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E1306C', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, gap: 8, marginBottom: 16 }}
+            onPress={() => Linking.openURL('https://instagram.com/socialproapp')}
+            activeOpacity={0.8}
+          >
+            <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>{s.followUs || 'Follow us @socialproapp'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => Linking.openURL('https://smyagency.de')} style={{ alignItems: 'center' }}>
+            <Text style={{ color: '#999', fontSize: 12 }}>{s.poweredBy || 'Powered by SMY Agency, Munich'}</Text>
+            <Text style={{ color: '#EF4444', fontSize: 12, fontWeight: '500', marginTop: 2 }}>smyagency.de</Text>
+          </TouchableOpacity>
+        </View>
+
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <LogOut size={20} color="#EF4444" />
           <Text style={styles.logoutText}>{s.logout}</Text>
@@ -215,6 +232,11 @@ function SettingItem({ icon, label, value, onPress }: { icon: React.ReactNode; l
 }
 
 const styles = StyleSheet.create({
+  brandingSection: { alignItems: 'center', marginTop: 8, marginBottom: 24 },
+  instagramButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E1306C', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, gap: 8, marginBottom: 16 },
+  instagramButtonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  brandingText: { color: '#999', fontSize: 13, textAlign: 'center', marginBottom: 2 },
+  brandingLink: { color: '#EF4444', fontSize: 13, textAlign: 'center', fontWeight: '500' },
   container: { flex: 1, backgroundColor: "#F8F9FA" },
   contentContainer: { padding: 16, paddingBottom: 40 },
   section: { marginBottom: 32 },
