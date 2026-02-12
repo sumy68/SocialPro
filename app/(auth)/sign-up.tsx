@@ -2,10 +2,18 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { useSignUp } from '@clerk/clerk-expo';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
+import { useApp } from '@/contexts/AppContext';
 
 export default function SignUpScreen() {
   const { signUp, setActive, isLoaded } = useSignUp();
   const router = useRouter();
+  const { language } = useApp();
+  const auth = ({
+    de: { title: 'Konto erstellen', subtitle: 'Starte heute deine kostenlose Testversion', trial: '\u{1F381} 3 Tage kostenlos testen', email: 'E-Mail', password: 'Passwort (min. 8 Zeichen)', cta: '3 Tage kostenlos starten', terms: 'Kostenlose 3-Tage-Testversion. Danach automatische Verlaengerung fuer \u20AC29,99/Monat.', cancel: 'Jederzeit in den Einstellungen kuendbar.', login: 'Du hast bereits ein Konto? Anmelden', verify: 'E-Mail bestaetigen', verifyCta: 'Verifizieren & Testversion starten', error: 'Fehler', regFailed: 'Registrierung fehlgeschlagen', verifyFailed: 'Verifizierung fehlgeschlagen' },
+    en: { title: 'Create Account', subtitle: 'Start your free trial today', trial: '\u{1F381} 3 days free trial', email: 'Email', password: 'Password (min. 8 characters)', cta: 'Start 3 days free', terms: 'Free 3-day trial. Then auto-renewal for \u20AC29.99/month.', cancel: 'Cancel anytime in settings.', login: 'Already have an account? Sign in', verify: 'Verify Email', verifyCta: 'Verify & start trial', error: 'Error', regFailed: 'Registration failed', verifyFailed: 'Verification failed' },
+    es: { title: 'Crear cuenta', subtitle: 'Comienza tu prueba gratuita hoy', trial: '\u{1F381} 3 dias de prueba gratis', email: 'Correo', password: 'Contrasena (min. 8 caracteres)', cta: 'Empezar 3 dias gratis', terms: 'Prueba gratuita de 3 dias. Luego renovacion automatica por \u20AC29,99/mes.', cancel: 'Cancela en cualquier momento.', login: 'Ya tienes cuenta? Iniciar sesion', verify: 'Verificar correo', verifyCta: 'Verificar e iniciar prueba', error: 'Error', regFailed: 'Registro fallido', verifyFailed: 'Verificacion fallida' },
+    tr: { title: 'Hesap Olustur', subtitle: 'Ucretsiz denemenize bugun baslayin', trial: '\u{1F381} 3 gun ucretsiz dene', email: 'E-posta', password: 'Sifre (min. 8 karakter)', cta: '3 gun ucretsiz basla', terms: '3 gunluk ucretsiz deneme. Sonra aylik \u20AC29,99 otomatik yenileme.', cancel: 'Istediginiz zaman iptal edin.', login: 'Zaten hesabiniz var mi? Giris yapin', verify: 'E-posta dogrula', verifyCta: 'Dogrula ve denemeyi basla', error: 'Hata', regFailed: 'Kayit basarisiz', verifyFailed: 'Dogrulama basarisiz' },
+  } as any)[language] || { title: 'Create Account', subtitle: 'Start your free trial today', trial: '\u{1F381} 3 days free trial', email: 'Email', password: 'Password (min. 8 characters)', cta: 'Start 3 days free', terms: 'Free 3-day trial. Then auto-renewal for \u20AC29.99/month.', cancel: 'Cancel anytime in settings.', login: 'Already have an account? Sign in', verify: 'Verify Email', verifyCta: 'Verify & start trial', error: 'Error', regFailed: 'Registration failed', verifyFailed: 'Verification failed' };
   
   const [emailAddress, setEmailAddress] = useState('');
   const [password, setPassword] = useState('');
@@ -24,7 +32,7 @@ export default function SignUpScreen() {
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
     } catch (err: any) {
-      Alert.alert('Fehler', err.errors?.[0]?.message || 'Registrierung fehlgeschlagen');
+      Alert.alert(auth.error, err.errors?.[0]?.message || auth.regFailed);
     }
   };
 
@@ -39,7 +47,7 @@ export default function SignUpScreen() {
       await setActive({ session: completeSignUp.createdSessionId });
       router.replace('/paywall');
     } catch (err: any) {
-      Alert.alert('Fehler', err.errors?.[0]?.message || 'Verifizierung fehlgeschlagen');
+      Alert.alert(auth.error, err.errors?.[0]?.message || auth.verifyFailed);
     }
   };
 
