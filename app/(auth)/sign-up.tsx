@@ -46,7 +46,7 @@ export default function SignUpScreen() {
   if (pendingVerification) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>E-Mail bestätigen</Text>
+        <Text style={styles.title}>{auth.verify}</Text>
         <Text style={styles.subtitle}>Code eingeben, den wir an {emailAddress} gesendet haben</Text>
 
         <TextInput
@@ -58,7 +58,7 @@ export default function SignUpScreen() {
         />
 
         <TouchableOpacity style={styles.button} onPress={onVerifyPress}>
-          <Text style={styles.buttonText}>Verifizieren & Testversion starten</Text>
+          <Text style={styles.buttonText}>{auth.verifyCta}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -66,16 +66,16 @@ export default function SignUpScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Konto erstellen</Text>
-      <Text style={styles.subtitle}>Starte heute deine kostenlose Testversion</Text>
+      <Text style={styles.title}>{auth.title}</Text>
+      <Text style={styles.subtitle}>{auth.subtitle}</Text>
 
       <View style={styles.trialBadge}>
-        <Text style={styles.trialText}>🎁 3 Tage kostenlos testen</Text>
+        <Text style={styles.trialText}>{auth.trial}</Text>
       </View>
 
       <TextInput
         style={styles.input}
-        placeholder="E-Mail"
+        placeholder={auth.email}
         value={emailAddress}
         onChangeText={setEmailAddress}
         autoCapitalize="none"
@@ -84,26 +84,26 @@ export default function SignUpScreen() {
 
       <TextInput
         style={styles.input}
-        placeholder="Passwort (min. 8 Zeichen)"
+        placeholder={auth.password}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
 
       <TouchableOpacity style={styles.button} onPress={onSignUpPress}>
-        <Text style={styles.buttonText}>3 Tage kostenlos starten</Text>
+        <Text style={styles.buttonText}>{auth.cta}</Text>
       </TouchableOpacity>
 
       <View style={styles.termsBox}>
         <Text style={styles.termsText}>
-          Kostenlose 3-Tage-Testversion. Danach automatische Verlängerung für €29,99/Monat.
+          {auth.terms}
           {'\n\n'}
-          Jederzeit in den Einstellungen kündbar.
+          {auth.cancel}
         </Text>
       </View>
 
       <Link href="/(auth)/sign-in" style={styles.link}>
-        <Text style={styles.linkText}>Du hast bereits ein Konto? Anmelden</Text>
+        <Text style={styles.linkText}>{auth.login}</Text>
       </Link>
     </View>
   );

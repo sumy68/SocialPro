@@ -193,6 +193,20 @@ export default function SettingsScreen() {
         </View>
 
 
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{s.feedback || 'Feedback'}</Text>
+          <SettingItem
+            icon={<HelpCircle size={24} color="#10B981" />}
+            label={s.reportProblem || 'Report a Problem'}
+            onPress={() => Linking.openURL('mailto:info@smyagency.de?subject=' + encodeURIComponent(s.reportProblemSubject || 'SocialPro - Bug Report') + '&body=' + encodeURIComponent((s.reportProblemBody || 'Hi SMY Team, I found an issue:') + '\n\n'))}
+          />
+          <SettingItem
+            icon={<Lightbulb size={24} color="#F59E0B" />}
+            label={s.featureRequest || 'Request a Feature'}
+            onPress={() => Linking.openURL('mailto:info@smyagency.de?subject=' + encodeURIComponent(s.featureRequestSubject || 'SocialPro - Feature Request') + '&body=' + encodeURIComponent((s.featureRequestBody || 'Hi SMY Team, I would love to see:') + '\n\n'))}
+          />
+        </View>
+
         {/* SMY Agency Branding */}
         <View style={{ alignItems: 'center', marginTop: 32, marginBottom: 8 }}>
           <TouchableOpacity
