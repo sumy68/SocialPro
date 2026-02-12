@@ -198,12 +198,12 @@ export default function SettingsScreen() {
           <SettingItem
             icon={<HelpCircle size={24} color="#10B981" />}
             label={s.reportProblem || 'Report a Problem'}
-            onPress={() => Linking.openURL('mailto:info@smyagency.de?subject=' + encodeURIComponent(s.reportProblemSubject || 'SocialPro - Bug Report') + '&body=' + encodeURIComponent((s.reportProblemBody || 'Hi SMY Team, I found an issue:') + '\n\n'))}
+            onPress={() => Linking.openURL('mailto:info@smyagency.de?subject=' + encodeURIComponent(s.reportProblemSubject || 'SocialPro - Bug Report') + '&body=' + encodeURIComponent((s.reportProblemBody || 'Hi SMY Team, I found an issue:') + '\n\n')).catch(() => Alert.alert(s.support || 'Support', 'info@smyagency.de'))}
           />
           <SettingItem
-            icon={<Lightbulb size={24} color="#F59E0B" />}
+            icon={<HelpCircle size={24} color="#F59E0B" />}
             label={s.featureRequest || 'Request a Feature'}
-            onPress={() => Linking.openURL('mailto:info@smyagency.de?subject=' + encodeURIComponent(s.featureRequestSubject || 'SocialPro - Feature Request') + '&body=' + encodeURIComponent((s.featureRequestBody || 'Hi SMY Team, I would love to see:') + '\n\n'))}
+            onPress={() => Linking.openURL('mailto:info@smyagency.de?subject=' + encodeURIComponent(s.featureRequestSubject || 'SocialPro - Feature Request') + '&body=' + encodeURIComponent((s.featureRequestBody || 'Hi SMY Team, I would love to see:') + '\n\n')).catch(() => Alert.alert(s.support || 'Support', 'info@smyagency.de'))}
           />
         </View>
 
