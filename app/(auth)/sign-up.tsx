@@ -45,7 +45,7 @@ export default function SignUpScreen() {
       });
 
       await setActive({ session: completeSignUp.createdSessionId });
-      router.replace('/paywall');
+      setTimeout(() => router.replace('/'), 500);
     } catch (err: any) {
       Alert.alert(auth.error, err.errors?.[0]?.message || auth.verifyFailed);
     }

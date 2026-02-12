@@ -1,4 +1,5 @@
 import { Stack, router } from "expo-router";
+import { useAuth } from '@clerk/clerk-expo';
 import {
   View,
   Text,
@@ -46,7 +47,7 @@ export default function SettingsScreen() {
 
   const handleManageSubscription = () => { router.push("/subscription-manage"); };
 
-  const handleLogout = () => { router.replace("/onboarding/welcome"); };
+  const handleLogout = async () => { try { await signOut(); router.replace("/"); } catch (e) { console.error(e); } };
 
   const handleRefreshPlatform = async (platform: Platform) => {
     try {

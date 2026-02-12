@@ -21,8 +21,8 @@ export default function SignInScreen() {
 
       await setActive({ session: completeSignIn.createdSessionId });
       
-      // ✅ Lass index.tsx den Flow entscheiden!
-      router.replace('/');
+      // Wait for Clerk to update session state
+      setTimeout(() => router.replace('/'), 500);
     } catch (err: any) {
       Alert.alert('Error', err.errors?.[0]?.message || 'Sign in failed');
     }
