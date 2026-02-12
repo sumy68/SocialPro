@@ -119,9 +119,7 @@ export function useWeeklyData(params: {
       shares: tp.shares,
     }));
 
-        const d = (translations[language as Language] ?? translations.de).dashboard;
-    const insightValue = cmp.engagement.changePercent >= 0 ? `+${cmp.engagement.changePercent.toFixed(1)}%` : `${cmp.engagement.changePercent.toFixed(1)}%`;
-        const d = (translations[language as Language] ?? translations.de).dashboard;
+    const d = (translations[language as Language] ?? translations.de).dashboard;
     const insightValue = cmp.engagement.changePercent >= 0 ? `+${cmp.engagement.changePercent.toFixed(1)}%` : `${cmp.engagement.changePercent.toFixed(1)}%`;
     const insights = [
       {
