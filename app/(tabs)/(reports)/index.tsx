@@ -115,7 +115,7 @@ export default function ReportsScreen() {
         change: formatChange(reachChange),
         changePercent: reachChange,
         changeLabel: label,
-        color: '#007AFF',
+        color: '#EF4444',
       },
       {
         id: '2',

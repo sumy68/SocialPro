@@ -16,7 +16,8 @@ type CalendarDay = {
 };
 
 export default function CalendarScreen() {
-  const { posts } = useApp();
+  const { posts , language} = useApp();
+  const cal = (translations[language as Language] ?? translations.de).calendar;
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const goToPreviousMonth = () => {

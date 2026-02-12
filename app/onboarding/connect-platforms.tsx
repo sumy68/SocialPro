@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useRouter, Stack } from "expo-router";
 import { Linkedin, Instagram, Music2, CheckCircle } from "lucide-react-native";
+import { onboardingTranslations } from '@/constants/translations';
 import { useTranslation } from "@/hooks/useTranslation";
 import { Platform } from "@/constants/types";
 import { useApp } from "@/contexts/AppContext";
@@ -56,7 +57,7 @@ const parseQuery = (url: string) => {
 export default function ConnectPlatformsScreen() {
   const router = useRouter();
   const t = useTranslation();
-  const { connectedPlatforms, connectPlatform, disconnectPlatform } = useApp();
+  const { connectedPlatforms, connectPlatform, disconnectPlatform, language } = useApp();
   const pt = (onboardingTranslations[language] ?? onboardingTranslations.de).platforms ?? {};
   const [connecting, setConnecting] = useState<Platform | null>(null);
   const [igConnected, setIgConnected] = useState(false);

@@ -169,10 +169,10 @@ export default function CompanyInfoScreen() {
             {accountType === 'both' && <Users size={32} color="#7C3AED" strokeWidth={2} />}
           </View>
           <Text style={styles.title}>
-            {c.profileTitle || 'Vervollständige dein Profil'}
+            {c.profileTitle || c.title || 'Complete your Profile'}
           </Text>
           <Text style={styles.subtitle}>
-            {c.profileSubtitle || 'Helfen Sie uns, Ihre perfekte Content-Strategie zu erstellen'}
+            {c.profileSubtitle || c.subtitle || 'Help us create your content strategy'}
           </Text>
         </View>
 
@@ -243,20 +243,20 @@ export default function CompanyInfoScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Posting-Frequenz</Text>
+            <Text style={styles.label}>{c.postingFrequency || "Posting Frequency"}</Text>
             <View style={styles.frequencyButtons}>
               <FrequencyButton
-                label="Täglich"
+                label={c.daily || "Daily"}
                 selected={postingFrequency === 'daily'}
                 onPress={() => setPostingFrequency('daily')}
               />
               <FrequencyButton
-                label="Wöchentlich"
+                label={c.weekly || "Weekly"}
                 selected={postingFrequency === 'weekly'}
                 onPress={() => setPostingFrequency('weekly')}
               />
               <FrequencyButton
-                label="2x pro Monat"
+                label={c.biweekly || "Bi-weekly"}
                 selected={postingFrequency === 'biweekly'}
                 onPress={() => setPostingFrequency('biweekly')}
               />
@@ -264,18 +264,18 @@ export default function CompanyInfoScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Ton / Schreibstil</Text>
+            <Text style={styles.label}>{c.tone || "Tone / Writing Style"}</Text>
             <View style={styles.toneButtons}>
               {[
-                { key: 'casual', label: 'Locker' },
-                { key: 'professional', label: 'Professionell' },
-                { key: 'inspiring', label: 'Inspirierend' },
-                { key: 'friendly', label: 'Freundlich' },
-                { key: 'educational', label: 'Lehrreich' },
-                { key: 'serious', label: 'Seriös' },
-                { key: 'playful', label: 'Verspielt' },
-                { key: 'empathetic', label: 'Einfühlsam' },
-                { key: 'authoritative', label: 'Autoritär' },
+                { key: 'casual', label: c.toneOptions?.casual || 'Casual' },
+                { key: 'professional', label: c.toneOptions?.professional || 'Professional' },
+                { key: 'inspiring', label: c.toneOptions?.inspiring || 'Inspiring' },
+                { key: 'friendly', label: c.toneOptions?.friendly || 'Friendly' },
+                { key: 'educational', label: c.toneOptions?.educational || 'Educational' },
+                { key: 'serious', label: c.toneOptions?.serious || 'Serious' },
+                { key: 'playful', label: c.toneOptions?.playful || 'Playful' },
+                { key: 'empathetic', label: c.toneOptions?.empathetic || 'Empathetic' },
+                { key: 'authoritative', label: c.toneOptions?.authoritative || 'Authoritative' },
               ].map(({ key, label }) => (
                 <TouchableOpacity
                   key={key}

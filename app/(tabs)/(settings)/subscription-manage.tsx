@@ -90,7 +90,7 @@ export default function SubscriptionManageScreen() {
     <>
       <Stack.Screen
         options={{
-          title: st.manageSubscription,
+          title: st?.manageSubscription || 'Manage Subscription',
           headerBackTitle: '',
         }}
       />

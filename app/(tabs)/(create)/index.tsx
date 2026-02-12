@@ -18,7 +18,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { LocalTRPCProvider } from './trpc-local';
 
 function CreateScreenInner() {
-  const { addPost, connectedPlatforms } = useApp();
+  const { addPost, connectedPlatforms , language} = useApp();
+  const cr = (translations[language as Language] ?? translations.de).create;
   const { publishToMultiplePlatforms, isPublishing } = usePublishPost();
 
   const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>([]);
