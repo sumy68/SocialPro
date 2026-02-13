@@ -20,7 +20,7 @@ ios: {
 supportsTablet: true,
 bundleIdentifier: "app.rork.socialmedia-mastermind-content-planning-analytics",
 // ✅ WICHTIG: Build Number hochgezählt
-buildNumber: "11",
+buildNumber: "100",
 infoPlist: {
 NSPhotoLibraryUsageDescription:
 "Allow $(PRODUCT_NAME) to access your photos",
