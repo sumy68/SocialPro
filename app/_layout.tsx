@@ -4,6 +4,7 @@ import { AppProvider } from '@/contexts/AppContext';
 import { ReactQueryProvider } from '@/lib/query';
 import { useEffect } from 'react';
 import { initRevenueCat } from '@/lib/purchases';
+import { View, Text } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 const tokenCache = {
@@ -27,13 +28,7 @@ const tokenCache = {
   },
 };
 
-const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
-
-if (!publishableKey) {
-  throw new Error(
-    'Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env'
-  );
-}
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 export default function RootLayout() {
   useEffect(() => {
@@ -46,9 +41,17 @@ export default function RootLayout() {
     })();
   }, []);
 
+  if (!publishableKey) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>App wird geladen...</Text>
+      </View>
+    );
+  }
+
   return (
-    <ClerkProvider 
-      tokenCache={tokenCache} 
+    <ClerkProvider
+      tokenCache={tokenCache}
       publishableKey={publishableKey}
       appearance={{
         variables: {
