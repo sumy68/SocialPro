@@ -50,12 +50,14 @@ export default function SettingsScreen() {
 
   const handleLogout = async () => {
     try {
-      await signOut(); router.replace("/(auth)/sign-in"); return;
-      // Clear onboarding state so fresh start
       const AsyncStorage = require('@react-native-async-storage/async-storage').default;
       await AsyncStorage.multiRemove(['@socialpro:welcomeSeen', '@trial_start_date']);
-      setTimeout(() => router.replace('/'), 1000);
-    } catch (e) { console.error(e); }
+      await signOut();
+      router.replace("/(auth)/sign-in");
+    } catch (e) {
+      console.error('Logout error:', e);
+      Alert.alert('Error', 'Logout failed: ' + (e as any)?.message);
+    }
   };
 
   const handleRefreshPlatform = async (platform: Platform) => {
