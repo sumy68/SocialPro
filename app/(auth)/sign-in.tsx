@@ -24,7 +24,7 @@ export default function SignInScreen() {
       // Wait for Clerk to update session state
       // Wait for Clerk to sync then navigate
       const checkAndNav = () => {
-        router.replace('/(tabs)/(dashboard)');
+        router.replace('/');
       };
       checkAndNav();
     } catch (err: any) {

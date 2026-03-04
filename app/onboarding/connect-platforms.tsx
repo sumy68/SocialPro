@@ -233,7 +233,7 @@ export default function ConnectPlatformsScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.replace("/(tabs)/(dashboard)")}
+            onPress={() => router.replace("/")}
             style={styles.skipButtonTop}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
