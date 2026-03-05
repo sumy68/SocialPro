@@ -38,15 +38,18 @@ export default function SignUpScreen() {
 
   const onVerifyPress = async () => {
     if (!isLoaded) return;
-
     try {
-      const completeSignUp = await signUp.attemptEmailAddressVerification({
-        code,
-      });
-
-      await setActive({ session: completeSignUp.createdSessionId });
-      router.replace('/onboarding/welcome' as any);
+      const completeSignUp = await signUp.attemptEmailAddressVerification({ code });
+      console.log("[SignUp] Verification status:", completeSignUp.status);
+      console.log("[SignUp] Session ID:", completeSignUp.createdSessionId);
+      if (completeSignUp.status === "complete" && completeSignUp.createdSessionId) {
+        await setActive({ session: completeSignUp.createdSessionId });
+        router.replace("/");
+      } else {
+        Alert.alert(auth.error, "Verification incomplete: " + completeSignUp.status);
+      }
     } catch (err: any) {
+      console.log("[SignUp] ERROR:", JSON.stringify(err));
       Alert.alert(auth.error, err.errors?.[0]?.message || auth.verifyFailed);
     }
   };
