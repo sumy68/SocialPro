@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import Purchases, { PurchasesOfferings, PurchasesPackage } from 'react-native-purchases';
@@ -16,6 +16,7 @@ const paywallT: Record<string, Record<string, string>> = {
     monthlyDesc: '3 Tage gratis, dann monatlich abgerechnet', yearlyDesc: '3 Tage gratis, dann jährlich - spare 30%',
     popular: 'AM BELIEBTESTEN',
     terms: 'Die Testversion verlängert sich automatisch in ein kostenpflichtiges Abo, wenn sie nicht 24 Stunden vor Ablauf gekündigt wird. Jederzeit in den Einstellungen kündbar.',
+    privacyPolicy: 'Datenschutz', eula: 'Nutzungsbedingungen', and: ' & ',
   },
   en: {
     skip: 'Later', title: 'Start your free trial', subtitle: '3 days free, then choose your plan',
@@ -23,6 +24,7 @@ const paywallT: Record<string, Record<string, string>> = {
     monthlyDesc: '3 days free, then billed monthly', yearlyDesc: '3 days free, then billed yearly - save 30%',
     popular: 'MOST POPULAR',
     terms: 'The trial automatically converts to a paid subscription if not cancelled 24 hours before expiry. Cancel anytime in Settings.',
+    privacyPolicy: 'Privacy Policy', eula: 'Terms of Use', and: ' & ',
   },
   es: {
     skip: 'Después', title: 'Inicia tu prueba gratuita', subtitle: '3 días gratis, luego elige tu plan',
@@ -30,6 +32,7 @@ const paywallT: Record<string, Record<string, string>> = {
     monthlyDesc: '3 días gratis, luego facturación mensual', yearlyDesc: '3 días gratis, luego facturación anual - ahorra 30%',
     popular: 'MÁS POPULAR',
     terms: 'La prueba se convierte automáticamente en una suscripción de pago si no se cancela 24 horas antes del vencimiento. Cancela en cualquier momento.',
+    privacyPolicy: 'Política de privacidad', eula: 'Términos de uso', and: ' & ',
   },
   tr: {
     skip: 'Sonra', title: 'Ücretsiz denemenizi başlatın', subtitle: '3 gün ücretsiz, sonra planınızı seçin',
@@ -37,6 +40,7 @@ const paywallT: Record<string, Record<string, string>> = {
     monthlyDesc: '3 gün ücretsiz, sonra aylık faturalandırma', yearlyDesc: '3 gün ücretsiz, sonra yıllık faturalandırma - %30 tasarruf',
     popular: 'EN POPÜLER',
     terms: 'Deneme süresi, sona ermeden 24 saat önce iptal edilmezse otomatik olarak ücretli aboneliğe dönüşür. İstediğiniz zaman iptal edebilirsiniz.',
+    privacyPolicy: 'Gizlilik Politikası', eula: 'Kullanım Koşulları', and: ' & ',
   },
 };
 
@@ -116,6 +120,17 @@ export default function PaywallScreen() {
       )}
 
       <Text style={styles.terms}>{t.terms}</Text>
+
+      <View style={styles.linksRow}>
+        <TouchableOpacity onPress={() => Linking.openURL('https://smyagency.de/datenschutz-socialpro.html')}>
+          <Text style={styles.link}>{t.privacyPolicy}</Text>
+        </TouchableOpacity>
+        <Text style={styles.linkSeparator}>{t.and}</Text>
+        <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
+          <Text style={styles.link}>{t.eula}</Text>
+        </TouchableOpacity>
+      </View>
+
       {purchasing && (<ActivityIndicator size="large" color="#EF4444" style={styles.purchasingIndicator} />)}
     </ScrollView>
   );
@@ -140,5 +155,8 @@ const styles = StyleSheet.create({
   packagePrice: { fontSize: 24, fontWeight: 'bold', color: '#EF4444' },
   packageDescription: { fontSize: 14, color: '#6B7280' },
   terms: { fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginTop: 30, lineHeight: 16 },
+  linksRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 10, marginBottom: 20 },
+  link: { fontSize: 12, color: '#EF4444', textDecorationLine: 'underline' },
+  linkSeparator: { fontSize: 12, color: '#9CA3AF', marginHorizontal: 4 },
   purchasingIndicator: { marginTop: 20 },
 });
