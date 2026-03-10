@@ -9,6 +9,7 @@ const TRIAL_START_KEY = '@trial_start_date';
 const TRIAL_DAYS = 3;
 const LANGUAGE_SELECTED_KEY = '@socialpro:languageSelected';
 const WELCOME_SEEN_KEY = '@socialpro:welcomeSeen';
+const PAYWALL_SEEN_KEY = '@socialpro:paywallSeen';
 
 export default function Index() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -19,11 +20,14 @@ export default function Index() {
   const [checkingLanguage, setCheckingLanguage] = useState(true);
   const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
   const [checkingWelcome, setCheckingWelcome] = useState(true);
+  const [hasSeenPaywall, setHasSeenPaywall] = useState(false);
+  const [checkingPaywall, setCheckingPaywall] = useState(true);
 
   useEffect(() => {
     checkTrial();
     checkLanguageSelection();
     checkWelcomeSeen();
+    checkPaywallSeen();
   }, [isSignedIn, isLoaded]);
 
   const checkTrial = async () => {
@@ -66,7 +70,18 @@ export default function Index() {
     }
   };
 
-  if (!isLoaded || isLoading || checkingTrial || checkingLanguage || checkingWelcome) {
+  const checkPaywallSeen = async () => {
+    try {
+      const paywallSeen = await AsyncStorage.getItem(PAYWALL_SEEN_KEY);
+      setHasSeenPaywall(paywallSeen === 'true');
+    } catch (error) {
+      console.error('Error checking paywall seen:', error);
+    } finally {
+      setCheckingPaywall(false);
+    }
+  };
+
+  if (!isLoaded || isLoading || checkingTrial || checkingLanguage || checkingWelcome || checkingPaywall) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
         <ActivityIndicator size="large" color="#EF4444" />
@@ -74,13 +89,14 @@ export default function Index() {
     );
   }
 
-  console.log('[Index] isSignedIn:', isSignedIn, 'hasSelectedLanguage:', hasSelectedLanguage, 'hasSeenWelcome:', hasSeenWelcome, 'hasCompletedOnboarding:', hasCompletedOnboarding, 'trialExpired:', trialExpired);
+  console.log('[Index] isSignedIn:', isSignedIn, 'hasSelectedLanguage:', hasSelectedLanguage, 'hasSeenWelcome:', hasSeenWelcome, 'hasSeenPaywall:', hasSeenPaywall, 'hasCompletedOnboarding:', hasCompletedOnboarding, 'trialExpired:', trialExpired);
+
   // ✅ 1. LANGUAGE SELECTION ZUERST
   if (!hasSelectedLanguage) {
     return <Redirect href="/language-selection" />;
   }
 
-  // ✅ 2. WELCOME SCREEN (in gewählter Sprache - zeigt was die App ist!)
+  // ✅ 2. WELCOME SCREEN
   if (!hasSeenWelcome) {
     return <Redirect href="/onboarding/welcome" />;
   }
@@ -90,8 +106,8 @@ export default function Index() {
     return <Redirect href="/(auth)/sign-in" />;
   }
 
-  // ✅ 4. PAYWALL (Trial Check)
-  if (trialExpired) {
+  // ✅ 4. PAYWALL (neue User sehen sie immer + Trial abgelaufen)
+  if (!hasSeenPaywall || trialExpired) {
     return <Redirect href="/paywall" />;
   }
 

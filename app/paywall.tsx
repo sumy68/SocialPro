@@ -8,6 +8,7 @@ import { translations } from '@/constants/translations';
 import type { Language } from '@/constants/translations';
 
 const TRIAL_START_KEY = '@trial_start_date';
+const PAYWALL_SEEN_KEY = '@socialpro:paywallSeen';
 
 const paywallT: Record<string, Record<string, string>> = {
   de: {
@@ -64,13 +65,17 @@ export default function PaywallScreen() {
     setPurchasing(true);
     try {
       const { customerInfo } = await Purchases.purchasePackage(pkg);
-      if (customerInfo.entitlements.active['premium']) { router.replace('/onboarding/company-info'); }
+      if (customerInfo.entitlements.active['premium']) {
+        await AsyncStorage.setItem(PAYWALL_SEEN_KEY, 'true');
+        router.replace('/onboarding/company-info');
+      }
     } catch (error: any) { if (!error.userCancelled) console.error('Purchase error:', error); }
     finally { setPurchasing(false); }
   };
 
   const handleSkip = async () => {
     try {
+      await AsyncStorage.setItem(PAYWALL_SEEN_KEY, 'true');
       const trialStartDate = await AsyncStorage.getItem(TRIAL_START_KEY);
       if (!trialStartDate) { await AsyncStorage.setItem(TRIAL_START_KEY, new Date().toISOString()); }
       router.replace('/onboarding/company-info');
