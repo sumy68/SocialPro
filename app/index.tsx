@@ -4,6 +4,7 @@ import { Redirect } from 'expo-router';
 import { View, ActivityIndicator } from 'react-native';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Purchases from 'react-native-purchases';
 
 const TRIAL_START_KEY = '@trial_start_date';
 const TRIAL_DAYS = 3;
@@ -22,6 +23,7 @@ export default function Index() {
   const [checkingWelcome, setCheckingWelcome] = useState(true);
   const [hasSeenPaywall, setHasSeenPaywall] = useState(false);
   const [checkingPaywall, setCheckingPaywall] = useState(true);
+  const [hasPremium, setHasPremium] = useState(false);
 
   useEffect(() => {
     checkTrial();
@@ -73,7 +75,22 @@ export default function Index() {
   const checkPaywallSeen = async () => {
     try {
       const paywallSeen = await AsyncStorage.getItem(PAYWALL_SEEN_KEY);
-      setHasSeenPaywall(paywallSeen === 'true');
+      if (paywallSeen === 'true') {
+        setHasSeenPaywall(true);
+      } else {
+        // Auch RevenueCat checken — falls App neu installiert wurde
+        try {
+          const customerInfo = await Purchases.getCustomerInfo();
+          if (customerInfo.entitlements.active['premium']) {
+            // Hat aktives Abo → Paywall nicht nochmal zeigen
+            await AsyncStorage.setItem(PAYWALL_SEEN_KEY, 'true');
+            setHasSeenPaywall(true);
+            setHasPremium(true);
+          }
+        } catch (e) {
+          console.error('Error checking RevenueCat:', e);
+        }
+      }
     } catch (error) {
       console.error('Error checking paywall seen:', error);
     } finally {
@@ -89,7 +106,7 @@ export default function Index() {
     );
   }
 
-  console.log('[Index] isSignedIn:', isSignedIn, 'hasSelectedLanguage:', hasSelectedLanguage, 'hasSeenWelcome:', hasSeenWelcome, 'hasSeenPaywall:', hasSeenPaywall, 'hasCompletedOnboarding:', hasCompletedOnboarding, 'trialExpired:', trialExpired);
+  console.log('[Index] isSignedIn:', isSignedIn, 'hasSelectedLanguage:', hasSelectedLanguage, 'hasSeenWelcome:', hasSeenWelcome, 'hasSeenPaywall:', hasSeenPaywall, 'hasCompletedOnboarding:', hasCompletedOnboarding, 'trialExpired:', trialExpired, 'hasPremium:', hasPremium);
 
   // ✅ 1. LANGUAGE SELECTION ZUERST
   if (!hasSelectedLanguage) {
@@ -106,8 +123,8 @@ export default function Index() {
     return <Redirect href="/(auth)/sign-in" />;
   }
 
-  // ✅ 4. PAYWALL (neue User sehen sie immer + Trial abgelaufen)
-  if (!hasSeenPaywall || trialExpired) {
+  // ✅ 4. PAYWALL (neue User + Trial abgelaufen, aber nicht wenn aktives Abo)
+  if ((!hasSeenPaywall || trialExpired) && !hasPremium) {
     return <Redirect href="/paywall" />;
   }
 
