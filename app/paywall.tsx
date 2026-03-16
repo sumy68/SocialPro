@@ -103,29 +103,7 @@ export default function PaywallScreen() {
         <Text style={styles.trialBadgeText}>{t.trialBadge}</Text>
       </View>
 
-      {monthlyPackage && (
-        <TouchableOpacity style={styles.packageCard} onPress={() => handlePurchase(monthlyPackage)} disabled={purchasing}>
-          <View style={styles.packageHeader}>
-            <Text style={styles.packageTitle}>{t.monthly}</Text>
-            <Text style={styles.packagePrice}>{monthlyPackage.product.priceString}{t.perMonth}</Text>
-          </View>
-          <Text style={styles.packageDescription}>{t.monthlyDesc}</Text>
-        </TouchableOpacity>
-      )}
-
-      {annualPackage && (
-        <TouchableOpacity style={[styles.packageCard, styles.popularPackage]} onPress={() => handlePurchase(annualPackage)} disabled={purchasing}>
-          <View style={styles.popularBadge}><Text style={styles.popularBadgeText}>{t.popular}</Text></View>
-          <View style={styles.packageHeader}>
-            <Text style={styles.packageTitle}>{t.yearly}</Text>
-            <Text style={styles.packagePrice}>{annualPackage.product.priceString}{t.perYear}</Text>
-          </View>
-          <Text style={styles.packageDescription}>{t.yearlyDesc}</Text>
-        </TouchableOpacity>
-      )}
-
-      <Text style={styles.terms}>{t.terms}</Text>
-
+      {/* Links BEFORE purchase buttons - prominent & always visible */}
       <View style={styles.linksRow}>
         <TouchableOpacity onPress={() => Linking.openURL('https://smyagency.de/datenschutz-socialpro.html')}>
           <Text style={styles.link}>{t.privacyPolicy}</Text>
@@ -135,6 +113,46 @@ export default function PaywallScreen() {
           <Text style={styles.link}>{t.eula}</Text>
         </TouchableOpacity>
       </View>
+
+      {monthlyPackage ? (
+        <TouchableOpacity style={styles.packageCard} onPress={() => handlePurchase(monthlyPackage)} disabled={purchasing}>
+          <View style={styles.packageHeader}>
+            <Text style={styles.packageTitle}>{t.monthly}</Text>
+            <Text style={styles.packagePrice}>{monthlyPackage.product.priceString}{t.perMonth}</Text>
+          </View>
+          <Text style={styles.packageDescription}>{t.monthlyDesc}</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.packageCard}>
+          <View style={styles.packageHeader}>
+            <Text style={styles.packageTitle}>{t.monthly}</Text>
+            <Text style={styles.packagePrice}>€4,99{t.perMonth}</Text>
+          </View>
+          <Text style={styles.packageDescription}>{t.monthlyDesc}</Text>
+        </View>
+      )}
+
+      {annualPackage ? (
+        <TouchableOpacity style={[styles.packageCard, styles.popularPackage]} onPress={() => handlePurchase(annualPackage)} disabled={purchasing}>
+          <View style={styles.popularBadge}><Text style={styles.popularBadgeText}>{t.popular}</Text></View>
+          <View style={styles.packageHeader}>
+            <Text style={styles.packageTitle}>{t.yearly}</Text>
+            <Text style={styles.packagePrice}>{annualPackage.product.priceString}{t.perYear}</Text>
+          </View>
+          <Text style={styles.packageDescription}>{t.yearlyDesc}</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={[styles.packageCard, styles.popularPackage]}>
+          <View style={styles.popularBadge}><Text style={styles.popularBadgeText}>{t.popular}</Text></View>
+          <View style={styles.packageHeader}>
+            <Text style={styles.packageTitle}>{t.yearly}</Text>
+            <Text style={styles.packagePrice}>€34,99{t.perYear}</Text>
+          </View>
+          <Text style={styles.packageDescription}>{t.yearlyDesc}</Text>
+        </View>
+      )}
+
+      <Text style={styles.terms}>{t.terms}</Text>
 
       {purchasing && (<ActivityIndicator size="large" color="#EF4444" style={styles.purchasingIndicator} />)}
     </ScrollView>
@@ -149,8 +167,11 @@ const styles = StyleSheet.create({
   skipText: { color: '#EF4444', fontSize: 16, fontWeight: '600' },
   title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', marginBottom: 10, marginTop: 20 },
   subtitle: { fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 30 },
-  trialBadge: { backgroundColor: '#10B981', paddingVertical: 15, paddingHorizontal: 30, borderRadius: 30, alignSelf: 'center', marginBottom: 40 },
+  trialBadge: { backgroundColor: '#10B981', paddingVertical: 15, paddingHorizontal: 30, borderRadius: 30, alignSelf: 'center', marginBottom: 20 },
   trialBadgeText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  linksRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 10, marginBottom: 20 },
+  link: { fontSize: 12, color: '#EF4444', textDecorationLine: 'underline' },
+  linkSeparator: { fontSize: 12, color: '#9CA3AF', marginHorizontal: 4 },
   packageCard: { borderWidth: 2, borderColor: '#E5E7EB', borderRadius: 16, padding: 20, marginBottom: 15 },
   popularPackage: { borderColor: '#EF4444', backgroundColor: '#F3F4F6' },
   popularBadge: { position: 'absolute', top: -12, right: 20, backgroundColor: '#EF4444', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
@@ -160,8 +181,5 @@ const styles = StyleSheet.create({
   packagePrice: { fontSize: 24, fontWeight: 'bold', color: '#EF4444' },
   packageDescription: { fontSize: 14, color: '#6B7280' },
   terms: { fontSize: 11, color: '#9CA3AF', textAlign: 'center', marginTop: 30, lineHeight: 16 },
-  linksRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 10, marginBottom: 20 },
-  link: { fontSize: 12, color: '#EF4444', textDecorationLine: 'underline' },
-  linkSeparator: { fontSize: 12, color: '#9CA3AF', marginHorizontal: 4 },
   purchasingIndicator: { marginTop: 20 },
 });
