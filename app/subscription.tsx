@@ -1,17 +1,59 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, ActivityIndicator, Alert, ScrollView } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, Pressable, ActivityIndicator, Alert, ScrollView, Linking } from "react-native";
 import type { CustomerInfo, PurchasesOffering, PurchasesPackage } from "react-native-purchases";
 import { router } from "expo-router";
 
 import { getCustomerInfo, getOfferings, purchasePackage, restorePurchases, isPro } from "@/lib/purchases";
+
+// Apple Guideline 3.1.2(c): required legal links on any purchase screen.
+const EULA_URL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
+const PRIVACY_URL = "https://smyagency.de/datenschutz-socialpro.html";
+
+// Auto-renewal disclosure required for auto-renewable subscriptions.
+const AUTO_RENEWAL_NOTICE =
+  "Verlängert sich automatisch. Jederzeit kündbar in den App-Store-Einstellungen.";
+
+// Map RevenueCat package type to a human-readable billing period.
+function billingPeriodLabel(pkg: PurchasesPackage): string {
+  switch (pkg.packageType) {
+    case "MONTHLY":
+      return "monatlich";
+    case "ANNUAL":
+      return "jährlich";
+    case "WEEKLY":
+      return "wöchentlich";
+    case "SIX_MONTH":
+      return "halbjährlich";
+    case "THREE_MONTH":
+      return "vierteljährlich";
+    case "TWO_MONTH":
+      return "alle 2 Monate";
+    case "LIFETIME":
+      return "einmalig";
+    default:
+      return "";
+  }
+}
+
+async function openExternalUrl(url: string) {
+  try {
+    const canOpen = await Linking.canOpenURL(url);
+    if (canOpen) {
+      await Linking.openURL(url);
+    } else {
+      // Falls canOpenURL false liefert (z. B. Schema-Whitelist), trotzdem versuchen.
+      await Linking.openURL(url);
+    }
+  } catch (e) {
+    console.warn("[Subscription] Failed to open URL", url, e);
+  }
+}
 
 export default function SubscriptionScreen() {
   const [loading, setLoading] = useState(true);
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [info, setInfo] = useState<CustomerInfo | null>(null);
   const [purchasingId, setPurchasingId] = useState<string | null>(null);
-
-  const proActive = useMemo(() => (info ? isPro(info) : false), [info]);
 
   async function load() {
     try {
@@ -178,7 +220,10 @@ export default function SubscriptionScreen() {
               const price = pkg.product.priceString;
               const title = pkg.product.title;
               const desc = pkg.product.description;
+              const period = billingPeriodLabel(pkg);
               const busy = purchasingId === pkg.identifier;
+              // Preis inkl. Laufzeit, z. B. "9,99 € / monatlich"
+              const priceWithPeriod = period ? `${price} / ${period}` : price;
 
               return (
                 <Pressable
@@ -195,21 +240,31 @@ export default function SubscriptionScreen() {
                   }}
                 >
                   <Text style={{ fontWeight: "800", fontSize: 18, marginBottom: 4 }}>{title}</Text>
+                  {period ? (
+                    <Text style={{ fontWeight: "600", fontSize: 14, color: "#EF4444", marginBottom: 4 }}>
+                      Laufzeit: {period}
+                    </Text>
+                  ) : null}
                   <Text style={{ opacity: 0.7, marginBottom: 16 }}>{desc}</Text>
 
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                    <Text style={{ fontWeight: "800", fontSize: 20, color: "#EF4444" }}>{price}</Text>
-                    <View style={{ 
-                      backgroundColor: "#EF4444", 
-                      paddingHorizontal: 20, 
-                      paddingVertical: 10, 
-                      borderRadius: 8 
+                    <Text style={{ fontWeight: "800", fontSize: 20, color: "#EF4444" }}>{priceWithPeriod}</Text>
+                    <View style={{
+                      backgroundColor: "#EF4444",
+                      paddingHorizontal: 20,
+                      paddingVertical: 10,
+                      borderRadius: 8
                     }}>
                       <Text style={{ color: "#fff", fontWeight: "700" }}>
                         {busy ? "..." : "Jetzt kaufen"}
                       </Text>
                     </View>
                   </View>
+
+                  {/* Auto-Renewal-Hinweis pro Abo (Apple 3.1.2) */}
+                  <Text style={{ fontSize: 12, color: "#6B7280", marginTop: 12, lineHeight: 16 }}>
+                    {AUTO_RENEWAL_NOTICE}
+                  </Text>
                 </Pressable>
               );
             })}
@@ -231,6 +286,27 @@ export default function SubscriptionScreen() {
             Käufe wiederherstellen
           </Text>
         </Pressable>
+
+        {/* Pflicht-Disclosure (Apple 3.1.2) */}
+        <Text style={{ fontSize: 12, color: "#6B7280", textAlign: "center", marginTop: 24, lineHeight: 18 }}>
+          Die Zahlung wird bei Kaufbestätigung deinem Apple-ID-Konto belastet. {AUTO_RENEWAL_NOTICE}
+          {" "}Die Verlängerung wird 24 Stunden vor Ablauf des aktuellen Zeitraums berechnet.
+        </Text>
+
+        {/* Funktionierende Pflicht-Links (Apple 3.1.2(c)) */}
+        <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: 16, marginBottom: 8 }}>
+          <Pressable onPress={() => openExternalUrl(EULA_URL)} hitSlop={8}>
+            <Text style={{ fontSize: 13, color: "#EF4444", textDecorationLine: "underline" }}>
+              Nutzungsbedingungen
+            </Text>
+          </Pressable>
+          <Text style={{ fontSize: 13, color: "#9CA3AF", marginHorizontal: 8 }}>&amp;</Text>
+          <Pressable onPress={() => openExternalUrl(PRIVACY_URL)} hitSlop={8}>
+            <Text style={{ fontSize: 13, color: "#EF4444", textDecorationLine: "underline" }}>
+              Datenschutz
+            </Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </View>
   );

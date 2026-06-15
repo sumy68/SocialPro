@@ -6,14 +6,12 @@ import {
   ScrollView,
   TouchableOpacity,
   Linking,
-  Alert,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useApp } from "@/contexts/AppContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import { translations } from '@/constants/translations';
 import type { Language } from '@/constants/translations';
-import Purchases from "react-native-purchases";
 
 export default function SubscriptionManageScreen() {
   const router = useRouter();
@@ -49,31 +47,11 @@ export default function SubscriptionManageScreen() {
     subscription?.expiresAt ??
     null;
 
-  // ✅ NEU: Premium Upgrade Handler
-  const handleUpgradeToPremium = async () => {
-    try {
-      const offerings = await Purchases.getOfferings();
-      if (offerings.current !== null && offerings.current.availablePackages.length > 0) {
-        // Zeige RevenueCat Paywall - nimm erstes Package
-        const purchaserInfo = await Purchases.purchasePackage(offerings.current.availablePackages[0]);
-        
-        // Check ob Premium aktiviert
-        if (typeof purchaserInfo.entitlements.active['premium'] !== 'undefined') {
-          Alert.alert('✅', 'Premium activated!');
-          // Optional: App Context updaten
-          if (typeof app.checkSubscription === 'function') {
-            await app.checkSubscription();
-          }
-        }
-      } else {
-        Alert.alert('Error', 'No options available');
-      }
-    } catch (e: any) {
-      if (!e.userCancelled) {
-        console.error('[Premium Upgrade]', e);
-        Alert.alert('Error', 'Purchase failed');
-      }
-    }
+  // Premium Upgrade: zur Paywall mit allen Pflichtangaben (Titel, Laufzeit,
+  // Preis, Auto-Renewal-Hinweis, Nutzungsbedingungen & Datenschutz) leiten,
+  // statt direkt zu kaufen (Apple Guideline 3.1.2(c)).
+  const handleUpgradeToPremium = () => {
+    router.push("/subscription");
   };
 
   const handleOpenStoreSubscriptions = async () => {
