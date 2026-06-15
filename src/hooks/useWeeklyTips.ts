@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchWithTimeout, TimeoutError } from '@/lib/fetchWithTimeout';
 
 interface WeeklyTip {
   id: string;
@@ -56,7 +57,7 @@ export function useWeeklyTips() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_URL}/api/ai/weekly-tips`, {
+      const response = await fetchWithTimeout(`${API_URL}/api/ai/weekly-tips`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -76,7 +77,11 @@ export function useWeeklyTips() {
       await AsyncStorage.setItem(TIPS_TIMESTAMP_KEY, String(Date.now()));
     } catch (err: any) {
       console.error('[WeeklyTips] Fetch error:', err);
-      setError(err.message);
+      setError(
+        err instanceof TimeoutError
+          ? 'Zeitüberschreitung – bitte später erneut versuchen.'
+          : err?.message ?? 'Tipps konnten nicht geladen werden.'
+      );
     } finally {
       setLoading(false);
     }

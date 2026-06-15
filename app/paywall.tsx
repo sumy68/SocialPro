@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Linking } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import Purchases, { PurchasesOfferings, PurchasesPackage } from 'react-native-purchases';
@@ -47,6 +48,7 @@ const paywallT: Record<string, Record<string, string>> = {
 
 export default function PaywallScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { language } = useApp();
   const t = paywallT[language] ?? paywallT.de;
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
@@ -91,8 +93,8 @@ export default function PaywallScreen() {
   const annualPackage = currentOffering?.availablePackages.find(pkg => pkg.identifier === '$rc_annual');
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]}>
+      <TouchableOpacity style={[styles.skipButton, { top: insets.top + 8 }]} onPress={handleSkip}>
         <Text style={styles.skipText}>{t.skip}</Text>
       </TouchableOpacity>
 

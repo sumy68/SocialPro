@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { fetchWithTimeout, TimeoutError } from '@/lib/fetchWithTimeout';
 
 interface AIContentSuggestion {
   title: string;
@@ -26,7 +27,7 @@ export function useAIContentSuggestions() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${API_URL}/api/ai/content-suggestions`, {
+        const response = await fetchWithTimeout(`${API_URL}/api/ai/content-suggestions`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -48,7 +49,11 @@ export function useAIContentSuggestions() {
         setSuggestions(data.suggestions || []);
       } catch (err: any) {
         console.error('[AI Suggestions] Error:', err);
-        setError(err.message);
+        setError(
+          err instanceof TimeoutError
+            ? 'Zeitüberschreitung – bitte später erneut versuchen.'
+            : err?.message ?? 'Vorschläge konnten nicht geladen werden.'
+        );
       } finally {
         setLoading(false);
       }

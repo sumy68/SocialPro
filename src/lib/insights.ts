@@ -1,4 +1,5 @@
 import { getBaseUrl } from "./api";
+import { fetchWithTimeout } from "./fetchWithTimeout";
 import type { WeeklyInsight, Platform } from "@/types/insights";
 
 export async function fetchWeeklyInsights(params: {
@@ -13,8 +14,8 @@ export async function fetchWeeklyInsights(params: {
       .join(',');
     
     const url = `${base}/api/insights/weekly?platforms=${encodeURIComponent(platformsStr)}`;
-    
-    const res = await fetch(url);
+
+    const res = await fetchWithTimeout(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     
     const json = await res.json();
@@ -54,41 +55,27 @@ export async function fetchWeeklyInsights(params: {
     
   } catch (err) {
     console.error('[fetchWeeklyInsights] Error:', err);
-    
-    // Fallback to mock data
+
+    // Bei Fehler KEINE erfundenen Zahlen zurückgeben – das wäre irreführend
+    // (Apple/Nutzervertrauen). Stattdessen Null-Werte mit error-Flag, damit
+    // das UI einen ehrlichen "keine Daten"-Zustand anzeigen kann.
     const now = new Date();
     const weekEnd = now.toISOString();
     const weekStart = new Date(now.getTime() - 7 * 864e5).toISOString();
-    
-    const count = params.platforms.length || 1;
-    const reachThis = count * 12000 + Math.floor(Math.random() * 8000);
-    const engThis = count * 600 + Math.floor(Math.random() * 400);
-    const follThis = count * 45 + Math.floor(Math.random() * 50);
-    
-    const platforms = params.platforms.map(p => {
-      const reach = Math.round(reachThis / count + Math.random() * 2000);
-      const engagement = Math.round(engThis / count + Math.random() * 200);
-      const rate = reach > 0 ? Number(((engagement / reach) * 100).toFixed(1)) : 0;
-      return { platform: p.platform, reach, engagement, averageEngagementRate: rate };
-    });
-    
+
     return {
       weekStart,
       weekEnd,
-      totals: {
-        reach: reachThis,
-        engagement: engThis,
-        newFollowers: follThis,
-        postsPublished: 0,
-      },
-      previousWeek: {
-        reach: Math.max(1, count * 10000),
-        engagement: Math.max(1, count * 520),
-        newFollowers: Math.max(1, count * 40),
-        postsPublished: 0,
-      },
-      platforms,
+      totals: { reach: 0, engagement: 0, newFollowers: 0, postsPublished: 0 },
+      previousWeek: { reach: 0, engagement: 0, newFollowers: 0, postsPublished: 0 },
+      platforms: params.platforms.map(p => ({
+        platform: p.platform,
+        reach: 0,
+        engagement: 0,
+        averageEngagementRate: 0,
+      })),
       topPosts: [],
+      error: err instanceof Error ? err.message : 'Daten konnten nicht geladen werden.',
     };
   }
 }

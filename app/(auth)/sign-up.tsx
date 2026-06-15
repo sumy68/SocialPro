@@ -19,10 +19,21 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState('');
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const networkFallback = (err: any, fallback: string) => {
+    const clerkMsg = err?.errors?.[0]?.message;
+    const isNetwork =
+      !err?.errors &&
+      (err?.message?.toLowerCase?.().includes('network') ||
+        err?.message?.toLowerCase?.().includes('fetch'));
+    return clerkMsg || (isNetwork ? 'Keine Internetverbindung. Bitte prüfe dein Netzwerk.' : fallback);
+  };
 
   const onSignUpPress = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded || isSubmitting) return;
 
+    setIsSubmitting(true);
     try {
       await signUp.create({
         emailAddress,
@@ -32,25 +43,27 @@ export default function SignUpScreen() {
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
     } catch (err: any) {
-      Alert.alert(auth.error, err.errors?.[0]?.message || auth.regFailed);
+      Alert.alert(auth.error, networkFallback(err, auth.regFailed));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const onVerifyPress = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded || isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const completeSignUp = await signUp.attemptEmailAddressVerification({ code });
-      console.log("[SignUp] Verification status:", completeSignUp.status);
-      console.log("[SignUp] Session ID:", completeSignUp.createdSessionId);
       if (completeSignUp.status === "complete" && completeSignUp.createdSessionId) {
         await setActive({ session: completeSignUp.createdSessionId });
         router.replace("/");
       } else {
-        Alert.alert(auth.error, "Verification incomplete: " + completeSignUp.status);
+        Alert.alert(auth.error, "Verifizierung unvollständig: " + completeSignUp.status);
       }
     } catch (err: any) {
-      console.log("[SignUp] ERROR:", JSON.stringify(err));
-      Alert.alert(auth.error, err.errors?.[0]?.message || auth.verifyFailed);
+      Alert.alert(auth.error, networkFallback(err, auth.verifyFailed));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -68,8 +81,12 @@ export default function SignUpScreen() {
           keyboardType="number-pad"
         />
 
-        <TouchableOpacity style={styles.button} onPress={onVerifyPress}>
-          <Text style={styles.buttonText}>{auth.verifyCta}</Text>
+        <TouchableOpacity
+          style={[styles.button, isSubmitting && styles.buttonDisabled]}
+          onPress={onVerifyPress}
+          disabled={isSubmitting}
+        >
+          <Text style={styles.buttonText}>{isSubmitting ? '…' : auth.verifyCta}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -101,8 +118,12 @@ export default function SignUpScreen() {
         secureTextEntry
       />
 
-      <TouchableOpacity style={styles.button} onPress={onSignUpPress}>
-        <Text style={styles.buttonText}>{auth.cta}</Text>
+      <TouchableOpacity
+        style={[styles.button, isSubmitting && styles.buttonDisabled]}
+        onPress={onSignUpPress}
+        disabled={isSubmitting}
+      >
+        <Text style={styles.buttonText}>{isSubmitting ? '…' : auth.cta}</Text>
       </TouchableOpacity>
 
       <View style={styles.termsBox}>
@@ -166,6 +187,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 10,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   buttonText: {
     color: '#fff',

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Pressable, ActivityIndicator, Alert, ScrollView, Linking } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { CustomerInfo, PurchasesOffering, PurchasesPackage } from "react-native-purchases";
 import { router } from "expo-router";
 
@@ -50,6 +51,7 @@ async function openExternalUrl(url: string) {
 }
 
 export default function SubscriptionScreen() {
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [info, setInfo] = useState<CustomerInfo | null>(null);
@@ -126,10 +128,11 @@ export default function SubscriptionScreen() {
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: "#F8F9FA" }}>
-        <View style={{ 
-          flexDirection: "row", 
-          alignItems: "center", 
-          padding: 16, 
+        <View style={{
+          flexDirection: "row",
+          alignItems: "center",
+          padding: 16,
+          paddingTop: insets.top + 16,
           backgroundColor: "#fff",
           borderBottomWidth: 1,
           borderBottomColor: "#E0E0E0"
@@ -151,10 +154,11 @@ export default function SubscriptionScreen() {
   if (!offering) {
     return (
       <View style={{ flex: 1, backgroundColor: "#F8F9FA" }}>
-        <View style={{ 
-          flexDirection: "row", 
-          alignItems: "center", 
-          padding: 16, 
+        <View style={{
+          flexDirection: "row",
+          alignItems: "center",
+          padding: 16,
+          paddingTop: insets.top + 16,
           backgroundColor: "#fff",
           borderBottomWidth: 1,
           borderBottomColor: "#E0E0E0"

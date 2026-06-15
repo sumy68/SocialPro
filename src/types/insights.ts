@@ -32,4 +32,6 @@ export type WeeklyInsight = {
     comments: number;
     shares: number;
   }>;
+  // Gesetzt, wenn die Live-Daten nicht geladen werden konnten (Werte = 0).
+  error?: string;
 };

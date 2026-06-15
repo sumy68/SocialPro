@@ -9,26 +9,39 @@ export default function SignInScreen() {
   
   const [emailAddress, setEmailAddress] = useState('');
   const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onSignInPress = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded || isSubmitting) return;
 
+    setIsSubmitting(true);
     try {
       const completeSignIn = await signIn.create({
         identifier: emailAddress,
         password,
       });
 
-      await setActive({ session: completeSignIn.createdSessionId });
-      
-      // Wait for Clerk to update session state
-      // Wait for Clerk to sync then navigate
-      const checkAndNav = () => {
+      // Nur aktiv setzen, wenn die Anmeldung wirklich abgeschlossen ist.
+      // Bei 2FA / weiterer Verifizierung ist createdSessionId undefined.
+      if (completeSignIn.status === 'complete' && completeSignIn.createdSessionId) {
+        await setActive({ session: completeSignIn.createdSessionId });
         router.replace('/');
-      };
-      checkAndNav();
+      } else {
+        Alert.alert('Hinweis', 'Anmeldung unvollständig. Bitte versuche es erneut.');
+      }
     } catch (err: any) {
-      Alert.alert('Error', err.errors?.[0]?.message || 'Sign in failed');
+      // Clerk-Fehler tragen err.errors; Netzwerk-/Sonstige Fehler nicht.
+      const clerkMsg = err?.errors?.[0]?.message;
+      const isNetwork =
+        !err?.errors &&
+        (err?.message?.toLowerCase?.().includes('network') ||
+          err?.message?.toLowerCase?.().includes('fetch'));
+      Alert.alert(
+        'Fehler',
+        clerkMsg || (isNetwork ? 'Keine Internetverbindung. Bitte prüfe dein Netzwerk.' : 'Anmeldung fehlgeschlagen.')
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -54,8 +67,12 @@ export default function SignInScreen() {
         secureTextEntry
       />
 
-      <TouchableOpacity style={styles.button} onPress={onSignInPress}>
-        <Text style={styles.buttonText}>Sign In</Text>
+      <TouchableOpacity
+        style={[styles.button, isSubmitting && styles.buttonDisabled]}
+        onPress={onSignInPress}
+        disabled={isSubmitting}
+      >
+        <Text style={styles.buttonText}>{isSubmitting ? 'Anmeldung läuft…' : 'Sign In'}</Text>
       </TouchableOpacity>
 
       <Link href="/(auth)/sign-up" style={styles.link}>
@@ -98,6 +115,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 10,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   buttonText: {
     color: '#fff',

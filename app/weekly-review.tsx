@@ -491,8 +491,8 @@ export default function WeeklyReviewScreen() {
             {wr.platformPerformance || 'Platform Performance'}
           </Text>
           <View style={styles.platformGrid}>
-            {(weeklyData.platformPerformance ?? []).map((platform, index) => (
-              <View key={index} style={styles.platformCard}>
+            {(weeklyData.platformPerformance ?? []).map((platform) => (
+              <View key={platform.platform} style={styles.platformCard}>
                 <View
                   style={[
                     styles.platformHeader,
@@ -544,8 +544,8 @@ export default function WeeklyReviewScreen() {
           <Text style={styles.sectionTitle}>
             {wr.insights || 'Insights'}
           </Text>
-          {(weeklyData.insights ?? []).map((insight, index) => (
-            <InsightCard key={index} insight={insight} />
+          {(weeklyData.insights ?? []).map((insight) => (
+            <InsightCard key={insight.title} insight={insight} />
           ))}
           {(!weeklyData.insights || weeklyData.insights.length === 0) && (
             <Text style={styles.emptySubText}>
@@ -559,7 +559,7 @@ export default function WeeklyReviewScreen() {
           <Text style={styles.sectionTitle}>
             {wr.recommendations || 'Recommendations'}
           </Text>
-          {(weeklyData.recommendations ?? []).map((recommendation, index) => {
+          {(weeklyData.recommendations ?? []).map((recommendation) => {
             const handleActionPress = () => {
               if (recommendation.priority === 'high') {
                 router.push('/(tabs)/(create)');
@@ -575,7 +575,7 @@ export default function WeeklyReviewScreen() {
 
             return (
               <RecommendationCard
-                key={index}
+                key={recommendation.title}
                 recommendation={recommendation}
                 onActionPress={handleActionPress}
               />

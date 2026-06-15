@@ -35,6 +35,7 @@ function CreateScreenInner() {
   const [autoPost, setAutoPost] = useState<boolean>(true);
   const [contentType, setContentType] = useState<'post' | 'reel'>('post');
   const [showAiFallbackInfo, setShowAiFallbackInfo] = useState<boolean>(false);
+  const [isScheduling, setIsScheduling] = useState<boolean>(false);
 
   const togglePlatform = (platform: Platform) => {
     setSelectedPlatforms(prev =>
@@ -245,6 +246,9 @@ function CreateScreenInner() {
   };
 
   const handleSchedulePost = async () => {
+    // Doppelklick-Schutz: laufende Planung blockiert erneute Auslösung.
+    if (isScheduling) return;
+
     if (selectedPlatforms.length === 0) {
       Alert.alert('!', cr.selectPlatforms);
       return;
@@ -258,7 +262,9 @@ function CreateScreenInner() {
       Alert.alert('Ungültige Zeit', 'Zeitpunkt muss in der Zukunft liegen.');
       return;
     }
-  
+
+    setIsScheduling(true);
+    try {
     const allMediaUrls = [...selectedImages, ...selectedVideos];
     const fullCaption = caption.trim() + (hashtags.trim() ? ' ' + hashtags.trim() : '');
     const mediaType =
@@ -370,7 +376,7 @@ function CreateScreenInner() {
     }
   
     await addPost(post);
-  
+
     setCaption('');
     setHashtags('');
     setSelectedPlatforms([]);
@@ -378,6 +384,9 @@ function CreateScreenInner() {
     setSelectedVideos([]);
     setScheduledDate(new Date(Date.now() + 3600000));
     setContentType('post');
+    } finally {
+      setIsScheduling(false);
+    }
   };
 
   return (
@@ -578,15 +587,15 @@ function CreateScreenInner() {
         <TouchableOpacity
           style={[
             styles.scheduleButton,
-            (selectedPlatforms.length === 0 || (!caption.trim() && selectedImages.length === 0 && selectedVideos.length === 0) || isPublishing()) &&
+            (selectedPlatforms.length === 0 || (!caption.trim() && selectedImages.length === 0 && selectedVideos.length === 0) || isPublishing() || isScheduling) &&
               styles.scheduleButtonDisabled,
           ]}
           onPress={handleSchedulePost}
-          disabled={selectedPlatforms.length === 0 || (!caption.trim() && selectedImages.length === 0 && selectedVideos.length === 0) || isPublishing()}
+          disabled={selectedPlatforms.length === 0 || (!caption.trim() && selectedImages.length === 0 && selectedVideos.length === 0) || isPublishing() || isScheduling}
         >
-          {isPublishing() ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Send size={20} color="#FFFFFF" />}
+          {(isPublishing() || isScheduling) ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Send size={20} color="#FFFFFF" />}
           <Text style={styles.scheduleButtonText}>
-            {isPublishing() ? cr.publishing : autoPost ? cr.scheduleAndPost : cr.saveAsDraft}
+            {(isPublishing() || isScheduling) ? cr.publishing : autoPost ? cr.scheduleAndPost : cr.saveAsDraft}
           </Text>
         </TouchableOpacity>
       </ScrollView>

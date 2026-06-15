@@ -204,8 +204,8 @@ export const [PlatformConnectionProvider, usePlatformConnection] = createContext
     console.log('[PlatformConnection] Getting publish token for:', platform);
     
     const status = statusMap[platform];
-    
-    if (!status.connected) {
+
+    if (!status || !status.connected) {
       throw new Error(`${platform} is not connected`);
     }
     

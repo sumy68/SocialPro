@@ -96,8 +96,8 @@ export default function CalendarScreen() {
             <View key={post.id} style={styles.postCard}>
               <View style={styles.postHeader}>
                 <View style={styles.platformIconContainer}>
-                  {post.platforms.map((platform, idx) => (
-                    <View key={idx}>{getPlatformIcon(platform)}</View>
+                  {post.platforms.map((platform) => (
+                    <View key={platform}>{getPlatformIcon(platform)}</View>
                   ))}
                 </View>
                 <Text style={styles.platformName}>

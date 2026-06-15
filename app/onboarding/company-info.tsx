@@ -8,6 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronRight, Building2, User, Users, ChevronLeft } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
 import { onboardingTranslations } from '@/constants/translations';
@@ -17,6 +18,7 @@ type AccountType = 'business' | 'creator' | 'both';
 
 export default function CompanyInfoScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { language, completeOnboarding, updateAccountType, updateUserProfile } = useApp();
   const t = onboardingTranslations[language] ?? onboardingTranslations.de;
   const c = t.companyInfo ?? ({} as any);
@@ -77,10 +79,10 @@ export default function CompanyInfoScreen() {
             headerShown: false,
           }}
         />
-        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+        <ScrollView style={styles.container} contentContainerStyle={[styles.contentContainer, { paddingTop: insets.top + 24 }]}>
           {/* ✅ ZURÜCK BUTTON */}
-          <TouchableOpacity 
-            onPress={() => router.replace('/(tabs)/(settings)')}
+          <TouchableOpacity
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
             style={styles.backButton}
           >
             <ChevronLeft size={20} color="#EF4444" />
@@ -152,7 +154,7 @@ export default function CompanyInfoScreen() {
       />
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[styles.contentContainer, { paddingTop: insets.top + 24 }]}
       >
         <TouchableOpacity 
           onPress={() => setStep('type')} 

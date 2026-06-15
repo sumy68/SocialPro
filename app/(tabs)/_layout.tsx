@@ -1,7 +1,9 @@
 // app/(tabs)/_layout.tsx
 import React from "react";
-import { Tabs } from "expo-router";
+import { Tabs, Redirect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { View, ActivityIndicator } from "react-native";
+import { useAuth } from "@clerk/clerk-expo";
 import { useApp } from "@/contexts/AppContext";
 import { PlatformConnectionProvider } from "@/contexts/PlatformConnectionContext";
 import { translations } from "@/constants/translations";
@@ -9,7 +11,21 @@ import type { Language } from "@/constants/translations";
 
 export default function TabLayout() {
   const { language } = useApp();
+  const { isLoaded, isSignedIn } = useAuth();
   const t = translations[language as Language] ?? translations.de;
+
+  // Schutz: kein Zugriff auf die Tabs ohne gültige Session
+  // (fängt abgelaufene Tokens und wiederhergestellte Navigation ab).
+  if (!isLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" }}>
+        <ActivityIndicator size="large" color="#EF4444" />
+      </View>
+    );
+  }
+  if (!isSignedIn) {
+    return <Redirect href="/(auth)/sign-in" />;
+  }
 
   return (
     <PlatformConnectionProvider>
