@@ -46,3 +46,4 @@ SocialPro.ipa
 data/
 *.db
 dist/
+.claude/
