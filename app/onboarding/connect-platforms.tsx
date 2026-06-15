@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter, Stack } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Linkedin, Instagram, Music2, CheckCircle } from "lucide-react-native";
 import { onboardingTranslations } from '@/constants/translations';
 import { useTranslation } from "@/hooks/useTranslation";
@@ -56,6 +57,7 @@ const parseQuery = (url: string) => {
 
 export default function ConnectPlatformsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const t = useTranslation();
   const { connectedPlatforms, connectPlatform, disconnectPlatform, language } = useApp();
   const pt = (onboardingTranslations[language] ?? onboardingTranslations.de).platforms ?? {};
@@ -221,7 +223,7 @@ export default function ConnectPlatformsScreen() {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[styles.contentContainer, { paddingTop: insets.top + 24 }]}
       >
         <View style={styles.topBar}>
           <TouchableOpacity

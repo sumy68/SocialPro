@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
 import { Eye, Heart, Users, TrendingUp, TrendingDown, BarChart3, MessageCircle, Share2 } from 'lucide-react-native';
 import { useApp } from '@/contexts/AppContext';
@@ -11,6 +12,7 @@ type TimePeriod = '7' | '30' | '90';
 
 export default function ReportsScreen() {
   const { posts, connectedPlatforms, language } = useApp();
+  const insets = useSafeAreaInsets();
   const rp = (translations[language as Language] ?? translations.de).reports;
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('30');
 
@@ -369,7 +371,7 @@ export default function ReportsScreen() {
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
           <Text style={styles.headerTitle}>
             {rp.title}
           </Text>
